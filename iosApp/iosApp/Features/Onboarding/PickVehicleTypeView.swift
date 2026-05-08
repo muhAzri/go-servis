@@ -9,34 +9,14 @@ struct PickVehicleTypeView: View {
             Color.sgBgWarm.ignoresSafeArea()
 
             VStack(alignment: .leading, spacing: 0) {
-                Button(action: onBack) {
-                    Text("\u{f060}")
-                        .font(.custom("FontAwesome6Free-Solid", size: 18))
-                        .foregroundColor(.sgTextPrimary)
-                        .frame(width: 44, height: 44)
-                }
-                .buttonStyle(.plain)
-                .padding(.leading, 12)
-                .padding(.top, 8)
+                OnboardingStepHeader(
+                    stepLabel: "Langkah 1 dari 3",
+                    title: "Kendaraan kamu apa?",
+                    subtitle: "Bisa tambah lebih dari satu nanti.",
+                    onBack: onBack
+                )
 
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("Langkah 1 dari 3")
-                        .font(.custom("PlusJakartaSans-SemiBold", size: 13))
-                        .foregroundColor(.sgTextMuted)
-
-                    Spacer().frame(height: 6)
-
-                    Text("Kendaraan kamu apa?")
-                        .font(.custom("PlusJakartaSans-Bold", size: 26))
-                        .foregroundColor(.sgTextPrimary)
-                        .lineSpacing(2)
-
-                    Spacer().frame(height: 6)
-
-                    Text("Bisa tambah lebih dari satu nanti.")
-                        .font(.custom("PlusJakartaSans-Regular", size: 14))
-                        .foregroundColor(.sgTextMuted)
-
                     Spacer().frame(height: 28)
 
                     VehicleCard(
@@ -55,19 +35,7 @@ struct PickVehicleTypeView: View {
 
                     Spacer()
 
-                    HStack(spacing: 10) {
-                        Text("\u{f05a}")
-                            .font(.custom("FontAwesome6Free-Solid", size: 15))
-                            .foregroundColor(.sgTextMuted)
-                        Text("Data disimpan lokal di HP. Tidak butuh login.")
-                            .font(.custom("PlusJakartaSans-Regular", size: 12))
-                            .foregroundColor(.sgTextMuted)
-                            .lineSpacing(2)
-                    }
-                    .padding(14)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.sgSurfaceAlt)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    AppInfoBanner(text: "Data disimpan lokal di HP. Tidak butuh login.")
 
                     Spacer().frame(height: 32)
                 }

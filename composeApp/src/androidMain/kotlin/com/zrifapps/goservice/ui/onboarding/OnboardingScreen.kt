@@ -20,8 +20,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
@@ -39,6 +37,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import com.zrifapps.goservice.ui.components.AppButton
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
@@ -172,7 +171,8 @@ fun OnboardingScreen(
 
                 Spacer(Modifier.height(28.dp))
 
-                Button(
+                AppButton(
+                    text = if (currentPage == pages.size - 1) "Mulai Sekarang" else "Lanjut",
                     onClick = {
                         if (currentPage < pages.size - 1) {
                             scope.launch { pagerState.animateScrollToPage(currentPage + 1) }
@@ -180,26 +180,8 @@ fun OnboardingScreen(
                             onFinish()
                         }
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.Primary),
-                ) {
-                    Text(
-                        text = if (currentPage == pages.size - 1) "Mulai Sekarang" else "Lanjut",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = font,
-                        color = Color.White,
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    FaIcon(
-                        icon = FaIcons.CHEVRON_RIGHT,
-                        color = Color.White,
-                        size = 14.sp,
-                    )
-                }
+                    trailingIcon = FaIcons.CHEVRON_RIGHT,
+                )
             }
         }
     }

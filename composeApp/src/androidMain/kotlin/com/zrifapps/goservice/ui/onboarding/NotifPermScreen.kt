@@ -6,7 +6,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,16 +16,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +30,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.zrifapps.goservice.ui.components.AppButton
+import com.zrifapps.goservice.ui.components.AppTextButton
+import com.zrifapps.goservice.ui.onboarding.components.OnboardingStepHeader
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
@@ -47,7 +44,6 @@ fun NotifPermScreen(
     onComplete: () -> Unit,
 ) {
     val font = plusJakartaSansFontFamily()
-
     val notifLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { onComplete() },
@@ -62,39 +58,11 @@ fun NotifPermScreen(
     ) {
         Spacer(Modifier.height(8.dp))
 
-        IconButton(onClick = onBack, modifier = Modifier.offset(x = (-12).dp)) {
-            FaIcon(icon = FaIcons.ARROW_LEFT, color = AppColors.TextPrimary, size = 18.sp)
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        Text(
-            text = "Langkah 3 dari 3",
-            fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = font,
-            color = AppColors.TextMuted,
-        )
-
-        Spacer(Modifier.height(6.dp))
-
-        Text(
-            text = "Aktifkan pengingat",
-            fontSize = 26.sp,
-            fontWeight = FontWeight.ExtraBold,
-            fontFamily = font,
-            color = AppColors.TextPrimary,
-            lineHeight = 32.sp,
-        )
-
-        Spacer(Modifier.height(6.dp))
-
-        Text(
-            text = "Kami kirim notif saat servis hampir tiba — supaya tidak kelupaan.",
-            fontSize = 14.sp,
-            fontFamily = font,
-            color = AppColors.TextMuted,
-            lineHeight = 21.sp,
+        OnboardingStepHeader(
+            stepLabel = "Langkah 3 dari 3",
+            title = "Aktifkan pengingat",
+            subtitle = "Kami kirim notif saat servis hampir tiba — supaya tidak kelupaan.",
+            onBack = onBack,
         )
 
         Spacer(Modifier.height(24.dp))
@@ -123,7 +91,8 @@ fun NotifPermScreen(
 
         Spacer(Modifier.weight(1f))
 
-        Button(
+        AppButton(
+            text = "Aktifkan Notifikasi",
             onClick = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -131,37 +100,11 @@ fun NotifPermScreen(
                     onComplete()
                 }
             },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(18.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = AppColors.Primary),
-        ) {
-            Text(
-                text = "Aktifkan Notifikasi",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = font,
-                color = Color.White,
-            )
-        }
+        )
 
         Spacer(Modifier.height(4.dp))
 
-        TextButton(
-            onClick = onComplete,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-        ) {
-            Text(
-                text = "Nanti saja",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                fontFamily = font,
-                color = AppColors.TextMuted,
-            )
-        }
+        AppTextButton(text = "Nanti saja", onClick = onComplete)
 
         Spacer(Modifier.height(24.dp))
     }

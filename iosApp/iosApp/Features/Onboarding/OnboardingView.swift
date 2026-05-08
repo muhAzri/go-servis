@@ -69,29 +69,17 @@ struct OnboardingView: View {
 
                     Spacer().frame(height: 28)
 
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.3)) {
+                    AppButton(
+                        title: currentPage == pages.count - 1 ? "Mulai Sekarang" : "Lanjut",
+                        action: {
                             if currentPage < pages.count - 1 {
-                                currentPage += 1
+                                withAnimation(.easeInOut(duration: 0.2)) { currentPage += 1 }
                             } else {
                                 onFinish()
                             }
-                        }
-                    } label: {
-                        HStack(spacing: 8) {
-                            Text(currentPage == pages.count - 1 ? "Mulai Sekarang" : "Lanjut")
-                                .font(.custom("PlusJakartaSans-Bold", size: 16))
-                                .foregroundColor(.white)
-                            Text(currentPage == pages.count - 1 ? "\u{f061}" : "\u{f054}")
-                                .font(.custom("FontAwesome6Free-Solid", size: 14))
-                                .foregroundColor(.white)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(Color.sgPrimary)
-                        .clipShape(RoundedRectangle(cornerRadius: 18))
-                    }
-                    .buttonStyle(.plain)
+                        },
+                        trailingIcon: "\u{f054}"
+                    )
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 36)

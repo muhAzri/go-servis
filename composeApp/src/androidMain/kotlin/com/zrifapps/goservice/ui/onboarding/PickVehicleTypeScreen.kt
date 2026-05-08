@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,6 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.zrifapps.goservice.ui.components.AppInfoBanner
+import com.zrifapps.goservice.ui.onboarding.components.OnboardingStepHeader
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
@@ -48,38 +48,11 @@ fun PickVehicleTypeScreen(
     ) {
         Spacer(Modifier.height(8.dp))
 
-        IconButton(onClick = onBack, modifier = Modifier.offset(x = (-12).dp)) {
-            FaIcon(icon = FaIcons.ARROW_LEFT, color = AppColors.TextPrimary, size = 18.sp)
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        Text(
-            text = "Langkah 1 dari 3",
-            fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = font,
-            color = AppColors.TextMuted,
-        )
-
-        Spacer(Modifier.height(6.dp))
-
-        Text(
-            text = "Kendaraan kamu apa?",
-            fontSize = 26.sp,
-            fontWeight = FontWeight.ExtraBold,
-            fontFamily = font,
-            color = AppColors.TextPrimary,
-            lineHeight = 32.sp,
-        )
-
-        Spacer(Modifier.height(6.dp))
-
-        Text(
-            text = "Bisa tambah lebih dari satu nanti.",
-            fontSize = 14.sp,
-            fontFamily = font,
-            color = AppColors.TextMuted,
+        OnboardingStepHeader(
+            stepLabel = "Langkah 1 dari 3",
+            title = "Kendaraan kamu apa?",
+            subtitle = "Bisa tambah lebih dari satu nanti.",
+            onBack = onBack,
         )
 
         Spacer(Modifier.height(28.dp))
@@ -104,24 +77,7 @@ fun PickVehicleTypeScreen(
 
         Spacer(Modifier.weight(1f))
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(AppColors.SurfaceAlt)
-                .padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            FaIcon(icon = FaIcons.CIRCLE_INFO, color = AppColors.TextMuted, size = 16.sp)
-            Text(
-                text = "Data disimpan lokal di HP. Tidak butuh login.",
-                fontSize = 12.sp,
-                fontFamily = font,
-                color = AppColors.TextMuted,
-                lineHeight = 17.sp,
-            )
-        }
+        AppInfoBanner("Data disimpan lokal di HP. Tidak butuh login.")
 
         Spacer(Modifier.height(32.dp))
     }

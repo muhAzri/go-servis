@@ -10,34 +10,14 @@ struct NotifPermissionView: View {
             Color.sgBgWarm.ignoresSafeArea()
 
             VStack(alignment: .leading, spacing: 0) {
-                Button(action: onBack) {
-                    Text("\u{f060}")
-                        .font(.custom("FontAwesome6Free-Solid", size: 18))
-                        .foregroundColor(.sgTextPrimary)
-                        .frame(width: 44, height: 44)
-                }
-                .buttonStyle(.plain)
-                .padding(.leading, 12)
-                .padding(.top, 8)
+                OnboardingStepHeader(
+                    stepLabel: "Langkah 3 dari 3",
+                    title: "Aktifkan pengingat",
+                    subtitle: "Kami kirim notif saat servis hampir tiba — supaya tidak kelupaan.",
+                    onBack: onBack
+                )
 
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("Langkah 3 dari 3")
-                        .font(.custom("PlusJakartaSans-SemiBold", size: 13))
-                        .foregroundColor(.sgTextMuted)
-
-                    Spacer().frame(height: 6)
-
-                    Text("Aktifkan pengingat")
-                        .font(.custom("PlusJakartaSans-Bold", size: 26))
-                        .foregroundColor(.sgTextPrimary)
-
-                    Spacer().frame(height: 6)
-
-                    Text("Kami kirim notif saat servis hampir tiba — supaya tidak kelupaan.")
-                        .font(.custom("PlusJakartaSans-Regular", size: 14))
-                        .foregroundColor(.sgTextMuted)
-                        .lineSpacing(3)
-
                     Spacer().frame(height: 24)
 
                     NotifPreviewCard(
@@ -62,33 +42,17 @@ struct NotifPermissionView: View {
 
                     Spacer()
 
-                    Button {
+                    AppButton(title: "Aktifkan Notifikasi", action: {
                         UNUserNotificationCenter.current().requestAuthorization(
                             options: [.alert, .badge, .sound]
                         ) { _, _ in
                             DispatchQueue.main.async { onComplete() }
                         }
-                    } label: {
-                        Text("Aktifkan Notifikasi")
-                            .font(.custom("PlusJakartaSans-Bold", size: 16))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
-                            .background(Color.sgPrimary)
-                            .clipShape(RoundedRectangle(cornerRadius: 18))
-                    }
-                    .buttonStyle(.plain)
+                    })
 
                     Spacer().frame(height: 4)
 
-                    Button(action: onComplete) {
-                        Text("Nanti saja")
-                            .font(.custom("PlusJakartaSans-SemiBold", size: 14))
-                            .foregroundColor(.sgTextMuted)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                    }
-                    .buttonStyle(.plain)
+                    AppTextButton(title: "Nanti saja", action: onComplete)
 
                     Spacer().frame(height: 24)
                 }
