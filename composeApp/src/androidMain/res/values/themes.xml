@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Window-level splash: green background shown before Compose draws.
+         Icon is intentionally omitted here — the Compose SplashScreen handles
+         the full design with rounded box, icon, and text labels. -->
+    <style name="Theme.GoService.Splash" parent="Theme.SplashScreen">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="postSplashScreenTheme">@android:style/Theme.Material.Light.NoActionBar</item>
+    </style>
+</resources>
