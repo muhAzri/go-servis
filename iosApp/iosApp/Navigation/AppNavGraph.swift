@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct AppNavGraph: View {
+    @AppStorage("onboarding_done") private var onboardingDone = false
     @State private var router = AppRouter()
     @State private var isShowingSplash = true
 
@@ -9,6 +10,14 @@ struct AppNavGraph: View {
             SplashView {
                 isShowingSplash = false
             }
+        } else if !onboardingDone {
+            OnboardingFlowView {
+                onboardingDone = true
+            }
+            .transition(.asymmetric(
+                insertion: .move(edge: .trailing),
+                removal: .move(edge: .leading)
+            ))
         } else {
             NavigationStack(path: $router.path) {
                 HomeView()
@@ -25,6 +34,59 @@ struct AppNavGraph: View {
         switch destination {
         case .home:
             HomeView()
+        }
+    }
+}
+
+// MARK: – Onboarding flow state machine
+
+struct OnboardingFlowView: View {
+    let onComplete: () -> Void
+
+    enum Step { case carousel, pickType, notifPerm }
+    @State private var step: Step = .carousel
+
+    var body: some View {
+        ZStack {
+            switch step {
+            case .carousel:
+                OnboardingView(
+                    onSkip: onComplete,
+                    onFinish: {
+                        withAnimation(.easeInOut(duration: 0.3)) { step = .pickType }
+                    }
+                )
+                .transition(.asymmetric(
+                    insertion: .move(edge: .trailing),
+                    removal: .move(edge: .leading)
+                ))
+
+            case .pickType:
+                PickVehicleTypeView(
+                    onBack: {
+                        withAnimation(.easeInOut(duration: 0.3)) { step = .carousel }
+                    },
+                    onPickType: { _ in
+                        withAnimation(.easeInOut(duration: 0.3)) { step = .notifPerm }
+                    }
+                )
+                .transition(.asymmetric(
+                    insertion: .move(edge: .trailing),
+                    removal: .move(edge: .leading)
+                ))
+
+            case .notifPerm:
+                NotifPermissionView(
+                    onBack: {
+                        withAnimation(.easeInOut(duration: 0.3)) { step = .pickType }
+                    },
+                    onComplete: onComplete
+                )
+                .transition(.asymmetric(
+                    insertion: .move(edge: .trailing),
+                    removal: .move(edge: .leading)
+                ))
+            }
         }
     }
 }
