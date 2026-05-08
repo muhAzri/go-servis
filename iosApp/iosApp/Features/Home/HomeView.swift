@@ -2,6 +2,7 @@ import SwiftUI
 import Shared
 
 struct HomeView: View {
+    @Environment(AppRouter.self) private var router
     @State private var showContent = false
 
     var body: some View {
@@ -10,6 +11,9 @@ struct HomeView: View {
                 withAnimation {
                     showContent.toggle()
                 }
+            }
+            Button("Tambah Kendaraan") {
+                router.navigate(to: .addVehicle)
             }
 
             if showContent {

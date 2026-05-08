@@ -24,7 +24,7 @@ import goservice.composeapp.generated.resources.compose_multiplatform
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(onAddVehicle: () -> Unit = {}) {
     var showContent by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier
@@ -35,6 +35,9 @@ fun HomeScreen() {
     ) {
         Button(onClick = { showContent = !showContent }) {
             Text("Click me!")
+        }
+        Button(onClick = onAddVehicle) {
+            Text("Tambah Kendaraan")
         }
         AnimatedVisibility(showContent) {
             val greeting = remember { Greeting().greet() }

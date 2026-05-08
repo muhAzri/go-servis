@@ -34,6 +34,11 @@ struct AppNavGraph: View {
         switch destination {
         case .home:
             HomeView()
+        case .addVehicle:
+            AddVehicleView(
+                onBack: { router.navigateBack() },
+                onSaved: { _ in router.navigateBack() }
+            )
         }
     }
 }
@@ -41,8 +46,9 @@ struct AppNavGraph: View {
 struct OnboardingFlowView: View {
     let onComplete: () -> Void
 
-    enum Step { case carousel, pickType, notifPerm }
+    enum Step { case carousel, pickType, addVehicle(String), notifPerm }
     @State private var step: Step = .carousel
+    @State private var selectedVehicleType: String = ""
 
     var body: some View {
         ZStack {
@@ -64,7 +70,23 @@ struct OnboardingFlowView: View {
                     onBack: {
                         withAnimation(.easeInOut(duration: 0.3)) { step = .carousel }
                     },
-                    onPickType: { _ in
+                    onPickType: { type in
+                        selectedVehicleType = type
+                        withAnimation(.easeInOut(duration: 0.3)) { step = .addVehicle(type) }
+                    }
+                )
+                .transition(.asymmetric(
+                    insertion: .move(edge: .trailing),
+                    removal: .move(edge: .leading)
+                ))
+
+            case .addVehicle(let type):
+                OnboardingAddVehicleView(
+                    vehicleType: type,
+                    onBack: {
+                        withAnimation(.easeInOut(duration: 0.3)) { step = .pickType }
+                    },
+                    onComplete: { _ in
                         withAnimation(.easeInOut(duration: 0.3)) { step = .notifPerm }
                     }
                 )
@@ -76,7 +98,7 @@ struct OnboardingFlowView: View {
             case .notifPerm:
                 NotifPermissionView(
                     onBack: {
-                        withAnimation(.easeInOut(duration: 0.3)) { step = .pickType }
+                        withAnimation(.easeInOut(duration: 0.3)) { step = .addVehicle(selectedVehicleType) }
                     },
                     onComplete: onComplete
                 )
