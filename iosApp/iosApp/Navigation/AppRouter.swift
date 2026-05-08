@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// Central navigation state for the app. Inject via `.environment(router)` and
-/// read with `@Environment(AppRouter.self)` in any child view.
 @Observable
 final class AppRouter {
     var path = NavigationPath()

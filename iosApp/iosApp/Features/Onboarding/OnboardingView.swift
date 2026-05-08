@@ -31,7 +31,6 @@ struct OnboardingView: View {
             Color.sgBgWarm.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Illustration pager
                 TabView(selection: $currentPage) {
                     IllustWelcomeView().tag(0)
                     IllustReminderView().tag(1)
@@ -40,9 +39,7 @@ struct OnboardingView: View {
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .frame(maxHeight: .infinity)
 
-                // Bottom section
                 VStack(alignment: .leading, spacing: 0) {
-                    // Dot indicators
                     HStack(spacing: 6) {
                         ForEach(0..<pages.count, id: \.self) { idx in
                             Capsule()
@@ -100,7 +97,6 @@ struct OnboardingView: View {
                 .padding(.bottom, 36)
             }
 
-            // Skip button
             Button(action: onSkip) {
                 Text("Lewati")
                     .font(.custom("PlusJakartaSans-SemiBold", size: 14))
@@ -114,30 +110,24 @@ struct OnboardingView: View {
     }
 }
 
-// MARK: – Illustrations
-
 struct IllustWelcomeView: View {
     var body: some View {
-        // ZStack centered — offsets are from the visual center of the 280×260 container
         ZStack {
             RoundedRectangle(cornerRadius: 100)
                 .fill(Color.sgPrimarySoft)
                 .frame(width: 280, height: 260)
 
-            // Motorcycle — hero, center-left and slightly below center
             Text("\u{f21c}")
                 .font(.custom("FontAwesome6Free-Solid", size: 108))
                 .foregroundColor(.sgPrimary)
                 .offset(x: -16, y: 18)
 
-            // Car — upper-right quadrant, clearly separated
             Text("\u{f1b9}")
                 .font(.custom("FontAwesome6Free-Solid", size: 66))
                 .foregroundColor(.sgPrimaryDark)
                 .rotationEffect(.degrees(10))
                 .offset(x: 72, y: -68)
 
-            // Bubbles
             Circle().fill(Color.sgWarning.opacity(0.7)).frame(width: 16, height: 16)
                 .offset(x: -110, y: -96)
             Circle().fill(Color.sgPrimaryDark.opacity(0.4)).frame(width: 22, height: 22)
@@ -157,16 +147,13 @@ struct IllustReminderView: View {
                 .fill(Color.sgWarningSoft)
                 .frame(width: 280, height: 260)
 
-            // Bell — perfectly centered
             Text("\u{f0f3}")
                 .font(.custom("FontAwesome6Free-Solid", size: 112))
                 .foregroundColor(.sgWarning)
 
-            // Toast card 1 — upper-right, slightly overlapping bell
             toastCard(dot: .sgDanger, text: "Ganti oli telat", time: "sekarang")
                 .offset(x: 52, y: -82)
 
-            // Toast card 2 — lower-left
             toastCard(dot: .sgWarning, text: "Servis dalam 3 hari", time: "3j lalu")
                 .offset(x: -46, y: 84)
         }
@@ -196,23 +183,17 @@ struct IllustReminderView: View {
 
 struct IllustHistoryView: View {
     var body: some View {
-        // ZStack centered — offsets from center of 280×260
-        // Stack: 3 cards (200×60 each) stepped 16pt apart = 92pt total height
-        // Vertical center offset: stack center at y=0, so top card at y ≈ -32, bottom at y ≈ +32
         ZStack {
             RoundedRectangle(cornerRadius: 100)
                 .fill(Color.sgPrimarySofter)
                 .frame(width: 280, height: 260)
 
-            // Card 0 — back (drawn first = behind)
             serviceCard(iconChar: "\u{f613}", iconBg: .sgWarningSoft, iconColor: .sgWarning, rotation: -2)
                 .offset(x: -6, y: -26)
 
-            // Card 1 — middle
             serviceCard(iconChar: "\u{f5df}", iconBg: .sgDangerSoft, iconColor: .sgDanger, rotation: 0)
                 .offset(x: 0, y: -10)
 
-            // Card 2 — front (drawn last = on top)
             serviceCard(iconChar: "\u{f0ad}", iconBg: .sgPrimarySoft, iconColor: .sgPrimary, rotation: 2)
                 .offset(x: 6, y: 6)
         }

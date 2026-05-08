@@ -42,7 +42,6 @@ fun FaIcon(
 
 @Suppress("unused")
 object FaIcons {
-    // Navigation & UI
     const val HOUSE = ""
     const val BARS = ""
     const val CHEVRON_RIGHT = ""
@@ -57,7 +56,6 @@ object FaIcons {
     const val ELLIPSIS = ""
     const val SEARCH = ""
 
-    // Actions
     const val PEN = ""
     const val TRASH = ""
     const val COPY = ""
@@ -67,7 +65,6 @@ object FaIcons {
     const val FILTER = ""
     const val SORT = ""
 
-    // Vehicles & Service
     const val WRENCH = ""
     const val SCREWDRIVER_WRENCH = ""
     const val TOOLBOX = ""
@@ -79,7 +76,6 @@ object FaIcons {
     const val ROAD = ""
     const val GAUGE = ""
 
-    // Time & Calendar
     const val CALENDAR = ""
     const val CALENDAR_CHECK = ""
     const val CALENDAR_PLUS = ""
@@ -87,7 +83,6 @@ object FaIcons {
     const val ROTATE_LEFT = ""
     const val HISTORY = ""
 
-    // Notifications & Status
     const val BELL = ""
     const val BELL_SLASH = ""
     const val CIRCLE_CHECK = ""
@@ -95,14 +90,12 @@ object FaIcons {
     const val TRIANGLE_EXCLAMATION = ""
     const val CIRCLE_INFO = ""
 
-    // User & Settings
     const val USER = ""
     const val USERS = ""
     const val GEAR = ""
     const val LOCK = ""
     const val UNLOCK = ""
 
-    // Misc
     const val LIST = ""
     const val GRIP = ""
     const val STAR = ""
@@ -114,7 +107,6 @@ object FaIcons {
     const val FILE = ""
     const val FOLDER = ""
 
-    // Brands (use FaStyle.Brands)
     const val BRAND_GOOGLE = ""
     const val BRAND_APPLE = ""
     const val BRAND_ANDROID = ""

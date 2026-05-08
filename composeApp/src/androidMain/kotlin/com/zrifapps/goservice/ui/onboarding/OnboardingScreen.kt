@@ -81,7 +81,6 @@ fun OnboardingScreen(
             .background(AppColors.BgWarm)
             .statusBarsPadding(),
     ) {
-        // Skip button
         TextButton(
             onClick = onSkip,
             modifier = Modifier
@@ -101,7 +100,6 @@ fun OnboardingScreen(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Illustration pager — fills ~52% of screen height
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier
@@ -120,7 +118,6 @@ fun OnboardingScreen(
                 }
             }
 
-            // Bottom section
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -128,7 +125,6 @@ fun OnboardingScreen(
                     .padding(bottom = 36.dp),
                 horizontalAlignment = Alignment.Start,
             ) {
-                // Dot indicators
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier
@@ -209,10 +205,6 @@ fun OnboardingScreen(
     }
 }
 
-// ─────────────────────────────────────────────────────
-// Illustrations
-// ─────────────────────────────────────────────────────
-
 @Composable
 private fun IllustWelcome() {
     Box(
@@ -227,7 +219,6 @@ private fun IllustWelcome() {
                 .background(AppColors.PrimarySoft),
         )
 
-        // Motorcycle — hero, centered horizontally, sits in the lower half
         Box(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -241,7 +232,6 @@ private fun IllustWelcome() {
             )
         }
 
-        // Car — upper-right, clearly separated from motorcycle
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -256,7 +246,6 @@ private fun IllustWelcome() {
             )
         }
 
-        // Bubbles
         Box(
             modifier = Modifier
                 .offset(x = 18.dp, y = 16.dp)
@@ -286,7 +275,6 @@ private fun IllustWelcome() {
 @Composable
 private fun IllustReminder() {
     val font = plusJakartaSansFontFamily()
-    // 280×260, borderRadius 100
     Box(
         modifier = Modifier
             .width(280.dp)
@@ -299,7 +287,6 @@ private fun IllustReminder() {
                 .background(AppColors.WarningSoft),
         )
 
-        // Bell — perfectly centered
         Box(modifier = Modifier.align(Alignment.Center)) {
             FaIcon(
                 icon = FaIcons.BELL,
@@ -309,7 +296,6 @@ private fun IllustReminder() {
             )
         }
 
-        // Toast card 1 — top-right, overlapping the bell
         Card(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -340,7 +326,6 @@ private fun IllustReminder() {
             }
         }
 
-        // Toast card 2 — bottom-left
         Card(
             modifier = Modifier
                 .align(Alignment.BottomStart)
@@ -376,7 +361,6 @@ private fun IllustReminder() {
 @Composable
 private fun IllustHistory() {
     val font = plusJakartaSansFontFamily()
-    // 280×260, borderRadius 100
     Box(
         modifier = Modifier
             .width(280.dp)
@@ -389,9 +373,6 @@ private fun IllustHistory() {
                 .background(AppColors.PrimarySofter),
         )
 
-        // Cards — centered horizontally (card 200dp, container 280dp → left margin 40dp)
-        // Stacked with 16dp step, vertically centered in 260dp container
-        // Stack total visual span: 60 + 16 + 16 = 92dp → top start = (260-92)/2 = 84dp
         HistoryCard(
             iconUnicode = FaIcons.OIL_CAN,
             iconBg = AppColors.WarningSoft,

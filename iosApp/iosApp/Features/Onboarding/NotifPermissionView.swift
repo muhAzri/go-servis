@@ -10,7 +10,6 @@ struct NotifPermissionView: View {
             Color.sgBgWarm.ignoresSafeArea()
 
             VStack(alignment: .leading, spacing: 0) {
-                // Back button
                 Button(action: onBack) {
                     Text("\u{f060}")
                         .font(.custom("FontAwesome6Free-Solid", size: 18))
@@ -41,7 +40,6 @@ struct NotifPermissionView: View {
 
                     Spacer().frame(height: 24)
 
-                    // Mock notification card 1 — overdue
                     NotifPreviewCard(
                         accentColor: .sgDanger,
                         iconUnicode: "\u{f0ad}",
@@ -53,7 +51,6 @@ struct NotifPermissionView: View {
 
                     Spacer().frame(height: 8)
 
-                    // Mock notification card 2 — upcoming
                     NotifPreviewCard(
                         accentColor: .sgWarning,
                         iconUnicode: "\u{f0f3}",
@@ -65,7 +62,6 @@ struct NotifPermissionView: View {
 
                     Spacer()
 
-                    // Primary button
                     Button {
                         UNUserNotificationCenter.current().requestAuthorization(
                             options: [.alert, .badge, .sound]
@@ -85,7 +81,6 @@ struct NotifPermissionView: View {
 
                     Spacer().frame(height: 4)
 
-                    // Secondary button
                     Button(action: onComplete) {
                         Text("Nanti saja")
                             .font(.custom("PlusJakartaSans-SemiBold", size: 14))
@@ -104,9 +99,6 @@ struct NotifPermissionView: View {
     }
 }
 
-/// iOS 26 Liquid Glass notification style.
-/// Key traits: .regularMaterial frosted background, top-edge specular highlight,
-/// circular app icon, system rounded font, 24pt corner radius.
 private struct NotifPreviewCard: View {
     let accentColor: Color
     let iconUnicode: String
@@ -118,7 +110,6 @@ private struct NotifPreviewCard: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
 
-            // App icon — circular in iOS 26 notification banners
             ZStack {
                 Circle()
                     .fill(
@@ -129,7 +120,6 @@ private struct NotifPreviewCard: View {
                         )
                     )
                     .frame(width: 36, height: 36)
-                // Glass sheen on icon — small top-left highlight
                 Circle()
                     .fill(
                         LinearGradient(
@@ -144,7 +134,6 @@ private struct NotifPreviewCard: View {
                     .foregroundColor(.white)
             }
 
-            // Text — system font (it's an OS notification, not app UI)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline) {
                     Text("ServisGo")
@@ -168,9 +157,7 @@ private struct NotifPreviewCard: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 13)
-        // ── Liquid Glass material ──
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        // Top-edge specular highlight — the signature Liquid Glass shine
         .overlay(alignment: .top) {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .strokeBorder(

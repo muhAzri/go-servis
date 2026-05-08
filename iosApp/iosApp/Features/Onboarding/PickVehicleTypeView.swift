@@ -9,7 +9,6 @@ struct PickVehicleTypeView: View {
             Color.sgBgWarm.ignoresSafeArea()
 
             VStack(alignment: .leading, spacing: 0) {
-                // Back button
                 Button(action: onBack) {
                     Text("\u{f060}")
                         .font(.custom("FontAwesome6Free-Solid", size: 18))

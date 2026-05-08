@@ -38,8 +38,6 @@ struct AppNavGraph: View {
     }
 }
 
-// MARK: – Onboarding flow state machine
-
 struct OnboardingFlowView: View {
     let onComplete: () -> Void
 

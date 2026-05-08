@@ -99,7 +99,6 @@ fun NotifPermScreen(
 
         Spacer(Modifier.height(24.dp))
 
-        // Mock notification card 1 — overdue
         NotifPreviewCard(
             accentColor = AppColors.Danger,
             iconUnicode = FaIcons.WRENCH,
@@ -112,7 +111,6 @@ fun NotifPermScreen(
 
         Spacer(Modifier.height(8.dp))
 
-        // Mock notification card 2 — upcoming
         NotifPreviewCard(
             accentColor = AppColors.Warning,
             iconUnicode = FaIcons.BELL,
@@ -169,12 +167,6 @@ fun NotifPermScreen(
     }
 }
 
-/**
- * Mimics Android 12+ (Material You) notification style:
- * - Small 28dp coloured circle with monochrome white icon in the header row
- * - Header: [small icon] AppName · time — all small grey text
- * - Content block below: bold title + regular body
- */
 @Composable
 private fun NotifPreviewCard(
     accentColor: Color,
@@ -198,13 +190,11 @@ private fun NotifPreviewCard(
                 start = 14.dp, end = 14.dp, top = 10.dp, bottom = 12.dp,
             ),
         ) {
-            // ── Header row (Android-style: small icon + app name + dot + time) ──
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                // Small notification icon — 28dp circle, coloured bg, white icon inside
                 Box(
                     modifier = Modifier
                         .size(20.dp)
@@ -234,7 +224,6 @@ private fun NotifPreviewCard(
                     color = AppColors.TextMuted,
                 )
                 Spacer(Modifier.weight(1f))
-                // Expand chevron — common in Android notifications
                 FaIcon(
                     icon = FaIcons.CHEVRON_DOWN,
                     color = AppColors.TextSubtle,
@@ -244,7 +233,6 @@ private fun NotifPreviewCard(
 
             Spacer(Modifier.height(6.dp))
 
-            // ── Content ──
             Text(
                 text = title,
                 fontSize = 13.sp,
