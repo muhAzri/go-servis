@@ -1,4 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="primary_color">#2E8B57</color>
+    <color name="primary_dark">#22683F</color>
+    <color name="primary_soft">#DCEEDF</color>
+    <color name="primary_softer">#EBF5ED</color>
+    <color name="bg_warm">#FAF7F2</color>
+    <color name="surface_alt">#F2EEE6</color>
+    <color name="text_primary">#1A2418</color>
+    <color name="text_muted">#5C6357</color>
+    <color name="text_subtle">#8A8E82</color>
+    <color name="danger">#D6453A</color>
+    <color name="danger_soft">#FBE5E2</color>
+    <color name="warning_color">#E89C2E</color>
+    <color name="warning_soft">#FBEFD7</color>
 </resources>
