@@ -1,6 +1,7 @@
 import Foundation
 
 enum AppDestination: Hashable {
-    case home
+    case main
     case addVehicle
+    case test
 }

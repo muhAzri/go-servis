@@ -20,7 +20,7 @@ struct AppNavGraph: View {
             ))
         } else {
             NavigationStack(path: $router.path) {
-                HomeView()
+                MainTabsView()
                     .navigationDestination(for: AppDestination.self) { destination in
                         destinationView(for: destination)
                     }
@@ -32,13 +32,15 @@ struct AppNavGraph: View {
     @ViewBuilder
     private func destinationView(for destination: AppDestination) -> some View {
         switch destination {
-        case .home:
-            HomeView()
+        case .main:
+            MainTabsView()
         case .addVehicle:
             AddVehicleView(
                 onBack: { router.navigateBack() },
                 onSaved: { _ in router.navigateBack() }
             )
+        case .test:
+            TestView()
         }
     }
 }
