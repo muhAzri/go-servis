@@ -41,6 +41,14 @@ struct AppNavGraph: View {
             )
         case .test:
             TestView()
+        case .privacy:
+            PrivacyView(onBack: { router.navigateBack() })
+        case .terms:
+            TermsView(onBack: { router.navigateBack() })
+        case .about:
+            AboutView(onBack: { router.navigateBack() })
+        case .help:
+            HelpView(onBack: { router.navigateBack() })
         }
     }
 }

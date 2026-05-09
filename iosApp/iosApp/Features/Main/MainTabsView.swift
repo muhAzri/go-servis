@@ -13,9 +13,13 @@ struct MainTabsView: View {
                 case .add:       GarasiView()
                 case .riwayat:   RiwayatView()
                 case .saya:
-                    PengaturanView(onOpenTestScreen: {
-                        router.navigate(to: .test)
-                    })
+                    PengaturanView(
+                        onOpenPrivacy: { router.navigate(to: .privacy) },
+                        onOpenTerms: { router.navigate(to: .terms) },
+                        onOpenAbout: { router.navigate(to: .about) },
+                        onOpenHelp: { router.navigate(to: .help) },
+                        onOpenTestScreen: { router.navigate(to: .test) }
+                    )
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
