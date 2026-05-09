@@ -53,7 +53,7 @@ struct PengaturanView: View {
                     SettingsRow(icon: "\u{f005}", label: "Beri Rating ⭐", action: {})
                 }
 
-                AppFooter()
+                SettingsFooter()
             }
         }
     }
@@ -191,7 +191,7 @@ private struct SectionDivider: View {
     }
 }
 
-private struct AppFooter: View {
+private struct SettingsFooter: View {
     var body: some View {
         Text("ServisGo v1.0.0 · build 2026.05.06\n© 2026 Muhammad Azri Fatihah Susanto")
             .font(.custom("PlusJakartaSans-Medium", size: 11))
