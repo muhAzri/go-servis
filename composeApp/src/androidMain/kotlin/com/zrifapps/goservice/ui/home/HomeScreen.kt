@@ -6,10 +6,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -30,6 +32,9 @@ import com.zrifapps.goservice.ads.YandexBannerInline
 import com.zrifapps.goservice.ads.YandexNativeAd
 import com.zrifapps.goservice.ads.findActivity
 import com.zrifapps.goservice.ads.rememberYandexInterstitial
+import com.zrifapps.goservice.ui.components.BottomNavBar
+import com.zrifapps.goservice.ui.components.BottomTab
+import com.zrifapps.goservice.ui.theme.AppColors
 import goservice.composeapp.generated.resources.Res
 import goservice.composeapp.generated.resources.compose_multiplatform
 import org.jetbrains.compose.resources.painterResource
@@ -39,56 +44,70 @@ fun HomeScreen(onAddVehicle: () -> Unit = {}) {
     var showContent by remember { mutableStateOf(false) }
     var showBanner by remember { mutableStateOf(false) }
     var showNative by remember { mutableStateOf(false) }
+    var selectedTab by remember { mutableStateOf(BottomTab.Beranda) }
     val context = LocalContext.current
     val interstitial = rememberYandexInterstitial()
 
     Column(
         modifier = Modifier
-            .background(MaterialTheme.colorScheme.primaryContainer)
-            .safeContentPadding()
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .background(AppColors.BgWarm)
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .fillMaxSize(),
     ) {
-        Button(onClick = { showContent = !showContent }) {
-            Text("Click me!")
-        }
-        Button(onClick = onAddVehicle) {
-            Text("Tambah Kendaraan")
-        }
-        Spacer(Modifier.height(8.dp))
-        Text("— Yandex Ads test —", style = MaterialTheme.typography.titleSmall)
-        Button(onClick = { showBanner = !showBanner }) {
-            Text(if (showBanner) "Hide inline banner" else "Test inline banner")
-        }
-        Button(
-            enabled = interstitial.isReady,
-            onClick = { context.findActivity()?.let(interstitial::show) },
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(if (interstitial.isReady) "Test interstitial" else "Loading interstitial…")
-        }
-        Button(onClick = { showNative = !showNative }) {
-            Text(if (showNative) "Hide native ad" else "Test native ad")
-        }
-
-        if (showBanner) {
-            YandexBannerInline(modifier = Modifier.fillMaxWidth())
-        }
-        if (showNative) {
-            YandexNativeAd(modifier = Modifier.fillMaxWidth())
-        }
-
-        AnimatedVisibility(showContent) {
-            val greeting = remember { Greeting().greet() }
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
+            Button(onClick = { showContent = !showContent }) {
+                Text("Click me!")
+            }
+            Button(onClick = onAddVehicle) {
+                Text("Tambah Kendaraan")
+            }
+            Spacer(Modifier.height(8.dp))
+            Text("— Yandex Ads test —", style = MaterialTheme.typography.titleSmall)
+            Button(onClick = { showBanner = !showBanner }) {
+                Text(if (showBanner) "Hide inline banner" else "Test inline banner")
+            }
+            Button(
+                enabled = interstitial.isReady,
+                onClick = { context.findActivity()?.let(interstitial::show) },
             ) {
-                Image(painterResource(Res.drawable.compose_multiplatform), null)
-                Text("Compose: $greeting")
+                Text(if (interstitial.isReady) "Test interstitial" else "Loading interstitial…")
+            }
+            Button(onClick = { showNative = !showNative }) {
+                Text(if (showNative) "Hide native ad" else "Test native ad")
+            }
+
+            if (showBanner) {
+                YandexBannerInline(modifier = Modifier.fillMaxWidth())
+            }
+            if (showNative) {
+                YandexNativeAd(modifier = Modifier.fillMaxWidth())
+            }
+
+            AnimatedVisibility(showContent) {
+                val greeting = remember { Greeting().greet() }
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Image(painterResource(Res.drawable.compose_multiplatform), null)
+                    Text("Compose: $greeting")
+                }
             }
         }
+
+        BottomNavBar(
+            selected = selectedTab,
+            onSelect = { tab ->
+                if (tab == BottomTab.Add) onAddVehicle() else selectedTab = tab
+            },
+        )
     }
 }
 
