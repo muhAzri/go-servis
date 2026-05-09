@@ -26,6 +26,10 @@ import com.zrifapps.goservice.ui.theme.AppColors
 fun MainTabsScreen(
     onAddService: () -> Unit = {},
     onOpenTestScreen: () -> Unit = {},
+    onOpenPrivacy: () -> Unit = {},
+    onOpenTerms: () -> Unit = {},
+    onOpenAbout: () -> Unit = {},
+    onOpenHelp: () -> Unit = {},
 ) {
     var selectedTab by remember { mutableStateOf(BottomTab.Beranda) }
 
@@ -44,7 +48,13 @@ fun MainTabsScreen(
                 BottomTab.Beranda -> GarasiTab()
                 BottomTab.Pengingat -> PengingatTab()
                 BottomTab.Riwayat -> RiwayatTab()
-                BottomTab.Saya -> PengaturanTab(onOpenTestScreen = onOpenTestScreen)
+                BottomTab.Saya -> PengaturanTab(
+                    onOpenPrivacy = onOpenPrivacy,
+                    onOpenTerms = onOpenTerms,
+                    onOpenAbout = onOpenAbout,
+                    onOpenHelp = onOpenHelp,
+                    onOpenTestScreen = onOpenTestScreen,
+                )
                 BottomTab.Add -> GarasiTab()
             }
         }

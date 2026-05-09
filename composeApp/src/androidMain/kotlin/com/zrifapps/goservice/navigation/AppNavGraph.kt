@@ -12,6 +12,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.zrifapps.goservice.ads.AdsManager
+import com.zrifapps.goservice.ui.legal.AboutScreen
+import com.zrifapps.goservice.ui.legal.HelpScreen
+import com.zrifapps.goservice.ui.legal.PrivacyScreen
+import com.zrifapps.goservice.ui.legal.TermsScreen
 import com.zrifapps.goservice.ui.main.MainTabsScreen
 import com.zrifapps.goservice.ui.test.TestScreen
 import com.zrifapps.goservice.ui.vehicle.AddVehicleScreen
@@ -100,6 +104,10 @@ fun AppNavGraph() {
             MainTabsScreen(
                 onAddService = { navController.navigate(Screen.AddVehicleForm) },
                 onOpenTestScreen = { navController.navigate(Screen.Test) },
+                onOpenPrivacy = { navController.navigate(Screen.Privacy) },
+                onOpenTerms = { navController.navigate(Screen.Terms) },
+                onOpenAbout = { navController.navigate(Screen.About) },
+                onOpenHelp = { navController.navigate(Screen.Help) },
             )
         }
 
@@ -115,6 +123,22 @@ fun AppNavGraph() {
                 onBack = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() },
             )
+        }
+
+        composable<Screen.Privacy> {
+            PrivacyScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable<Screen.Terms> {
+            TermsScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable<Screen.About> {
+            AboutScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable<Screen.Help> {
+            HelpScreen(onBack = { navController.popBackStack() })
         }
     }
 }
