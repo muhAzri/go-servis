@@ -1,4 +1,4 @@
-package com.zrifapps.goservice.ui.home
+package com.zrifapps.goservice.ui.test
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
@@ -32,19 +32,19 @@ import com.zrifapps.goservice.ads.YandexBannerInline
 import com.zrifapps.goservice.ads.YandexNativeAd
 import com.zrifapps.goservice.ads.findActivity
 import com.zrifapps.goservice.ads.rememberYandexInterstitial
-import com.zrifapps.goservice.ui.components.BottomNavBar
-import com.zrifapps.goservice.ui.components.BottomTab
 import com.zrifapps.goservice.ui.theme.AppColors
 import goservice.composeapp.generated.resources.Res
 import goservice.composeapp.generated.resources.compose_multiplatform
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
-fun HomeScreen(onAddVehicle: () -> Unit = {}) {
+fun TestScreen(
+    onBack: () -> Unit = {},
+    onAddVehicle: () -> Unit = {},
+) {
     var showContent by remember { mutableStateOf(false) }
     var showBanner by remember { mutableStateOf(false) }
     var showNative by remember { mutableStateOf(false) }
-    var selectedTab by remember { mutableStateOf(BottomTab.Beranda) }
     val context = LocalContext.current
     val interstitial = rememberYandexInterstitial()
 
@@ -62,6 +62,14 @@ fun HomeScreen(onAddVehicle: () -> Unit = {}) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            Text(
+                "Test Screen",
+                style = MaterialTheme.typography.titleLarge,
+                color = AppColors.TextPrimary,
+            )
+            Button(onClick = onBack) {
+                Text("← Kembali")
+            }
             Button(onClick = { showContent = !showContent }) {
                 Text("Click me!")
             }
@@ -101,18 +109,11 @@ fun HomeScreen(onAddVehicle: () -> Unit = {}) {
                 }
             }
         }
-
-        BottomNavBar(
-            selected = selectedTab,
-            onSelect = { tab ->
-                if (tab == BottomTab.Add) onAddVehicle() else selectedTab = tab
-            },
-        )
     }
 }
 
 @Preview
 @Composable
-private fun HomeScreenPreview() {
-    HomeScreen()
+private fun TestScreenPreview() {
+    TestScreen()
 }

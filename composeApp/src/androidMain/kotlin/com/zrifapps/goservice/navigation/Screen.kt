@@ -8,6 +8,7 @@ sealed interface Screen {
     @Serializable data object PickVehicleType : Screen
     @Serializable data class AddVehicle(val type: String) : Screen
     @Serializable data object NotifPermission : Screen
-    @Serializable data object Home : Screen
+    @Serializable data object Main : Screen
     @Serializable data object AddVehicleForm : Screen
+    @Serializable data object Test : Screen
 }

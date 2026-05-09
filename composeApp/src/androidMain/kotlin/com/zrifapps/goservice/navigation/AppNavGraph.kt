@@ -12,7 +12,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.zrifapps.goservice.ads.AdsManager
-import com.zrifapps.goservice.ui.home.HomeScreen
+import com.zrifapps.goservice.ui.main.MainTabsScreen
+import com.zrifapps.goservice.ui.test.TestScreen
 import com.zrifapps.goservice.ui.vehicle.AddVehicleScreen
 import com.zrifapps.goservice.ui.onboarding.NotifPermScreen
 import com.zrifapps.goservice.ui.onboarding.OnboardingAddVehicleScreen
@@ -30,7 +31,7 @@ fun AppNavGraph() {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     LaunchedEffect(currentRoute) {
-        AdsManager.setAppOpenAllowed(currentRoute == Screen.Home::class.qualifiedName)
+        AdsManager.setAppOpenAllowed(currentRoute == Screen.Main::class.qualifiedName)
     }
 
     NavHost(
@@ -40,7 +41,7 @@ fun AppNavGraph() {
         composable<Screen.Splash> {
             SplashScreen {
                 if (onboardingDone) {
-                    navController.navigate(Screen.Home) {
+                    navController.navigate(Screen.Main) {
                         popUpTo<Screen.Splash> { inclusive = true }
                     }
                 } else {
@@ -55,7 +56,7 @@ fun AppNavGraph() {
             OnboardingScreen(
                 onSkip = {
                     prefs.edit().putBoolean("onboarding_done", true).apply()
-                    navController.navigate(Screen.Home) {
+                    navController.navigate(Screen.Main) {
                         popUpTo<Screen.Onboarding> { inclusive = true }
                     }
                 },
@@ -88,15 +89,25 @@ fun AppNavGraph() {
                 onBack = { navController.popBackStack() },
                 onComplete = {
                     prefs.edit().putBoolean("onboarding_done", true).apply()
-                    navController.navigate(Screen.Home) {
+                    navController.navigate(Screen.Main) {
                         popUpTo<Screen.Onboarding> { inclusive = true }
                     }
                 },
             )
         }
 
-        composable<Screen.Home> {
-            HomeScreen(onAddVehicle = { navController.navigate(Screen.AddVehicleForm) })
+        composable<Screen.Main> {
+            MainTabsScreen(
+                onAddService = { navController.navigate(Screen.AddVehicleForm) },
+                onOpenTestScreen = { navController.navigate(Screen.Test) },
+            )
+        }
+
+        composable<Screen.Test> {
+            TestScreen(
+                onBack = { navController.popBackStack() },
+                onAddVehicle = { navController.navigate(Screen.AddVehicleForm) },
+            )
         }
 
         composable<Screen.AddVehicleForm> {
