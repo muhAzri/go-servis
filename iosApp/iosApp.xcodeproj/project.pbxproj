@@ -6,6 +6,20 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		6AB1CB232FAEEE40006E0E88 /* AppLovinYandexMobileAdsAdapters in Frameworks */ = {isa = PBXBuildFile; productRef = 6AB1CB222FAEEE40006E0E88 /* AppLovinYandexMobileAdsAdapters */; };
+		6AB1CB252FAEEE40006E0E88 /* DigitalTurbineYandexMobileAdsAdapters in Frameworks */ = {isa = PBXBuildFile; productRef = 6AB1CB242FAEEE40006E0E88 /* DigitalTurbineYandexMobileAdsAdapters */; };
+		6AB1CB292FAEEE40006E0E88 /* MintegralYandexMobileAdsAdapters in Frameworks */ = {isa = PBXBuildFile; productRef = 6AB1CB282FAEEE40006E0E88 /* MintegralYandexMobileAdsAdapters */; };
+		6AB1CB2B2FAEEE40006E0E88 /* MyTargetYandexMobileAdsAdapters in Frameworks */ = {isa = PBXBuildFile; productRef = 6AB1CB2A2FAEEE40006E0E88 /* MyTargetYandexMobileAdsAdapters */; };
+		6AB1CB2D2FAEEE40006E0E88 /* VungleYandexMobileAdsAdapters in Frameworks */ = {isa = PBXBuildFile; productRef = 6AB1CB2C2FAEEE40006E0E88 /* VungleYandexMobileAdsAdapters */; };
+		6AB1CB2F2FAEEE40006E0E88 /* YandexMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 6AB1CB2E2FAEEE40006E0E88 /* YandexMobileAds */; };
+		6AB1CB312FAEEE40006E0E88 /* YandexMobileAdsAdMobAdapters in Frameworks */ = {isa = PBXBuildFile; productRef = 6AB1CB302FAEEE40006E0E88 /* YandexMobileAdsAdMobAdapters */; };
+		6AB1CB332FAEEE40006E0E88 /* YandexMobileAdsConsentManagement in Frameworks */ = {isa = PBXBuildFile; productRef = 6AB1CB322FAEEE40006E0E88 /* YandexMobileAdsConsentManagement */; };
+		6AB1CB352FAEEE40006E0E88 /* YandexMobileAdsInstream in Frameworks */ = {isa = PBXBuildFile; productRef = 6AB1CB342FAEEE40006E0E88 /* YandexMobileAdsInstream */; };
+		6AB1CB372FAEEE40006E0E88 /* YandexMobileAdsMediation in Frameworks */ = {isa = PBXBuildFile; productRef = 6AB1CB362FAEEE40006E0E88 /* YandexMobileAdsMediation */; };
+		6AB1CB3F2FAEF6D5006E0E88 /* GoogleYandexMobileAdsAdapters in Frameworks */ = {isa = PBXBuildFile; productRef = 6AB1CB3E2FAEF6D5006E0E88 /* GoogleYandexMobileAdsAdapters */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		4A7F568C8EAE4FCAC93FB1CD /* GoService.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GoService.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -41,6 +55,17 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6AB1CB292FAEEE40006E0E88 /* MintegralYandexMobileAdsAdapters in Frameworks */,
+				6AB1CB2D2FAEEE40006E0E88 /* VungleYandexMobileAdsAdapters in Frameworks */,
+				6AB1CB2B2FAEEE40006E0E88 /* MyTargetYandexMobileAdsAdapters in Frameworks */,
+				6AB1CB3F2FAEF6D5006E0E88 /* GoogleYandexMobileAdsAdapters in Frameworks */,
+				6AB1CB372FAEEE40006E0E88 /* YandexMobileAdsMediation in Frameworks */,
+				6AB1CB332FAEEE40006E0E88 /* YandexMobileAdsConsentManagement in Frameworks */,
+				6AB1CB232FAEEE40006E0E88 /* AppLovinYandexMobileAdsAdapters in Frameworks */,
+				6AB1CB352FAEEE40006E0E88 /* YandexMobileAdsInstream in Frameworks */,
+				6AB1CB312FAEEE40006E0E88 /* YandexMobileAdsAdMobAdapters in Frameworks */,
+				6AB1CB2F2FAEEE40006E0E88 /* YandexMobileAds in Frameworks */,
+				6AB1CB252FAEEE40006E0E88 /* DigitalTurbineYandexMobileAdsAdapters in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -52,8 +77,16 @@
 			children = (
 				5629B6642571E5409FB14F2B /* Configuration */,
 				768FF3D4760AB1C96E27520B /* iosApp */,
+				6AB1CB3B2FAEF58E006E0E88 /* Frameworks */,
 				737DB9DBD13663E0F316D596 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		6AB1CB3B2FAEF58E006E0E88 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		737DB9DBD13663E0F316D596 /* Products */ = {
@@ -74,6 +107,7 @@
 				25A5DA0A0C27EB80392515B9 /* Compile Kotlin Framework */,
 				B2EF0B983A4C7C7C3C3F0A43 /* Sources */,
 				7E20CFF7AF1479C9384D8E20 /* Frameworks */,
+				6AB1CB3A2FAEF411006E0E88 /* Update Yandex SKAdNetwork IDs */,
 				E4F555A4B1AE40A174CBEFA1 /* Resources */,
 			);
 			buildRules = (
@@ -85,6 +119,17 @@
 			);
 			name = iosApp;
 			packageProductDependencies = (
+				6AB1CB222FAEEE40006E0E88 /* AppLovinYandexMobileAdsAdapters */,
+				6AB1CB242FAEEE40006E0E88 /* DigitalTurbineYandexMobileAdsAdapters */,
+				6AB1CB282FAEEE40006E0E88 /* MintegralYandexMobileAdsAdapters */,
+				6AB1CB2A2FAEEE40006E0E88 /* MyTargetYandexMobileAdsAdapters */,
+				6AB1CB2C2FAEEE40006E0E88 /* VungleYandexMobileAdsAdapters */,
+				6AB1CB2E2FAEEE40006E0E88 /* YandexMobileAds */,
+				6AB1CB302FAEEE40006E0E88 /* YandexMobileAdsAdMobAdapters */,
+				6AB1CB322FAEEE40006E0E88 /* YandexMobileAdsConsentManagement */,
+				6AB1CB342FAEEE40006E0E88 /* YandexMobileAdsInstream */,
+				6AB1CB362FAEEE40006E0E88 /* YandexMobileAdsMediation */,
+				6AB1CB3E2FAEF6D5006E0E88 /* GoogleYandexMobileAdsAdapters */,
 			);
 			productName = iosApp;
 			productReference = 4A7F568C8EAE4FCAC93FB1CD /* GoService.app */;
@@ -114,6 +159,9 @@
 			);
 			mainGroup = 51CCD36E40FE738EDC37018D;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				6AB1CB212FAEEE40006E0E88 /* XCRemoteSwiftPackageReference "yandex-ads-sdk-ios" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 737DB9DBD13663E0F316D596 /* Products */;
 			projectDirPath = "";
@@ -153,6 +201,25 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "export JAVA_HOME=/Applications/Android\\ Studio.app/Contents/jbr/Contents/Home/\nexport JDK_HOME=/Applications/Android\\ Studio.app/Contents/jbr/Contents/\n\n\nif [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\ncd \"$SRCROOT/..\"\n./gradlew :shared:embedAndSignAppleFrameworkForXcode\n";
+		};
+		6AB1CB3A2FAEF411006E0E88 /* Update Yandex SKAdNetwork IDs */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 8;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Update Yandex SKAdNetwork IDs";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/update_skad_ids.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -227,6 +294,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				OTHER_LDFLAGS = "-ObjC";
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
@@ -252,6 +320,7 @@
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIUserInterfaceStyle = "";
 				JAVA_HOME = /opt/homebrew/opt/openjdk;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -316,6 +385,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				OTHER_LDFLAGS = "-ObjC";
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -341,6 +411,7 @@
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIUserInterfaceStyle = "";
 				JAVA_HOME = /opt/homebrew/opt/openjdk;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -374,6 +445,75 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		6AB1CB212FAEEE40006E0E88 /* XCRemoteSwiftPackageReference "yandex-ads-sdk-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/yandexmobile/yandex-ads-sdk-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		6AB1CB222FAEEE40006E0E88 /* AppLovinYandexMobileAdsAdapters */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6AB1CB212FAEEE40006E0E88 /* XCRemoteSwiftPackageReference "yandex-ads-sdk-ios" */;
+			productName = AppLovinYandexMobileAdsAdapters;
+		};
+		6AB1CB242FAEEE40006E0E88 /* DigitalTurbineYandexMobileAdsAdapters */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6AB1CB212FAEEE40006E0E88 /* XCRemoteSwiftPackageReference "yandex-ads-sdk-ios" */;
+			productName = DigitalTurbineYandexMobileAdsAdapters;
+		};
+		6AB1CB282FAEEE40006E0E88 /* MintegralYandexMobileAdsAdapters */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6AB1CB212FAEEE40006E0E88 /* XCRemoteSwiftPackageReference "yandex-ads-sdk-ios" */;
+			productName = MintegralYandexMobileAdsAdapters;
+		};
+		6AB1CB2A2FAEEE40006E0E88 /* MyTargetYandexMobileAdsAdapters */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6AB1CB212FAEEE40006E0E88 /* XCRemoteSwiftPackageReference "yandex-ads-sdk-ios" */;
+			productName = MyTargetYandexMobileAdsAdapters;
+		};
+		6AB1CB2C2FAEEE40006E0E88 /* VungleYandexMobileAdsAdapters */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6AB1CB212FAEEE40006E0E88 /* XCRemoteSwiftPackageReference "yandex-ads-sdk-ios" */;
+			productName = VungleYandexMobileAdsAdapters;
+		};
+		6AB1CB2E2FAEEE40006E0E88 /* YandexMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6AB1CB212FAEEE40006E0E88 /* XCRemoteSwiftPackageReference "yandex-ads-sdk-ios" */;
+			productName = YandexMobileAds;
+		};
+		6AB1CB302FAEEE40006E0E88 /* YandexMobileAdsAdMobAdapters */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6AB1CB212FAEEE40006E0E88 /* XCRemoteSwiftPackageReference "yandex-ads-sdk-ios" */;
+			productName = YandexMobileAdsAdMobAdapters;
+		};
+		6AB1CB322FAEEE40006E0E88 /* YandexMobileAdsConsentManagement */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6AB1CB212FAEEE40006E0E88 /* XCRemoteSwiftPackageReference "yandex-ads-sdk-ios" */;
+			productName = YandexMobileAdsConsentManagement;
+		};
+		6AB1CB342FAEEE40006E0E88 /* YandexMobileAdsInstream */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6AB1CB212FAEEE40006E0E88 /* XCRemoteSwiftPackageReference "yandex-ads-sdk-ios" */;
+			productName = YandexMobileAdsInstream;
+		};
+		6AB1CB362FAEEE40006E0E88 /* YandexMobileAdsMediation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6AB1CB212FAEEE40006E0E88 /* XCRemoteSwiftPackageReference "yandex-ads-sdk-ios" */;
+			productName = YandexMobileAdsMediation;
+		};
+		6AB1CB3E2FAEF6D5006E0E88 /* GoogleYandexMobileAdsAdapters */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6AB1CB212FAEEE40006E0E88 /* XCRemoteSwiftPackageReference "yandex-ads-sdk-ios" */;
+			productName = GoogleYandexMobileAdsAdapters;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 16034EEBAC0F0A75E592A842 /* Project object */;
 }
