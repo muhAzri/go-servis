@@ -19,9 +19,10 @@ final class AppOpenManager: NSObject {
     private override init() {}
 
     func start() {
+        log("start() — registering observers and loading ad")
         NotificationCenter.default.addObserver(
-            self, selector: #selector(onWillEnterForeground),
-            name: UIApplication.willEnterForegroundNotification, object: nil
+            self, selector: #selector(onDidBecomeActive),
+            name: UIApplication.didBecomeActiveNotification, object: nil
         )
         NotificationCenter.default.addObserver(
             self, selector: #selector(onDidEnterBackground),
@@ -31,10 +32,12 @@ final class AppOpenManager: NSObject {
     }
 
     func setAllowed(_ value: Bool) {
+        log("setAllowed(\(value))")
         allowed = value
     }
 
     private func load() {
+        log("load() requesting ad for unitId=\(AdsConfig.appOpenUnitId)")
         let request = AdRequest(adUnitID: AdsConfig.appOpenUnitId)
         loader.loadAd(with: request) { [weak self] result in
             guard let self else { return }
@@ -43,27 +46,44 @@ final class AppOpenManager: NSObject {
                 openAd.delegate = self
                 self.ad = openAd
                 self.loadedAt = Date()
-            case .failure:
-                break
+                self.log("load() success — ad cached")
+            case .failure(let error):
+                self.log("load() FAILED: \(error.localizedDescription)")
             }
         }
     }
 
     @objc private func onDidEnterBackground() {
+        log("didEnterBackground — hasBeenInBackground=true")
         hasBeenInBackground = true
     }
 
-    @objc private func onWillEnterForeground() {
-        guard allowed, hasBeenInBackground, !isPresentingAd else { return }
-        if let last = lastShownAt, Date().timeIntervalSince(last) < cooldown { return }
+    @objc private func onDidBecomeActive() {
+        log("didBecomeActive — allowed=\(allowed) hasBeenInBackground=\(hasBeenInBackground) isPresentingAd=\(isPresentingAd) adReady=\(ad != nil)")
+        guard allowed else { log("blocked: allowed=false"); return }
+        guard hasBeenInBackground else { log("blocked: never been in background (cold start)"); return }
+        guard !isPresentingAd else { log("blocked: already presenting"); return }
+        if let last = lastShownAt, Date().timeIntervalSince(last) < cooldown {
+            log("blocked: cooldown — \(Int(cooldown - Date().timeIntervalSince(last)))s remaining")
+            return
+        }
         if let loaded = loadedAt, Date().timeIntervalSince(loaded) > freshness {
+            log("ad stale (>\(Int(freshness/3600))h) — discarding and reloading")
             ad = nil
             load()
             return
         }
-        guard let openAd = ad, let presenter = topMostController() else { return }
+        guard let openAd = ad else { log("blocked: no ad cached — reloading"); load(); return }
+        guard let presenter = topMostController() else { log("blocked: no presenter (scene not foreground-active yet?)"); return }
+        log("calling show(from: \(type(of: presenter)))")
         isPresentingAd = true
         openAd.show(from: presenter)
+    }
+
+    private func log(_ message: String) {
+        #if DEBUG
+        print("[AppOpen] \(message)")
+        #endif
     }
 
     private func topMostController() -> UIViewController? {
@@ -80,18 +100,25 @@ final class AppOpenManager: NSObject {
 
 extension AppOpenManager: AppOpenAdDelegate {
     func appOpenAdDidShow(_ appOpenAd: AppOpenAd) {
+        log("delegate: didShow")
         lastShownAt = Date()
     }
     func appOpenAdDidDismiss(_ appOpenAd: AppOpenAd) {
+        log("delegate: didDismiss — clearing & reloading")
         ad = nil
         isPresentingAd = false
         load()
     }
-    func appOpenAdDidClick(_ appOpenAd: AppOpenAd) {}
+    func appOpenAdDidClick(_ appOpenAd: AppOpenAd) {
+        log("delegate: didClick")
+    }
     func appOpenAd(_ appOpenAd: AppOpenAd, didFailToShow error: Error) {
+        log("delegate: didFailToShow — \(error.localizedDescription)")
         ad = nil
         isPresentingAd = false
         load()
     }
-    func appOpenAd(_ appOpenAd: AppOpenAd, didTrackImpression impressionData: ImpressionData?) {}
+    func appOpenAd(_ appOpenAd: AppOpenAd, didTrackImpression impressionData: ImpressionData?) {
+        log("delegate: didTrackImpression")
+    }
 }
