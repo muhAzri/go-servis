@@ -22,6 +22,9 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.core.splashscreen)
             implementation(libs.androidx.navigation.compose)
+            implementation(libs.androidx.lifecycle.process)
+            implementation(libs.yandex.mobileads)
+            implementation(libs.yandex.mobileads.compose)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
