@@ -131,7 +131,7 @@ fun PengaturanTab(
     ) {
         TabHeader(subtitle = null, title = "Pengaturan")
 
-        ProfileHeaderCard(onOpenTestScreen = onOpenTestScreen)
+        ProfileHeaderCard(onClick = onOpenTestScreen)
 
         Spacer(Modifier.height(8.dp))
 
@@ -139,7 +139,7 @@ fun PengaturanTab(
             SectionTitle(section.title)
             SectionCard {
                 section.items.forEachIndexed { index, item ->
-                    if (index > 0) Divider()
+                    if (index > 0) RowDivider()
                     SettingRow(item = item)
                 }
             }
@@ -160,7 +160,7 @@ fun PengaturanTab(
 }
 
 @Composable
-private fun ProfileHeaderCard(onOpenTestScreen: () -> Unit) {
+private fun ProfileHeaderCard(onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .padding(horizontal = 16.dp)
@@ -168,7 +168,7 @@ private fun ProfileHeaderCard(onOpenTestScreen: () -> Unit) {
             .clip(RoundedCornerShape(18.dp))
             .border(1.dp, AppColors.Border, RoundedCornerShape(18.dp))
             .background(AppColors.Surface)
-            .clickable(onClick = onOpenTestScreen)
+            .clickable(onClick = onClick)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -237,7 +237,7 @@ private fun SectionCard(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun Divider() {
+private fun RowDivider() {
     Box(
         modifier = Modifier
             .fillMaxWidth()

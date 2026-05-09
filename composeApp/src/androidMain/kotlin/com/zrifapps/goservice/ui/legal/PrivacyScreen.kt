@@ -63,7 +63,7 @@ fun PrivacyScreen(onBack: () -> Unit) {
 
         Column(modifier = Modifier.padding(top = 16.dp)) {
             SECTIONS.forEach { (heading, body) ->
-                LegalParagraph(heading = heading, body = body)
+                LegalParagraph(heading = heading, text = body)
             }
         }
     }

@@ -75,7 +75,7 @@ fun LegalSectionTitle(text: String) {
 }
 
 @Composable
-fun LegalParagraph(heading: String, body: String) {
+fun LegalParagraph(heading: String, text: String) {
     Column(modifier = Modifier.padding(bottom = 14.dp)) {
         Text(
             text = heading,
@@ -85,7 +85,7 @@ fun LegalParagraph(heading: String, body: String) {
             modifier = Modifier.padding(bottom = 6.dp),
         )
         Text(
-            text = body,
+            text = text,
             color = AppColors.TextMuted,
             fontSize = 13.sp,
             lineHeight = 20.sp,

@@ -30,7 +30,7 @@ fun TermsScreen(onBack: () -> Unit) {
             modifier = Modifier.padding(bottom = 16.dp),
         )
         SECTIONS.forEach { (heading, body) ->
-            LegalParagraph(heading = heading, body = body)
+            LegalParagraph(heading = heading, text = body)
         }
     }
 }
