@@ -2,12 +2,16 @@ package com.zrifapps.goservice.navigation
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.zrifapps.goservice.ads.AdsManager
 import com.zrifapps.goservice.ui.home.HomeScreen
 import com.zrifapps.goservice.ui.vehicle.AddVehicleScreen
 import com.zrifapps.goservice.ui.onboarding.NotifPermScreen
@@ -22,6 +26,12 @@ fun AppNavGraph() {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("servisgo_prefs", Context.MODE_PRIVATE) }
     val onboardingDone = remember { prefs.getBoolean("onboarding_done", false) }
+
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+    LaunchedEffect(currentRoute) {
+        AdsManager.setAppOpenAllowed(currentRoute == Screen.Home::class.qualifiedName)
+    }
 
     NavHost(
         navController = navController,

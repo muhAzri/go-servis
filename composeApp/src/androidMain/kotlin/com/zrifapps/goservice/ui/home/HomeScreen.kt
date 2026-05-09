@@ -3,10 +3,15 @@ package com.zrifapps.goservice.ui.home
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -17,8 +22,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.zrifapps.goservice.Greeting
+import com.zrifapps.goservice.ads.YandexBannerInline
+import com.zrifapps.goservice.ads.YandexNativeAd
+import com.zrifapps.goservice.ads.findActivity
+import com.zrifapps.goservice.ads.rememberYandexInterstitial
 import goservice.composeapp.generated.resources.Res
 import goservice.composeapp.generated.resources.compose_multiplatform
 import org.jetbrains.compose.resources.painterResource
@@ -26,12 +37,19 @@ import org.jetbrains.compose.resources.painterResource
 @Composable
 fun HomeScreen(onAddVehicle: () -> Unit = {}) {
     var showContent by remember { mutableStateOf(false) }
+    var showBanner by remember { mutableStateOf(false) }
+    var showNative by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val interstitial = rememberYandexInterstitial()
+
     Column(
         modifier = Modifier
             .background(MaterialTheme.colorScheme.primaryContainer)
             .safeContentPadding()
-            .fillMaxSize(),
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Button(onClick = { showContent = !showContent }) {
             Text("Click me!")
@@ -39,6 +57,28 @@ fun HomeScreen(onAddVehicle: () -> Unit = {}) {
         Button(onClick = onAddVehicle) {
             Text("Tambah Kendaraan")
         }
+        Spacer(Modifier.height(8.dp))
+        Text("— Yandex Ads test —", style = MaterialTheme.typography.titleSmall)
+        Button(onClick = { showBanner = !showBanner }) {
+            Text(if (showBanner) "Hide inline banner" else "Test inline banner")
+        }
+        Button(
+            enabled = interstitial.isReady,
+            onClick = { context.findActivity()?.let(interstitial::show) },
+        ) {
+            Text(if (interstitial.isReady) "Test interstitial" else "Loading interstitial…")
+        }
+        Button(onClick = { showNative = !showNative }) {
+            Text(if (showNative) "Hide native ad" else "Test native ad")
+        }
+
+        if (showBanner) {
+            YandexBannerInline(modifier = Modifier.fillMaxWidth())
+        }
+        if (showNative) {
+            YandexNativeAd(modifier = Modifier.fillMaxWidth())
+        }
+
         AnimatedVisibility(showContent) {
             val greeting = remember { Greeting().greet() }
             Column(
