@@ -8,10 +8,28 @@ struct MainTabsView: View {
         VStack(spacing: 0) {
             Group {
                 switch selectedTab {
-                case .home:      HomeView()
-                case .reminders: RemindersView()
-                case .add:       HomeView()
-                case .history:   HistoryView()
+                case .home:
+                    HomeView(
+                        onOpenReminders: { selectedTab = .reminders },
+                        onOpenReminderDetail: { router.navigate(to: .reminderDetail) },
+                        onOpenVehicleDetail: { router.navigate(to: .vehicleDetail) },
+                        onAddService: { router.navigate(to: .addService) },
+                        onAddVehicle: { router.navigate(to: .addVehicle) },
+                        onUpdateOdometer: { router.navigate(to: .updateOdometer) },
+                        onOpenTips: { router.navigate(to: .tips) }
+                    )
+
+                case .reminders:
+                    RemindersView(
+                        onOpenReminderDetail: { router.navigate(to: .reminderDetail) }
+                    )
+
+                case .add:
+                    HomeView()
+
+                case .history:
+                    HistoryView()
+
                 case .settings:
                     SettingsView(
                         onOpenPrivacy: { router.navigate(to: .privacy) },
@@ -28,7 +46,7 @@ struct MainTabsView: View {
             BottomNavBar(
                 selected: $selectedTab,
                 onSelect: { tab in
-                    if tab == .add { router.navigate(to: .addVehicle) }
+                    if tab == .add { router.navigate(to: .addService) }
                 }
             )
         }

@@ -49,6 +49,32 @@ struct AppNavGraph: View {
             AboutView(onBack: { router.navigateBack() })
         case .help:
             HelpView(onBack: { router.navigateBack() })
+
+        case .reminderDetail:
+            ReminderDetailView(
+                onMarkServiced: { router.navigate(to: .addService) }
+            )
+        case .addService:
+            AddServiceView(
+                onSaved: { router.navigate(to: .interstitialAd) }
+            )
+        case .interstitialAd:
+            InterstitialAdView(
+                onClose: { router.navigate(to: .serviceSaved) }
+            )
+        case .serviceSaved:
+            ServiceSavedView(
+                onBackToHome: { router.popToRoot() },
+                onOpenHistory: { router.popToRoot() }
+            )
+        case .vehicleDetail:
+            VehicleDetailView()
+        case .updateOdometer:
+            UpdateOdometerView(
+                onSave: { router.navigateBack() }
+            )
+        case .tips:
+            TipsView()
         }
     }
 }

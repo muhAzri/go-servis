@@ -8,4 +8,13 @@ enum AppDestination: Hashable {
     case terms
     case about
     case help
+
+    // Core flow
+    case reminderDetail
+    case addService
+    case interstitialAd
+    case serviceSaved
+    case vehicleDetail
+    case updateOdometer
+    case tips
 }
