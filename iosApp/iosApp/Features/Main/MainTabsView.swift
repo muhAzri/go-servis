@@ -2,18 +2,18 @@ import SwiftUI
 
 struct MainTabsView: View {
     @Environment(AppRouter.self) private var router
-    @State private var selectedTab: BottomTab = .beranda
+    @State private var selectedTab: BottomTab = .home
 
     var body: some View {
         VStack(spacing: 0) {
             Group {
                 switch selectedTab {
-                case .beranda:   GarasiView()
-                case .pengingat: PengingatView()
-                case .add:       GarasiView()
-                case .riwayat:   RiwayatView()
-                case .saya:
-                    PengaturanView(
+                case .home:      HomeView()
+                case .reminders: RemindersView()
+                case .add:       HomeView()
+                case .history:   HistoryView()
+                case .settings:
+                    SettingsView(
                         onOpenPrivacy: { router.navigate(to: .privacy) },
                         onOpenTerms: { router.navigate(to: .terms) },
                         onOpenAbout: { router.navigate(to: .about) },

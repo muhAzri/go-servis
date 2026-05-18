@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct RiwayatView: View {
+struct HistoryView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -11,6 +11,6 @@ struct RiwayatView: View {
 }
 
 #Preview {
-    RiwayatView()
+    HistoryView()
         .background(Color.sgBgWarm)
 }

@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct PengaturanView: View {
+struct SettingsView: View {
     var onOpenPrivacy: () -> Void = {}
     var onOpenTerms: () -> Void = {}
     var onOpenAbout: () -> Void = {}
@@ -205,6 +205,6 @@ private struct SettingsFooter: View {
 }
 
 #Preview {
-    PengaturanView()
+    SettingsView()
         .background(Color.sgBgWarm)
 }

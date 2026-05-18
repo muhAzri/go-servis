@@ -8,12 +8,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 @Composable
-fun PengingatTab(modifier: Modifier = Modifier) {
+fun HistoryTab(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        TabHeader(subtitle = "0 pengingat aktif", title = "Pengingat Servis")
+        TabHeader(subtitle = "0 servis tercatat", title = "Riwayat Servis")
     }
 }

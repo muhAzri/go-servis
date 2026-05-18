@@ -16,10 +16,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.zrifapps.goservice.ui.components.BottomNavBar
 import com.zrifapps.goservice.ui.components.BottomTab
-import com.zrifapps.goservice.ui.main.tabs.GarasiTab
-import com.zrifapps.goservice.ui.main.tabs.PengaturanTab
-import com.zrifapps.goservice.ui.main.tabs.PengingatTab
-import com.zrifapps.goservice.ui.main.tabs.RiwayatTab
+import com.zrifapps.goservice.ui.main.tabs.HistoryTab
+import com.zrifapps.goservice.ui.main.tabs.HomeTab
+import com.zrifapps.goservice.ui.main.tabs.RemindersTab
+import com.zrifapps.goservice.ui.main.tabs.SettingsTab
 import com.zrifapps.goservice.ui.theme.AppColors
 
 @Composable
@@ -31,7 +31,7 @@ fun MainTabsScreen(
     onOpenAbout: () -> Unit = {},
     onOpenHelp: () -> Unit = {},
 ) {
-    var selectedTab by remember { mutableStateOf(BottomTab.Beranda) }
+    var selectedTab by remember { mutableStateOf(BottomTab.Home) }
 
     Column(
         modifier = Modifier
@@ -45,17 +45,17 @@ fun MainTabsScreen(
                 .fillMaxWidth(),
         ) {
             when (selectedTab) {
-                BottomTab.Beranda -> GarasiTab()
-                BottomTab.Pengingat -> PengingatTab()
-                BottomTab.Riwayat -> RiwayatTab()
-                BottomTab.Saya -> PengaturanTab(
+                BottomTab.Home -> HomeTab()
+                BottomTab.Reminders -> RemindersTab()
+                BottomTab.History -> HistoryTab()
+                BottomTab.Settings -> SettingsTab(
                     onOpenPrivacy = onOpenPrivacy,
                     onOpenTerms = onOpenTerms,
                     onOpenAbout = onOpenAbout,
                     onOpenHelp = onOpenHelp,
                     onOpenTestScreen = onOpenTestScreen,
                 )
-                BottomTab.Add -> GarasiTab()
+                BottomTab.Add -> HomeTab()
             }
         }
         BottomNavBar(

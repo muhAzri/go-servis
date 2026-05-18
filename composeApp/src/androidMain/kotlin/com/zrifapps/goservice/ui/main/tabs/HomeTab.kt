@@ -8,12 +8,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 @Composable
-fun RiwayatTab(modifier: Modifier = Modifier) {
+fun HomeTab(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        TabHeader(subtitle = "0 servis tercatat", title = "Riwayat Servis")
+        TabHeader(subtitle = "Halo, Budi 👋", title = "Garasi Saya")
     }
 }

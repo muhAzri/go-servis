@@ -1,25 +1,25 @@
 import SwiftUI
 
 enum BottomTab: Hashable, CaseIterable {
-    case beranda, pengingat, add, riwayat, saya
+    case home, reminders, add, history, settings
 
     var icon: String {
         switch self {
-        case .beranda:   return "\u{f015}"
-        case .pengingat: return "\u{f0f3}"
+        case .home:      return "\u{f015}"
+        case .reminders: return "\u{f0f3}"
         case .add:       return "\u{f067}"
-        case .riwayat:   return "\u{f1da}"
-        case .saya:      return "\u{f013}"
+        case .history:   return "\u{f1da}"
+        case .settings:  return "\u{f013}"
         }
     }
 
     var label: String {
         switch self {
-        case .beranda:   return "Beranda"
-        case .pengingat: return "Pengingat"
+        case .home:      return "Beranda"
+        case .reminders: return "Pengingat"
         case .add:       return ""
-        case .riwayat:   return "Riwayat"
-        case .saya:      return "Saya"
+        case .history:   return "Riwayat"
+        case .settings:  return "Saya"
         }
     }
 }
@@ -107,7 +107,7 @@ private struct AddTabItem: View {
 }
 
 #Preview {
-    StatefulPreviewWrapper(BottomTab.beranda) { binding in
+    StatefulPreviewWrapper(BottomTab.home) { binding in
         VStack {
             Spacer()
             BottomNavBar(selected: binding)

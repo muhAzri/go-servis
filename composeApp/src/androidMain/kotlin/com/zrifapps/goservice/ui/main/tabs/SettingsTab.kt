@@ -54,7 +54,7 @@ private data class SettingSection(
 )
 
 @Composable
-fun PengaturanTab(
+fun SettingsTab(
     modifier: Modifier = Modifier,
     onOpenPrivacy: () -> Unit = {},
     onOpenTerms: () -> Unit = {},

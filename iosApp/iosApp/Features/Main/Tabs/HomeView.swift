@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct GarasiView: View {
+struct HomeView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -11,6 +11,6 @@ struct GarasiView: View {
 }
 
 #Preview {
-    GarasiView()
+    HomeView()
         .background(Color.sgBgWarm)
 }

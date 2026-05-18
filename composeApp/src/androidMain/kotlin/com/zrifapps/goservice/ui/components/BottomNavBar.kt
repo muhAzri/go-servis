@@ -30,11 +30,11 @@ import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
 
 enum class BottomTab(val icon: String, val label: String) {
-    Beranda(FaIcons.HOUSE, "Beranda"),
-    Pengingat(FaIcons.BELL, "Pengingat"),
+    Home(FaIcons.HOUSE, "Beranda"),
+    Reminders(FaIcons.BELL, "Pengingat"),
     Add(FaIcons.PLUS, ""),
-    Riwayat(FaIcons.HISTORY, "Riwayat"),
-    Saya(FaIcons.GEAR, "Saya"),
+    History(FaIcons.HISTORY, "Riwayat"),
+    Settings(FaIcons.GEAR, "Saya"),
 }
 
 @Composable
@@ -124,6 +124,6 @@ private fun AddTabItem(onClick: () -> Unit) {
 @Composable
 private fun BottomNavBarPreview() {
     AppTheme {
-        BottomNavBar(selected = BottomTab.Beranda, onSelect = {})
+        BottomNavBar(selected = BottomTab.Home, onSelect = {})
     }
 }

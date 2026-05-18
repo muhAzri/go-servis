@@ -8,12 +8,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 @Composable
-fun GarasiTab(modifier: Modifier = Modifier) {
+fun RemindersTab(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        TabHeader(subtitle = "Halo, Budi 👋", title = "Garasi Saya")
+        TabHeader(subtitle = "0 pengingat aktif", title = "Pengingat Servis")
     }
 }

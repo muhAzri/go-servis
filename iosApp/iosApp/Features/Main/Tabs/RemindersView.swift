@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct PengingatView: View {
+struct RemindersView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -11,6 +11,6 @@ struct PengingatView: View {
 }
 
 #Preview {
-    PengingatView()
+    RemindersView()
         .background(Color.sgBgWarm)
 }
