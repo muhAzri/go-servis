@@ -111,4 +111,22 @@ object FaIcons {
     const val BRAND_APPLE = ""
     const val BRAND_ANDROID = ""
     const val BRAND_WHATSAPP = ""
+
+    // Additional icons used by Core Flow screens
+    const val LIFE_RING        = "\uF1CD"
+    const val CAR_BATTERY      = "\uF5DF"
+    const val CIRCLE_NOTCH     = "\uF1CE"
+    const val TEMPERATURE_HALF = "\uF2C9"
+    const val GEARS            = "\uE5FE"
+    const val BOLT             = "\uF0E7"
+    const val LIGHTBULB        = "\uF0EB"
+    const val FIRE             = "\uF06D"
+    const val ARROW_RIGHT      = "\uF061"
+    const val BOX_OPEN         = "\uF49E"
+    const val SHIELD_HALVED    = "\uF3ED"
+    const val GLOBE            = "\uF0AC"
+    const val MOON             = "\uF186"
+    const val PEN_TO_SQUARE    = "\uF044"
+    const val FILE_LINES       = "\uF15C"
+    const val CIRCLE_QUESTION  = "\uF059"
 }
