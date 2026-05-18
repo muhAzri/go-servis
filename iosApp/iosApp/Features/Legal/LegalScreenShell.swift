@@ -7,17 +7,15 @@ struct LegalScreenShell<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 12) {
-                AppBackButton(action: onBack)
-                Text(title)
-                    .font(.custom("PlusJakartaSans-ExtraBold", size: 17))
-                    .foregroundColor(.sgTextPrimary)
-                Spacer()
-            }
-            .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
-
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
+                    VStack{
+                        Text(title)
+                            .font(.custom("PlusJakartaSans-ExtraBold", size: 17))
+                            .foregroundColor(.sgTextPrimary)
+                        Spacer()
+                    }
+                    .padding(EdgeInsets(top: 12, leading: 0, bottom: 0, trailing: 16))
                     content()
                 }
                 .padding(EdgeInsets(top: 8, leading: 24, bottom: 28, trailing: 24))
@@ -26,7 +24,8 @@ struct LegalScreenShell<Content: View>: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color.sgBgWarm)
-        .navigationBarBackButtonHidden(true)
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
