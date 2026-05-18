@@ -15,4 +15,13 @@ sealed interface Screen {
     @Serializable data object Terms : Screen
     @Serializable data object About : Screen
     @Serializable data object Help : Screen
+
+    // Core flow
+    @Serializable data object ReminderDetail : Screen
+    @Serializable data object AddService : Screen
+    @Serializable data object InterstitialAd : Screen
+    @Serializable data object ServiceSaved : Screen
+    @Serializable data object VehicleDetail : Screen
+    @Serializable data object UpdateOdometer : Screen
+    @Serializable data object Tips : Screen
 }

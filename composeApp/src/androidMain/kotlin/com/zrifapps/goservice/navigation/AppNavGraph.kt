@@ -17,13 +17,20 @@ import com.zrifapps.goservice.ui.legal.HelpScreen
 import com.zrifapps.goservice.ui.legal.PrivacyScreen
 import com.zrifapps.goservice.ui.legal.TermsScreen
 import com.zrifapps.goservice.ui.main.MainTabsScreen
-import com.zrifapps.goservice.ui.test.TestScreen
-import com.zrifapps.goservice.ui.vehicle.AddVehicleScreen
 import com.zrifapps.goservice.ui.onboarding.NotifPermScreen
 import com.zrifapps.goservice.ui.onboarding.OnboardingAddVehicleScreen
 import com.zrifapps.goservice.ui.onboarding.OnboardingScreen
 import com.zrifapps.goservice.ui.onboarding.PickVehicleTypeScreen
+import com.zrifapps.goservice.ui.reminders.ReminderDetailScreen
+import com.zrifapps.goservice.ui.service.AddServiceScreen
+import com.zrifapps.goservice.ui.service.InterstitialAdScreen
+import com.zrifapps.goservice.ui.service.ServiceSavedScreen
 import com.zrifapps.goservice.ui.splash.SplashScreen
+import com.zrifapps.goservice.ui.test.TestScreen
+import com.zrifapps.goservice.ui.tips.TipsScreen
+import com.zrifapps.goservice.ui.vehicle.AddVehicleScreen
+import com.zrifapps.goservice.ui.vehicle.UpdateOdometerScreen
+import com.zrifapps.goservice.ui.vehicle.VehicleDetailScreen
 
 @Composable
 fun AppNavGraph() {
@@ -102,7 +109,12 @@ fun AppNavGraph() {
 
         composable<Screen.Main> {
             MainTabsScreen(
-                onAddService = { navController.navigate(Screen.AddVehicleForm) },
+                onAddService = { navController.navigate(Screen.AddService) },
+                onAddVehicle = { navController.navigate(Screen.AddVehicleForm) },
+                onUpdateOdometer = { navController.navigate(Screen.UpdateOdometer) },
+                onOpenTips = { navController.navigate(Screen.Tips) },
+                onOpenReminderDetail = { navController.navigate(Screen.ReminderDetail) },
+                onOpenVehicleDetail = { navController.navigate(Screen.VehicleDetail) },
                 onOpenTestScreen = { navController.navigate(Screen.Test) },
                 onOpenPrivacy = { navController.navigate(Screen.Privacy) },
                 onOpenTerms = { navController.navigate(Screen.Terms) },
@@ -139,6 +151,52 @@ fun AppNavGraph() {
 
         composable<Screen.Help> {
             HelpScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable<Screen.ReminderDetail> {
+            ReminderDetailScreen(
+                onBack = { navController.popBackStack() },
+                onMarkServiced = { navController.navigate(Screen.AddService) },
+            )
+        }
+
+        composable<Screen.AddService> {
+            AddServiceScreen(
+                onClose = { navController.popBackStack() },
+                onSaved = { navController.navigate(Screen.InterstitialAd) },
+            )
+        }
+
+        composable<Screen.InterstitialAd> {
+            InterstitialAdScreen(
+                onClose = { navController.navigate(Screen.ServiceSaved) },
+            )
+        }
+
+        composable<Screen.ServiceSaved> {
+            ServiceSavedScreen(
+                onBackToHome = {
+                    navController.popBackStack(Screen.Main, inclusive = false)
+                },
+                onOpenHistory = {
+                    navController.popBackStack(Screen.Main, inclusive = false)
+                },
+            )
+        }
+
+        composable<Screen.VehicleDetail> {
+            VehicleDetailScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable<Screen.UpdateOdometer> {
+            UpdateOdometerScreen(
+                onClose = { navController.popBackStack() },
+                onSave = { navController.popBackStack() },
+            )
+        }
+
+        composable<Screen.Tips> {
+            TipsScreen(onBack = { navController.popBackStack() })
         }
     }
 }

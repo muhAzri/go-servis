@@ -25,6 +25,11 @@ import com.zrifapps.goservice.ui.theme.AppColors
 @Composable
 fun MainTabsScreen(
     onAddService: () -> Unit = {},
+    onAddVehicle: () -> Unit = {},
+    onUpdateOdometer: () -> Unit = {},
+    onOpenTips: () -> Unit = {},
+    onOpenReminderDetail: () -> Unit = {},
+    onOpenVehicleDetail: () -> Unit = {},
     onOpenTestScreen: () -> Unit = {},
     onOpenPrivacy: () -> Unit = {},
     onOpenTerms: () -> Unit = {},
@@ -45,8 +50,18 @@ fun MainTabsScreen(
                 .fillMaxWidth(),
         ) {
             when (selectedTab) {
-                BottomTab.Home -> HomeTab()
-                BottomTab.Reminders -> RemindersTab()
+                BottomTab.Home -> HomeTab(
+                    onOpenReminders = { selectedTab = BottomTab.Reminders },
+                    onOpenReminderDetail = onOpenReminderDetail,
+                    onOpenVehicleDetail = onOpenVehicleDetail,
+                    onAddService = onAddService,
+                    onAddVehicle = onAddVehicle,
+                    onUpdateOdometer = onUpdateOdometer,
+                    onOpenTips = onOpenTips,
+                )
+                BottomTab.Reminders -> RemindersTab(
+                    onOpenReminderDetail = onOpenReminderDetail,
+                )
                 BottomTab.History -> HistoryTab()
                 BottomTab.Settings -> SettingsTab(
                     onOpenPrivacy = onOpenPrivacy,
