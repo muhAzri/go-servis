@@ -18,4 +18,9 @@ enum AppDestination: Hashable {
     case updateOdometer
     case tips
     case editProfile
+
+    // Component management
+    case vehicleComponents
+    case componentDetail(componentId: String)
+    case addCustomComponent
 }

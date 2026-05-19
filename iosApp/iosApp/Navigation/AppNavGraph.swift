@@ -91,6 +91,19 @@ struct AppNavGraph: View {
                 },
                 onCancel: { router.navigateBack() }
             )
+
+        case .vehicleComponents:
+            VehicleComponentsView()
+        case .componentDetail(let componentId):
+            ComponentDetailView(
+                componentId: componentId,
+                onSave: { router.navigateBack() },
+                onStopMonitoring: { router.navigateBack() }
+            )
+        case .addCustomComponent:
+            AddCustomComponentView(
+                onAdd: { _ in router.navigateBack() }
+            )
         }
     }
 }

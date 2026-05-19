@@ -1,6 +1,23 @@
 import SwiftUI
 
 struct VehicleDetailView: View {
+    var vehicleType: String = "motor"
+    var subtype: String = "matic"
+
+    @Environment(AppRouter.self) private var router
+
+    private var components: [ComponentInfo] {
+        ComponentsCatalog.forSubtype(subtype)
+    }
+
+    private var tilePreview: [ComponentInfo] {
+        Array(components.prefix(6))
+    }
+
+    private var subLabel: String {
+        VehicleSubtypes.label(for: vehicleType, id: subtype)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
@@ -10,9 +27,21 @@ struct VehicleDetailView: View {
                         .padding(.top, 8)
                         .padding(.bottom, 16)
 
-                    DetailSectionLabel(text: "Komponen (10)")
-                    ComponentsGrid()
-                        .padding(.bottom, 16)
+                    ComponentsSectionHeader(
+                        total: components.count,
+                        subLabel: subLabel,
+                        onManage: { router.navigate(to: .vehicleComponents) }
+                    )
+
+                    ComponentsGrid(
+                        components: tilePreview,
+                        vehicleType: vehicleType,
+                        onOpenComponent: { id in
+                            router.navigate(to: .componentDetail(componentId: id))
+                        },
+                        onAddComponent: { router.navigate(to: .addCustomComponent) }
+                    )
+                    .padding(.bottom, 16)
 
                     AdBannerSlot()
                         .padding(.bottom, 16)
@@ -125,49 +154,120 @@ private struct DetailSectionLabel: View {
     }
 }
 
+private struct ComponentsSectionHeader: View {
+    let total: Int
+    let subLabel: String
+    let onManage: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text("KOMPONEN (\(total))")
+                .font(.custom("PlusJakartaSans-ExtraBold", size: 11))
+                .kerning(1)
+                .foregroundColor(.sgTextMuted)
+            if !subLabel.isEmpty {
+                SubtypeBadge(label: subLabel)
+            }
+            Spacer()
+            Button(action: onManage) {
+                HStack(spacing: 4) {
+                    Text("Kelola")
+                        .font(.custom("PlusJakartaSans-Bold", size: 12))
+                        .foregroundColor(.sgPrimary)
+                    Text("\u{f054}")
+                        .font(.custom("FontAwesome6Free-Solid", size: 10))
+                        .foregroundColor(.sgPrimary)
+                }
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 8)
+    }
+}
+
 private struct ComponentsGrid: View {
-    private let components: [(label: String, icon: String, color: Color, interval: String, urgency: ReminderUrgency)] = [
-        ("Ganti Oli Mesin", "\u{f613}", Color(red: 0.91, green: 0.61, blue: 0.18), "2.000 km / 2 bln", .overdue),
-        ("Filter Oli & Udara", "\u{f0b0}", Color(red: 0.48, green: 0.44, blue: 0.91), "4.000 km", .ok),
-        ("Rotasi/Ganti Ban", "\u{f1cd}", Color(red: 0.25, green: 0.30, blue: 0.36), "10.000 km", .ok),
-        ("Aki", "\u{f5df}", Color(red: 0.84, green: 0.27, blue: 0.23), "1–2 tahun", .ok),
-        ("Kampas Rem", "\u{f1ce}", Color(red: 0.18, green: 0.55, blue: 0.34), "8.000 km", .soon),
-        ("Radiator/Coolant", "\u{f2c9}", Color(red: 0.25, green: 0.69, blue: 0.84), "tahunan", .ok),
-    ]
+    let components: [ComponentInfo]
+    let vehicleType: String
+    let onOpenComponent: (String) -> Void
+    let onAddComponent: () -> Void
 
     var body: some View {
         LazyVGrid(columns: [.init(.flexible(), spacing: 8), .init(.flexible(), spacing: 8)], spacing: 8) {
-            ForEach(components.indices, id: \.self) { i in
-                let c = components[i]
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        IconBadge(
-                            iconUnicode: c.icon,
-                            foreground: c.color,
-                            background: c.color.opacity(0.13),
-                            size: 32, iconSize: 18, corner: 8
-                        )
-                        Spacer()
-                        StatusDot(urgency: c.urgency)
-                    }
-                    Text(c.label)
-                        .font(.custom("PlusJakartaSans-Bold", size: 12))
-                        .foregroundColor(.sgTextPrimary)
-                    Text(c.interval)
-                        .font(.custom("PlusJakartaSans-Medium", size: 10))
-                        .foregroundColor(.sgTextMuted)
+            ForEach(components) { c in
+                let urgency: ReminderUrgency = (c.id == "oli_mesin") ? .overdue : .ok
+                Button(action: { onOpenComponent(c.id) }) {
+                    ComponentCard(component: c, interval: c.interval(for: vehicleType), urgency: urgency)
                 }
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.sgSurface)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .strokeBorder(Color.sgBorder, lineWidth: 1)
-                )
+                .buttonStyle(.plain)
             }
+            Button(action: onAddComponent) {
+                AddComponentCard()
+            }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, 16)
+    }
+}
+
+private struct ComponentCard: View {
+    let component: ComponentInfo
+    let interval: String
+    let urgency: ReminderUrgency
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                IconBadge(
+                    iconUnicode: component.iconUnicode,
+                    foreground: component.color,
+                    background: component.color.opacity(0.13),
+                    size: 32, iconSize: 18, corner: 8
+                )
+                Spacer()
+                StatusDot(urgency: urgency)
+            }
+            Text(component.label)
+                .font(.custom("PlusJakartaSans-Bold", size: 12))
+                .foregroundColor(.sgTextPrimary)
+            Text(interval)
+                .font(.custom("PlusJakartaSans-Medium", size: 10))
+                .foregroundColor(.sgTextMuted)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 86, alignment: .leading)
+        .background(Color.sgSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .strokeBorder(Color.sgBorder, lineWidth: 1)
+        )
+    }
+}
+
+private struct AddComponentCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.sgSurfaceAlt)
+                    .frame(width: 32, height: 32)
+                Text("\u{2b}")
+                    .font(.custom("FontAwesome6Free-Solid", size: 16))
+                    .foregroundColor(.sgTextPrimary)
+            }
+            Text("Tambah komponen")
+                .font(.custom("PlusJakartaSans-Bold", size: 12))
+                .foregroundColor(.sgTextPrimary)
+            Text("katalog / manual")
+                .font(.custom("PlusJakartaSans-Medium", size: 10))
+                .foregroundColor(.sgTextMuted)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 86, alignment: .leading)
+        .background(Color.sgSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .dashedBorder(cornerRadius: 14, lineWidth: 1.5, color: Color.sgBorder.opacity(1.4))
     }
 }
 
@@ -219,5 +319,8 @@ private struct ServiceLine: View {
 }
 
 #Preview {
-    NavigationStack { VehicleDetailView() }
+    NavigationStack {
+        VehicleDetailView()
+    }
+    .environment(AppRouter())
 }
