@@ -5,7 +5,7 @@ struct SplashView: View {
     
     var body: some View {
         ZStack {
-            Color("PrimaryColor")
+            Color.sgPrimary
 
             VStack(spacing: 0) {
                 ZStack {
@@ -16,7 +16,7 @@ struct SplashView: View {
 
                     Text("\u{f0ad}")
                         .font(.custom("FontAwesome6Free-Solid", size: 48))
-                        .foregroundColor(Color("PrimaryColor"))
+                        .foregroundColor(.sgPrimary)
                 }
 
                 Spacer().frame(height: 24)

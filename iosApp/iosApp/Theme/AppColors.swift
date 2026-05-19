@@ -1,7 +1,7 @@
 import SwiftUI
 
 extension Color {
-    static let sgPrimary       = Color("PrimaryColor")
+    static let sgPrimary       = Color("BrandPrimary")
     static let sgPrimaryDark   = Color("PrimaryDark")
     static let sgPrimarySoft   = Color("PrimarySoft")
     static let sgPrimarySofter = Color("PrimarySofter")
