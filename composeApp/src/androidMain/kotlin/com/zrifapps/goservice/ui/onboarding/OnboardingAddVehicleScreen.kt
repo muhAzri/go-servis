@@ -43,7 +43,7 @@ fun OnboardingAddVehicleScreen(
         Spacer(Modifier.height(8.dp))
 
         OnboardingStepHeader(
-            stepLabel = "Langkah 2 dari 3",
+            stepLabel = "Langkah 3 dari 4",
             title = if (vehicleType == "motor") "Detail motormu" else "Detail mobilmu",
             subtitle = "Isi data kendaraan supaya pengingat servis lebih akurat.",
             onBack = onBack,

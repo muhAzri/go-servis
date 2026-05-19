@@ -49,7 +49,7 @@ fun PickVehicleTypeScreen(
         Spacer(Modifier.height(8.dp))
 
         OnboardingStepHeader(
-            stepLabel = "Langkah 1 dari 3",
+            stepLabel = "Langkah 2 dari 4",
             title = "Kendaraan kamu apa?",
             subtitle = "Bisa tambah lebih dari satu nanti.",
             onBack = onBack,

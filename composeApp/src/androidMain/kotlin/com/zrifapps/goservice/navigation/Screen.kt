@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 sealed interface Screen {
     @Serializable data object Splash : Screen
     @Serializable data object Onboarding : Screen
+    @Serializable data object Name : Screen
     @Serializable data object PickVehicleType : Screen
     @Serializable data class AddVehicle(val type: String) : Screen
     @Serializable data object NotifPermission : Screen
@@ -24,4 +25,5 @@ sealed interface Screen {
     @Serializable data object VehicleDetail : Screen
     @Serializable data object UpdateOdometer : Screen
     @Serializable data object Tips : Screen
+    @Serializable data object EditProfile : Screen
 }

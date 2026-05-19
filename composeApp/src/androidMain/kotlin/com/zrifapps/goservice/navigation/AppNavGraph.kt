@@ -4,7 +4,10 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -17,16 +20,19 @@ import com.zrifapps.goservice.ui.legal.HelpScreen
 import com.zrifapps.goservice.ui.legal.PrivacyScreen
 import com.zrifapps.goservice.ui.legal.TermsScreen
 import com.zrifapps.goservice.ui.main.MainTabsScreen
+import com.zrifapps.goservice.ui.onboarding.NameScreen
 import com.zrifapps.goservice.ui.onboarding.NotifPermScreen
 import com.zrifapps.goservice.ui.onboarding.OnboardingAddVehicleScreen
 import com.zrifapps.goservice.ui.onboarding.OnboardingScreen
 import com.zrifapps.goservice.ui.onboarding.PickVehicleTypeScreen
+import com.zrifapps.goservice.ui.profile.EditProfileScreen
 import com.zrifapps.goservice.ui.reminders.ReminderDetailScreen
 import com.zrifapps.goservice.ui.service.AddServiceScreen
 import com.zrifapps.goservice.ui.service.InterstitialAdScreen
 import com.zrifapps.goservice.ui.service.ServiceSavedScreen
 import com.zrifapps.goservice.ui.splash.SplashScreen
 import com.zrifapps.goservice.ui.test.TestScreen
+import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.tips.TipsScreen
 import com.zrifapps.goservice.ui.vehicle.AddVehicleScreen
 import com.zrifapps.goservice.ui.vehicle.UpdateOdometerScreen
@@ -38,6 +44,9 @@ fun AppNavGraph() {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("servisgo_prefs", Context.MODE_PRIVATE) }
     val onboardingDone = remember { prefs.getBoolean("onboarding_done", false) }
+
+    var userName by remember { mutableStateOf("") }
+    var userColorArgb by remember { mutableStateOf(AppColors.Primary.toArgb()) }
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -72,6 +81,20 @@ fun AppNavGraph() {
                     }
                 },
                 onFinish = {
+                    navController.navigate(Screen.Name)
+                },
+            )
+        }
+
+        composable<Screen.Name> {
+            NameScreen(
+                onBack = { navController.popBackStack() },
+                onNext = { typedName ->
+                    userName = typedName
+                    navController.navigate(Screen.PickVehicleType)
+                },
+                onSkip = {
+                    userName = ""
                     navController.navigate(Screen.PickVehicleType)
                 },
             )
@@ -109,6 +132,8 @@ fun AppNavGraph() {
 
         composable<Screen.Main> {
             MainTabsScreen(
+                userName = userName,
+                userColorArgb = userColorArgb,
                 onAddService = { navController.navigate(Screen.AddService) },
                 onAddVehicle = { navController.navigate(Screen.AddVehicleForm) },
                 onUpdateOdometer = { navController.navigate(Screen.UpdateOdometer) },
@@ -120,6 +145,20 @@ fun AppNavGraph() {
                 onOpenTerms = { navController.navigate(Screen.Terms) },
                 onOpenAbout = { navController.navigate(Screen.About) },
                 onOpenHelp = { navController.navigate(Screen.Help) },
+                onOpenEditProfile = { navController.navigate(Screen.EditProfile) },
+            )
+        }
+
+        composable<Screen.EditProfile> {
+            EditProfileScreen(
+                initialName = userName,
+                initialColorArgb = userColorArgb,
+                onBack = { navController.popBackStack() },
+                onSave = { name, colorArgb ->
+                    userName = name
+                    userColorArgb = colorArgb
+                    navController.popBackStack()
+                },
             )
         }
 

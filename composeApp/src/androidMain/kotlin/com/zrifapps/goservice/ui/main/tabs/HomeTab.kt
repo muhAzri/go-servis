@@ -45,6 +45,7 @@ import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
 @Composable
 fun HomeTab(
     modifier: Modifier = Modifier,
+    userName: String = "",
     onOpenReminders: () -> Unit = {},
     onOpenReminderDetail: () -> Unit = {},
     onOpenVehicleDetail: () -> Unit = {},
@@ -58,7 +59,7 @@ fun HomeTab(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        HomeHeader(onOpenReminders = onOpenReminders)
+        HomeHeader(userName = userName, onOpenReminders = onOpenReminders)
         HeroStatusCard(onOpenVehicleDetail = onOpenVehicleDetail)
         Spacer(Modifier.height(16.dp))
         AdBannerSlot()
@@ -139,8 +140,9 @@ fun HomeTab(
 }
 
 @Composable
-private fun HomeHeader(onOpenReminders: () -> Unit) {
+private fun HomeHeader(userName: String, onOpenReminders: () -> Unit) {
     val font = plusJakartaSansFontFamily()
+    val greetingName = userName.ifBlank { "Kamu" }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -149,7 +151,7 @@ private fun HomeHeader(onOpenReminders: () -> Unit) {
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "Halo, Budi 👋",
+                text = "Halo, $greetingName 👋",
                 color = AppColors.TextMuted,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,

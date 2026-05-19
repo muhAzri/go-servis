@@ -24,6 +24,8 @@ import com.zrifapps.goservice.ui.theme.AppColors
 
 @Composable
 fun MainTabsScreen(
+    userName: String = "",
+    userColorArgb: Int = 0xFF2E8B57.toInt(),
     onAddService: () -> Unit = {},
     onAddVehicle: () -> Unit = {},
     onUpdateOdometer: () -> Unit = {},
@@ -35,6 +37,7 @@ fun MainTabsScreen(
     onOpenTerms: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
     onOpenHelp: () -> Unit = {},
+    onOpenEditProfile: () -> Unit = {},
 ) {
     var selectedTab by remember { mutableStateOf(BottomTab.Home) }
 
@@ -51,6 +54,7 @@ fun MainTabsScreen(
         ) {
             when (selectedTab) {
                 BottomTab.Home -> HomeTab(
+                    userName = userName,
                     onOpenReminders = { selectedTab = BottomTab.Reminders },
                     onOpenReminderDetail = onOpenReminderDetail,
                     onOpenVehicleDetail = onOpenVehicleDetail,
@@ -64,13 +68,16 @@ fun MainTabsScreen(
                 )
                 BottomTab.History -> HistoryTab()
                 BottomTab.Settings -> SettingsTab(
+                    userName = userName,
+                    userColorArgb = userColorArgb,
                     onOpenPrivacy = onOpenPrivacy,
                     onOpenTerms = onOpenTerms,
                     onOpenAbout = onOpenAbout,
                     onOpenHelp = onOpenHelp,
                     onOpenTestScreen = onOpenTestScreen,
+                    onOpenEditProfile = onOpenEditProfile,
                 )
-                BottomTab.Add -> HomeTab()
+                BottomTab.Add -> HomeTab(userName = userName)
             }
         }
         BottomNavBar(

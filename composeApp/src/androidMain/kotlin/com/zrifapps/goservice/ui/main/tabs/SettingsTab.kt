@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -56,13 +57,17 @@ private data class SettingSection(
 @Composable
 fun SettingsTab(
     modifier: Modifier = Modifier,
+    userName: String = "",
+    userColorArgb: Int = AppColors.Primary.toArgb(),
     onOpenPrivacy: () -> Unit = {},
     onOpenTerms: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
     onOpenHelp: () -> Unit = {},
     onOpenTestScreen: () -> Unit = {},
+    onOpenEditProfile: () -> Unit = {},
 ) {
     var notifPengingatOn by remember { mutableStateOf(true) }
+    val userColor = remember(userColorArgb) { Color(userColorArgb) }
 
     val sections = listOf(
         SettingSection(
@@ -131,7 +136,11 @@ fun SettingsTab(
     ) {
         TabHeader(subtitle = null, title = "Pengaturan")
 
-        ProfileHeaderCard(onClick = onOpenTestScreen)
+        ProfileHeaderCard(
+            userName = userName,
+            avatarColor = userColor,
+            onClick = onOpenEditProfile,
+        )
 
         Spacer(Modifier.height(8.dp))
 
@@ -160,7 +169,14 @@ fun SettingsTab(
 }
 
 @Composable
-private fun ProfileHeaderCard(onClick: () -> Unit) {
+private fun ProfileHeaderCard(
+    userName: String,
+    avatarColor: Color,
+    onClick: () -> Unit,
+) {
+    val displayName = userName.ifBlank { "Kamu" }
+    val initial = (userName.trim().firstOrNull() ?: 'K').uppercase()
+
     Row(
         modifier = Modifier
             .padding(horizontal = 16.dp)
@@ -177,11 +193,11 @@ private fun ProfileHeaderCard(onClick: () -> Unit) {
             modifier = Modifier
                 .size(52.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(AppColors.Primary),
+                .background(avatarColor),
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = "A",
+                text = initial,
                 color = Color.White,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
@@ -189,22 +205,33 @@ private fun ProfileHeaderCard(onClick: () -> Unit) {
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "Profil Lokal",
+                text = displayName,
                 color = AppColors.TextPrimary,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = "Data tersimpan di perangkat ini",
+                text = "Profil lokal · 4 kendaraan · 12 servis tercatat",
                 color = AppColors.TextMuted,
                 fontSize = 12.sp,
             )
         }
-        FaIcon(
-            icon = FaIcons.PEN,
-            color = AppColors.TextMuted,
-            size = 16.sp,
-        )
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(100.dp))
+                .background(AppColors.PrimarySoft)
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            FaIcon(icon = FaIcons.PEN, color = AppColors.Primary, size = 12.sp)
+            Text(
+                text = "Edit",
+                color = AppColors.Primary,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
     }
 }
 
