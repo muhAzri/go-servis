@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct MainTabsView: View {
+    var userName: String = ""
+    var userColorId: String = "primary"
+
     @Environment(AppRouter.self) private var router
     @State private var selectedTab: BottomTab = .home
 
@@ -10,6 +13,7 @@ struct MainTabsView: View {
                 switch selectedTab {
                 case .home:
                     HomeView(
+                        userName: userName,
                         onOpenReminders: { selectedTab = .reminders },
                         onOpenReminderDetail: { router.navigate(to: .reminderDetail) },
                         onOpenVehicleDetail: { router.navigate(to: .vehicleDetail) },
@@ -25,18 +29,21 @@ struct MainTabsView: View {
                     )
 
                 case .add:
-                    HomeView()
+                    HomeView(userName: userName)
 
                 case .history:
                     HistoryView()
 
                 case .settings:
                     SettingsView(
+                        userName: userName,
+                        userColorId: userColorId,
                         onOpenPrivacy: { router.navigate(to: .privacy) },
                         onOpenTerms: { router.navigate(to: .terms) },
                         onOpenAbout: { router.navigate(to: .about) },
                         onOpenHelp: { router.navigate(to: .help) },
-                        onOpenTestScreen: { router.navigate(to: .test) }
+                        onOpenTestScreen: { router.navigate(to: .test) },
+                        onOpenEditProfile: { router.navigate(to: .editProfile) }
                     )
                 }
             }

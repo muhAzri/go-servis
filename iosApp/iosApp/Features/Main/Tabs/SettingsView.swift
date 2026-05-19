@@ -1,11 +1,14 @@
 import SwiftUI
 
 struct SettingsView: View {
+    var userName: String = ""
+    var userColorId: String = "primary"
     var onOpenPrivacy: () -> Void = {}
     var onOpenTerms: () -> Void = {}
     var onOpenAbout: () -> Void = {}
     var onOpenHelp: () -> Void = {}
     var onOpenTestScreen: () -> Void = {}
+    var onOpenEditProfile: () -> Void = {}
 
     @State private var notifPengingatOn = true
 
@@ -14,9 +17,13 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 0) {
                 TabHeader(subtitle: nil, title: "Pengaturan")
 
-                ProfileHeaderCard(onTap: onOpenTestScreen)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 8)
+                ProfileHeaderCard(
+                    userName: userName,
+                    colorId: userColorId,
+                    onTap: onOpenEditProfile
+                )
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
 
                 SettingsSection(title: "Akun & Data") {
                     SettingsRow(
@@ -60,33 +67,60 @@ struct SettingsView: View {
 }
 
 private struct ProfileHeaderCard: View {
+    let userName: String
+    let colorId: String
     let onTap: () -> Void
+
+    private var displayName: String { userName.isEmpty ? "Kamu" : userName }
+    private var initial: String {
+        let trimmed = userName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return String(trimmed.first ?? "K").uppercased()
+    }
+    private var avatarColor: Color {
+        switch colorId {
+        case "danger": return Color(red: 0.84, green: 0.27, blue: 0.23)
+        case "cyan":   return Color(red: 0.25, green: 0.69, blue: 0.84)
+        case "amber":  return Color(red: 0.91, green: 0.61, blue: 0.18)
+        case "violet": return Color(red: 0.48, green: 0.44, blue: 0.91)
+        case "ink":    return Color(red: 0.10, green: 0.14, blue: 0.09)
+        default:       return .sgPrimary
+        }
+    }
 
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(Color.sgPrimary)
-                    Text("A")
+                        .fill(avatarColor)
+                    Text(initial)
                         .font(.custom("PlusJakartaSans-ExtraBold", size: 20))
                         .foregroundColor(.white)
                 }
                 .frame(width: 52, height: 52)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Profil Lokal")
+                    Text(displayName)
                         .font(.custom("PlusJakartaSans-Bold", size: 15))
                         .foregroundColor(.sgTextPrimary)
-                    Text("Data tersimpan di perangkat ini")
+                    Text("Profil lokal · 4 kendaraan · 12 servis tercatat")
                         .font(.custom("PlusJakartaSans-Medium", size: 12))
                         .foregroundColor(.sgTextMuted)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                Text("\u{f303}")
-                    .font(.custom("FontAwesome6Free-Solid", size: 14))
-                    .foregroundColor(.sgTextMuted)
+                HStack(spacing: 6) {
+                    Text("\u{f303}")
+                        .font(.custom("FontAwesome6Free-Solid", size: 12))
+                        .foregroundColor(.sgPrimary)
+                    Text("Edit")
+                        .font(.custom("PlusJakartaSans-Bold", size: 12))
+                        .foregroundColor(.sgPrimary)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color.sgPrimarySoft)
+                .clipShape(Capsule())
             }
             .padding(16)
             .frame(maxWidth: .infinity)

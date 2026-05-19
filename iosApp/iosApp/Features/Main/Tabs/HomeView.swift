@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct HomeView: View {
+    var userName: String = ""
     var onOpenReminders: () -> Void = {}
     var onOpenReminderDetail: () -> Void = {}
     var onOpenVehicleDetail: () -> Void = {}
@@ -12,7 +13,7 @@ struct HomeView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                HomeHeader(onOpenReminders: onOpenReminders)
+                HomeHeader(userName: userName, onOpenReminders: onOpenReminders)
 
                 HeroStatusCard(onOpenVehicleDetail: onOpenVehicleDetail)
                     .padding(.horizontal, 16)
@@ -103,12 +104,15 @@ struct HomeView: View {
 // MARK: - Subviews
 
 private struct HomeHeader: View {
+    let userName: String
     let onOpenReminders: () -> Void
+
+    private var greetingName: String { userName.isEmpty ? "Kamu" : userName }
 
     var body: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Halo, Budi 👋")
+                Text("Halo, \(greetingName) 👋")
                     .font(.custom("PlusJakartaSans-Medium", size: 13))
                     .foregroundColor(.sgTextMuted)
                 Text("Garasi Saya")

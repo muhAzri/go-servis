@@ -17,4 +17,5 @@ enum AppDestination: Hashable {
     case vehicleDetail
     case updateOdometer
     case tips
+    case editProfile
 }

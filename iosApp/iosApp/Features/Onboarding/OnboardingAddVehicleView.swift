@@ -21,7 +21,7 @@ struct OnboardingAddVehicleView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     OnboardingStepHeader(
-                        stepLabel: "Langkah 2 dari 3",
+                        stepLabel: "Langkah 3 dari 4",
                         title: vehicleType == "motor" ? "Detail motormu" : "Detail mobilmu",
                         subtitle: "Isi data kendaraan supaya pengingat servis lebih akurat.",
                         onBack: onBack
