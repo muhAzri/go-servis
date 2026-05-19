@@ -3,6 +3,7 @@ package com.zrifapps.goservice.ui.vehicle
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,26 +41,28 @@ import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
 import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
+import com.zrifapps.goservice.ui.vehicle.components.ComponentInfo
+import com.zrifapps.goservice.ui.vehicle.components.ComponentsCatalog
+import com.zrifapps.goservice.ui.vehicle.components.SubtypeBadge
+import com.zrifapps.goservice.ui.vehicle.components.VehicleSubtypes
+import com.zrifapps.goservice.ui.vehicle.components.dashedBorder
 
-private data class ComponentTile(
-    val label: String,
-    val icon: String,
-    val color: Color,
-    val interval: String,
-    val urgency: ReminderUrgency,
-)
-
-private val components = listOf(
-    ComponentTile("Ganti Oli Mesin",    FaIcons.OIL_CAN,         Color(0xFFE89C2E), "2.000 km / 2 bln", ReminderUrgency.Overdue),
-    ComponentTile("Filter Oli & Udara", FaIcons.FILTER,          Color(0xFF7B6FE8), "4.000 km",         ReminderUrgency.Ok),
-    ComponentTile("Rotasi/Ganti Ban",   FaIcons.LIFE_RING,       Color(0xFF3F4D5C), "10.000 km",        ReminderUrgency.Ok),
-    ComponentTile("Aki",                 FaIcons.CAR_BATTERY,     Color(0xFFD6453A), "1–2 tahun",        ReminderUrgency.Ok),
-    ComponentTile("Kampas Rem",         FaIcons.CIRCLE_NOTCH,    Color(0xFF2E8B57), "8.000 km",         ReminderUrgency.Soon),
-    ComponentTile("Radiator/Coolant",   FaIcons.TEMPERATURE_HALF,Color(0xFF3FB1D6), "tahunan",          ReminderUrgency.Ok),
-)
+private const val DEFAULT_VEHICLE_TYPE = "motor"
+private const val DEFAULT_SUBTYPE = "matic"
 
 @Composable
-fun VehicleDetailScreen(onBack: () -> Unit) {
+fun VehicleDetailScreen(
+    onBack: () -> Unit,
+    onManageComponents: () -> Unit = {},
+    onOpenComponent: (String) -> Unit = {},
+    onAddComponent: () -> Unit = {},
+    vehicleType: String = DEFAULT_VEHICLE_TYPE,
+    subtype: String = DEFAULT_SUBTYPE,
+) {
+    val components = ComponentsCatalog.forSubtype(subtype)
+    val tilePreview = components.take(6)
+    val subLabel = VehicleSubtypes.labelOf(vehicleType, subtype)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -70,8 +73,17 @@ fun VehicleDetailScreen(onBack: () -> Unit) {
         VehicleDetailTopBar(onBack = onBack)
         VehicleHeroCard()
         Spacer(Modifier.height(16.dp))
-        DetailSectionLabel("Komponen (10)")
-        ComponentsGrid()
+        ComponentsSectionHeader(
+            total = components.size,
+            subLabel = subLabel,
+            onManage = onManageComponents,
+        )
+        ComponentsGrid(
+            components = tilePreview,
+            vehicleType = vehicleType,
+            onOpenComponent = onOpenComponent,
+            onAddComponent = onAddComponent,
+        )
         Spacer(Modifier.height(16.dp))
         AdBannerSlot()
         Spacer(Modifier.height(16.dp))
@@ -207,15 +219,81 @@ private fun DetailSectionLabel(text: String) {
 }
 
 @Composable
-private fun ComponentsGrid() {
+private fun ComponentsSectionHeader(
+    total: Int,
+    subLabel: String,
+    onManage: () -> Unit,
+) {
+    val font = plusJakartaSansFontFamily()
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .padding(bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "KOMPONEN ($total)",
+            color = AppColors.TextMuted,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = 1.sp,
+            fontFamily = font,
+        )
+        if (subLabel.isNotBlank()) {
+            Spacer(Modifier.size(8.dp))
+            SubtypeBadge(label = subLabel)
+        }
+        Spacer(Modifier.weight(1f))
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .clickable(onClick = onManage)
+                .padding(horizontal = 6.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = "Kelola",
+                color = AppColors.Primary,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = font,
+            )
+            FaIcon(icon = FaIcons.CHEVRON_RIGHT, color = AppColors.Primary, size = 11.sp)
+        }
+    }
+}
+
+@Composable
+private fun ComponentsGrid(
+    components: List<ComponentInfo>,
+    vehicleType: String,
+    onOpenComponent: (String) -> Unit,
+    onAddComponent: () -> Unit,
+) {
     Column(
         modifier = Modifier.padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        components.chunked(2).forEach { row ->
+        val rows = (components.map { it as Any? } + listOf<Any?>(null)).chunked(2)
+        rows.forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { c ->
-                    ComponentCard(component = c, modifier = Modifier.weight(1f))
+                row.forEach { item ->
+                    if (item is ComponentInfo) {
+                        ComponentCard(
+                            component = item,
+                            interval = item.intervalFor(vehicleType),
+                            urgency = if (item.id == "oli_mesin") ReminderUrgency.Overdue else ReminderUrgency.Ok,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onOpenComponent(item.id) },
+                        )
+                    } else {
+                        AddComponentCard(
+                            onClick = onAddComponent,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                 }
                 if (row.size < 2) {
                     Spacer(Modifier.weight(1f))
@@ -226,13 +304,20 @@ private fun ComponentsGrid() {
 }
 
 @Composable
-private fun ComponentCard(component: ComponentTile, modifier: Modifier = Modifier) {
+private fun ComponentCard(
+    component: ComponentInfo,
+    interval: String,
+    urgency: ReminderUrgency,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
     val font = plusJakartaSansFontFamily()
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
             .background(AppColors.Surface)
             .border(BorderStroke(1.dp, AppColors.Border), RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick)
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -246,7 +331,7 @@ private fun ComponentCard(component: ComponentTile, modifier: Modifier = Modifie
                 corner = 8.dp,
             )
             Spacer(Modifier.weight(1f))
-            StatusDot(urgency = component.urgency)
+            StatusDot(urgency = urgency)
         }
         Text(
             text = component.label,
@@ -256,7 +341,45 @@ private fun ComponentCard(component: ComponentTile, modifier: Modifier = Modifie
             fontFamily = font,
         )
         Text(
-            text = component.interval,
+            text = interval,
+            color = AppColors.TextMuted,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Medium,
+            fontFamily = font,
+        )
+    }
+}
+
+@Composable
+private fun AddComponentCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val font = plusJakartaSansFontFamily()
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(AppColors.Surface)
+            .dashedBorder(width = 1.5.dp, color = Color(0x24141E0F), corner = 14.dp)
+            .clickable(onClick = onClick)
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(AppColors.SurfaceAlt),
+            contentAlignment = Alignment.Center,
+        ) {
+            FaIcon(icon = FaIcons.PLUS, color = AppColors.TextPrimary, size = 18.sp)
+        }
+        Text(
+            text = "Tambah komponen",
+            color = AppColors.TextPrimary,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = font,
+        )
+        Text(
+            text = "katalog / manual",
             color = AppColors.TextMuted,
             fontSize = 10.sp,
             fontWeight = FontWeight.Medium,

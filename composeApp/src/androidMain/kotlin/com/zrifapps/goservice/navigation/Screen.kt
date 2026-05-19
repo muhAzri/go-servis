@@ -26,4 +26,9 @@ sealed interface Screen {
     @Serializable data object UpdateOdometer : Screen
     @Serializable data object Tips : Screen
     @Serializable data object EditProfile : Screen
+
+    // Component management
+    @Serializable data object VehicleComponents : Screen
+    @Serializable data class ComponentDetail(val componentId: String) : Screen
+    @Serializable data object AddCustomComponent : Screen
 }

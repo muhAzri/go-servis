@@ -34,8 +34,11 @@ import com.zrifapps.goservice.ui.splash.SplashScreen
 import com.zrifapps.goservice.ui.test.TestScreen
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.tips.TipsScreen
+import com.zrifapps.goservice.ui.vehicle.AddCustomComponentScreen
 import com.zrifapps.goservice.ui.vehicle.AddVehicleScreen
+import com.zrifapps.goservice.ui.vehicle.ComponentDetailScreen
 import com.zrifapps.goservice.ui.vehicle.UpdateOdometerScreen
+import com.zrifapps.goservice.ui.vehicle.VehicleComponentsScreen
 import com.zrifapps.goservice.ui.vehicle.VehicleDetailScreen
 
 @Composable
@@ -224,7 +227,37 @@ fun AppNavGraph() {
         }
 
         composable<Screen.VehicleDetail> {
-            VehicleDetailScreen(onBack = { navController.popBackStack() })
+            VehicleDetailScreen(
+                onBack = { navController.popBackStack() },
+                onManageComponents = { navController.navigate(Screen.VehicleComponents) },
+                onOpenComponent = { id -> navController.navigate(Screen.ComponentDetail(id)) },
+                onAddComponent = { navController.navigate(Screen.AddCustomComponent) },
+            )
+        }
+
+        composable<Screen.VehicleComponents> {
+            VehicleComponentsScreen(
+                onBack = { navController.popBackStack() },
+                onOpenComponent = { id -> navController.navigate(Screen.ComponentDetail(id)) },
+                onAdd = { navController.navigate(Screen.AddCustomComponent) },
+            )
+        }
+
+        composable<Screen.ComponentDetail> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.ComponentDetail>()
+            ComponentDetailScreen(
+                componentId = args.componentId,
+                onBack = { navController.popBackStack() },
+                onSave = { navController.popBackStack() },
+                onStopMonitoring = { navController.popBackStack() },
+            )
+        }
+
+        composable<Screen.AddCustomComponent> {
+            AddCustomComponentScreen(
+                onBack = { navController.popBackStack() },
+                onAdd = { _ -> navController.popBackStack() },
+            )
         }
 
         composable<Screen.UpdateOdometer> {
