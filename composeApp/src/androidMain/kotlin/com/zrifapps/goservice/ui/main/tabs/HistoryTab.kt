@@ -40,7 +40,10 @@ import com.zrifapps.goservice.ui.theme.FaIcons
 import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
 
 @Composable
-fun HistoryTab(modifier: Modifier = Modifier) {
+fun HistoryTab(
+    modifier: Modifier = Modifier,
+    onOpenServiceDetail: () -> Unit = {},
+) {
     var selectedFilter by remember { mutableStateOf("Semua kendaraan") }
 
     Column(
@@ -70,6 +73,7 @@ fun HistoryTab(modifier: Modifier = Modifier) {
             note = "KPB ke-2",
             cost = "Rp 320.000",
             date = "1 Mei 2026",
+            onClick = onOpenServiceDetail,
         )
 
         MonthSeparator("Maret 2026")
@@ -83,6 +87,7 @@ fun HistoryTab(modifier: Modifier = Modifier) {
             note = "AHM MPX2 0.8L",
             cost = "Rp 65.000",
             date = "20 Feb 2026",
+            onClick = onOpenServiceDetail,
         )
 
         MonthSeparator("Februari 2026")
@@ -96,6 +101,7 @@ fun HistoryTab(modifier: Modifier = Modifier) {
             note = "AHM MPX2 0.8L",
             cost = "Rp 65.000",
             date = "20 Feb 2026",
+            onClick = onOpenServiceDetail,
         )
 
         Spacer(Modifier.height(4.dp))
@@ -113,6 +119,7 @@ fun HistoryTab(modifier: Modifier = Modifier) {
             note = "Motul 5W-30 4L + filter",
             cost = "Rp 480.000",
             date = "5 Jan 2026",
+            onClick = onOpenServiceDetail,
         )
 
         MonthSeparator("Desember 2025")
@@ -126,6 +133,7 @@ fun HistoryTab(modifier: Modifier = Modifier) {
             note = "NGK CPR8EA",
             cost = "Rp 45.000",
             date = "10 Des 2025",
+            onClick = onOpenServiceDetail,
         )
 
         MonthSeparator("September 2025")
@@ -139,6 +147,7 @@ fun HistoryTab(modifier: Modifier = Modifier) {
             note = "Turanza 185/65 R15 4 pcs",
             cost = "Rp 2.400.000",
             date = "22 Sep 2025",
+            onClick = onOpenServiceDetail,
         )
         Spacer(Modifier.height(24.dp))
     }
@@ -208,6 +217,7 @@ private fun HistoryRowCard(
     note: String,
     cost: String,
     date: String,
+    onClick: () -> Unit = {},
 ) {
     val font = plusJakartaSansFontFamily()
     Row(
@@ -218,6 +228,7 @@ private fun HistoryRowCard(
             .clip(RoundedCornerShape(18.dp))
             .background(AppColors.Surface)
             .border(BorderStroke(1.dp, AppColors.Border), RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
             .padding(14.dp),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(12.dp),

@@ -43,6 +43,8 @@ import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
 fun ServiceSavedScreen(
     onBackToHome: () -> Unit,
     onOpenHistory: () -> Unit = {},
+    onOpenServiceDetail: () -> Unit = {},
+    onAddReminderFromContext: () -> Unit = {},
 ) {
     val font = plusJakartaSansFontFamily()
 
@@ -91,7 +93,20 @@ fun ServiceSavedScreen(
             )
 
             Spacer(Modifier.height(24.dp))
-            SavedSummaryCard()
+            SavedSummaryCard(onClick = onOpenServiceDetail)
+
+            Spacer(Modifier.height(12.dp))
+            Box(
+                modifier = Modifier.clickable(onClick = onAddReminderFromContext),
+            ) {
+                Text(
+                    text = "+ Buat pengingat berikutnya",
+                    color = AppColors.Primary,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = font,
+                )
+            }
         }
 
         Column(
@@ -102,20 +117,40 @@ fun ServiceSavedScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             AppButton(text = "Kembali ke Beranda", onClick = onBackToHome)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .clickable(onClick = onOpenHistory),
-                contentAlignment = Alignment.Center,
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Text(
-                    text = "Lihat Riwayat",
-                    color = AppColors.TextMuted,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = font,
-                )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp)
+                        .clickable(onClick = onOpenServiceDetail),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "Lihat Detail",
+                        color = AppColors.TextMuted,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = font,
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp)
+                        .clickable(onClick = onOpenHistory),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "Lihat Riwayat",
+                        color = AppColors.TextMuted,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = font,
+                    )
+                }
             }
         }
     }
@@ -136,7 +171,7 @@ private fun SuccessIcon() {
 }
 
 @Composable
-private fun SavedSummaryCard() {
+private fun SavedSummaryCard(onClick: () -> Unit = {}) {
     val font = plusJakartaSansFontFamily()
     Row(
         modifier = Modifier
@@ -144,6 +179,7 @@ private fun SavedSummaryCard() {
             .clip(RoundedCornerShape(18.dp))
             .background(AppColors.Surface)
             .border(BorderStroke(1.dp, AppColors.Border), RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
             .padding(18.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
