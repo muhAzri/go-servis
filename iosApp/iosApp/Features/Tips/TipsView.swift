@@ -1,23 +1,28 @@
 import SwiftUI
 
 struct TipsView: View {
+    var onOpenTipDetail: () -> Void = {}
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                HeroTip()
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-                    .padding(.bottom, 14)
+                Button(action: onOpenTipDetail) {
+                    HeroTip()
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 14)
 
                 AdBannerSlot()
                     .padding(.bottom, 14)
 
                 VStack(spacing: 8) {
-                    TipRow(tag: "Oli",     title: "Kapan harus ganti oli motor matic?",   readTime: "2 menit")
-                    TipRow(tag: "Ban",     title: "Cara cek tekanan ban yang benar",       readTime: "3 menit")
-                    TipRow(tag: "Aki",     title: "Tanda-tanda aki mobil mau soak",        readTime: "4 menit")
-                    TipRow(tag: "Tips",    title: "5 hal sebelum mudik dengan motor",      readTime: "5 menit")
-                    TipRow(tag: "Servis",  title: "Beda servis berkala 1.000 vs 5.000 km", readTime: "3 menit")
+                    TipRow(tag: "Oli",     title: "Kapan harus ganti oli motor matic?",   readTime: "2 menit", onTap: onOpenTipDetail)
+                    TipRow(tag: "Ban",     title: "Cara cek tekanan ban yang benar",       readTime: "3 menit", onTap: onOpenTipDetail)
+                    TipRow(tag: "Aki",     title: "Tanda-tanda aki mobil mau soak",        readTime: "4 menit", onTap: onOpenTipDetail)
+                    TipRow(tag: "Tips",    title: "5 hal sebelum mudik dengan motor",      readTime: "5 menit", onTap: onOpenTipDetail)
+                    TipRow(tag: "Servis",  title: "Beda servis berkala 1.000 vs 5.000 km", readTime: "3 menit", onTap: onOpenTipDetail)
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 24)
@@ -63,8 +68,16 @@ private struct TipRow: View {
     let tag: String
     let title: String
     let readTime: String
+    var onTap: () -> Void = {}
 
     var body: some View {
+        Button(action: onTap) {
+            rowBody
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var rowBody: some View {
         HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
