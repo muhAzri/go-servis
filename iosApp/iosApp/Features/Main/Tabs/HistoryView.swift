@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct HistoryView: View {
+    var onOpenServiceDetail: () -> Void = {}
+
     @State private var selectedVehicleFilter: String = "Semua kendaraan"
 
     var body: some View {
@@ -24,7 +26,8 @@ struct HistoryView: View {
                     place: "AHASS Kalimalang",
                     note: "KPB ke-2",
                     cost: "Rp 320.000",
-                    date: "1 Mei 2026"
+                    date: "1 Mei 2026",
+                    onTap: onOpenServiceDetail
                 )
 
                 MonthSeparator(label: "Maret 2026")
@@ -37,7 +40,8 @@ struct HistoryView: View {
                     place: "AHASS Kebon Jeruk",
                     note: "AHM MPX2 0.8L",
                     cost: "Rp 65.000",
-                    date: "20 Feb 2026"
+                    date: "20 Feb 2026",
+                    onTap: onOpenServiceDetail
                 )
 
                 MonthSeparator(label: "Februari 2026")
@@ -50,7 +54,8 @@ struct HistoryView: View {
                     place: "AHASS Kebon Jeruk",
                     note: "AHM MPX2 0.8L",
                     cost: "Rp 65.000",
-                    date: "20 Feb 2026"
+                    date: "20 Feb 2026",
+                    onTap: onOpenServiceDetail
                 )
 
                 NativeAdCard()
@@ -67,7 +72,8 @@ struct HistoryView: View {
                     place: "Auto2000 Cikarang",
                     note: "Motul 5W-30 4L + filter",
                     cost: "Rp 480.000",
-                    date: "5 Jan 2026"
+                    date: "5 Jan 2026",
+                    onTap: onOpenServiceDetail
                 )
 
                 MonthSeparator(label: "Desember 2025")
@@ -80,7 +86,8 @@ struct HistoryView: View {
                     place: "Bengkel Pak Karto",
                     note: "NGK CPR8EA",
                     cost: "Rp 45.000",
-                    date: "10 Des 2025"
+                    date: "10 Des 2025",
+                    onTap: onOpenServiceDetail
                 )
 
                 MonthSeparator(label: "September 2025")
@@ -93,7 +100,8 @@ struct HistoryView: View {
                     place: "Bridgestone Bekasi",
                     note: "Turanza 185/65 R15 4 pcs",
                     cost: "Rp 2.400.000",
-                    date: "22 Sep 2025"
+                    date: "22 Sep 2025",
+                    onTap: onOpenServiceDetail
                 )
                 .padding(.bottom, 24)
             }
@@ -158,62 +166,66 @@ private struct HistoryRowCard: View {
     let note: String
     let cost: String
     let date: String
+    var onTap: () -> Void = {}
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            IconBadge(
-                iconUnicode: iconUnicode,
-                foreground: accent,
-                background: accent.opacity(0.13)
-            )
+        Button(action: onTap) {
+            HStack(alignment: .top, spacing: 12) {
+                IconBadge(
+                    iconUnicode: iconUnicode,
+                    foreground: accent,
+                    background: accent.opacity(0.13)
+                )
 
-            VStack(alignment: .leading, spacing: 2) {
-                HStack {
-                    Text(title)
-                        .font(.custom("PlusJakartaSans-Bold", size: 14))
-                        .foregroundColor(.sgTextPrimary)
-                    Spacer()
-                    Text(cost)
-                        .font(.system(size: 13, weight: .bold, design: .monospaced))
-                        .foregroundColor(.sgTextPrimary)
-                }
-                Text("\(vehicle) · \(km)")
-                    .font(.custom("PlusJakartaSans-Medium", size: 12))
-                    .foregroundColor(.sgTextMuted)
-                HStack(spacing: 6) {
-                    Text("\u{f3c5}")
-                        .font(.custom("FontAwesome6Free-Solid", size: 11))
-                        .foregroundColor(.sgTextSubtle)
-                    Text(place)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Text(title)
+                            .font(.custom("PlusJakartaSans-Bold", size: 14))
+                            .foregroundColor(.sgTextPrimary)
+                        Spacer()
+                        Text(cost)
+                            .font(.system(size: 13, weight: .bold, design: .monospaced))
+                            .foregroundColor(.sgTextPrimary)
+                    }
+                    Text("\(vehicle) · \(km)")
                         .font(.custom("PlusJakartaSans-Medium", size: 12))
-                        .foregroundColor(.sgTextSubtle)
-                }
-                .padding(.top, 2)
-
-                if !note.isEmpty {
-                    Text(note)
-                        .font(.system(size: 11, design: .monospaced))
                         .foregroundColor(.sgTextMuted)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(Color.sgSurfaceAlt)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .padding(.top, 6)
-                }
+                    HStack(spacing: 6) {
+                        Text("\u{f3c5}")
+                            .font(.custom("FontAwesome6Free-Solid", size: 11))
+                            .foregroundColor(.sgTextSubtle)
+                        Text(place)
+                            .font(.custom("PlusJakartaSans-Medium", size: 12))
+                            .foregroundColor(.sgTextSubtle)
+                    }
+                    .padding(.top, 2)
 
-                Text(date)
-                    .font(.custom("PlusJakartaSans-Medium", size: 11))
-                    .foregroundColor(.sgTextSubtle)
-                    .padding(.top, 4)
+                    if !note.isEmpty {
+                        Text(note)
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundColor(.sgTextMuted)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(Color.sgSurfaceAlt)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .padding(.top, 6)
+                    }
+
+                    Text(date)
+                        .font(.custom("PlusJakartaSans-Medium", size: 11))
+                        .foregroundColor(.sgTextSubtle)
+                        .padding(.top, 4)
+                }
             }
+            .padding(14)
+            .background(Color.sgSurface)
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .strokeBorder(Color.sgBorder, lineWidth: 1)
+            )
         }
-        .padding(14)
-        .background(Color.sgSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 18))
-        .overlay(
-            RoundedRectangle(cornerRadius: 18)
-                .strokeBorder(Color.sgBorder, lineWidth: 1)
-        )
+        .buttonStyle(.plain)
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
     }

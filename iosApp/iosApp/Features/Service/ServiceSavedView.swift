@@ -3,6 +3,8 @@ import SwiftUI
 struct ServiceSavedView: View {
     let onBackToHome: () -> Void
     var onOpenHistory: () -> Void = {}
+    var onOpenServiceDetail: () -> Void = {}
+    var onAddReminderFromContext: () -> Void = {}
 
     var body: some View {
         VStack(spacing: 0) {
@@ -29,22 +31,43 @@ struct ServiceSavedView: View {
             .multilineTextAlignment(.center)
             .padding(.horizontal, 24)
 
-            SavedSummaryCard()
-                .padding(.horizontal, 24)
-                .padding(.top, 24)
+            Button(action: onOpenServiceDetail) {
+                SavedSummaryCard()
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 24)
+            .padding(.top, 24)
+
+            Button(action: onAddReminderFromContext) {
+                Text("+ Buat pengingat berikutnya")
+                    .font(.custom("PlusJakartaSans-Bold", size: 13))
+                    .foregroundColor(.sgPrimary)
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 12)
 
             Spacer()
 
             VStack(spacing: 8) {
                 AppButton(title: "Kembali ke Beranda", action: onBackToHome)
-                Button(action: onOpenHistory) {
-                    Text("Lihat Riwayat")
-                        .font(.custom("PlusJakartaSans-SemiBold", size: 14))
-                        .foregroundColor(.sgTextMuted)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
+                HStack(spacing: 16) {
+                    Button(action: onOpenServiceDetail) {
+                        Text("Lihat Detail")
+                            .font(.custom("PlusJakartaSans-SemiBold", size: 14))
+                            .foregroundColor(.sgTextMuted)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                    }
+                    .buttonStyle(.plain)
+                    Button(action: onOpenHistory) {
+                        Text("Lihat Riwayat")
+                            .font(.custom("PlusJakartaSans-SemiBold", size: 14))
+                            .foregroundColor(.sgTextMuted)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
