@@ -3,6 +3,7 @@ package com.zrifapps.goservice.ui.tips
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,7 +49,10 @@ private val tips = listOf(
 )
 
 @Composable
-fun TipsScreen(onBack: () -> Unit) {
+fun TipsScreen(
+    onBack: () -> Unit,
+    onOpenTipDetail: () -> Unit = {},
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -57,7 +61,7 @@ fun TipsScreen(onBack: () -> Unit) {
             .verticalScroll(rememberScrollState()),
     ) {
         TipsTopBar(onBack = onBack)
-        HeroTip()
+        HeroTip(onClick = onOpenTipDetail)
         Spacer(Modifier.height(14.dp))
         AdBannerSlot()
         Spacer(Modifier.height(14.dp))
@@ -65,7 +69,7 @@ fun TipsScreen(onBack: () -> Unit) {
             modifier = Modifier.padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            tips.forEach { TipRow(it) }
+            tips.forEach { TipRow(it, onClick = onOpenTipDetail) }
         }
         Spacer(Modifier.height(24.dp))
     }
@@ -93,7 +97,7 @@ private fun TipsTopBar(onBack: () -> Unit) {
 }
 
 @Composable
-private fun HeroTip() {
+private fun HeroTip(onClick: () -> Unit = {}) {
     val font = plusJakartaSansFontFamily()
     Column(
         modifier = Modifier
@@ -103,6 +107,7 @@ private fun HeroTip() {
             .background(
                 Brush.linearGradient(listOf(AppColors.Primary, AppColors.PrimaryDark)),
             )
+            .clickable(onClick = onClick)
             .padding(20.dp),
     ) {
         Text(
@@ -135,7 +140,7 @@ private fun HeroTip() {
 }
 
 @Composable
-private fun TipRow(tip: TipEntry) {
+private fun TipRow(tip: TipEntry, onClick: () -> Unit = {}) {
     val font = plusJakartaSansFontFamily()
     Row(
         modifier = Modifier
@@ -143,6 +148,7 @@ private fun TipRow(tip: TipEntry) {
             .clip(RoundedCornerShape(16.dp))
             .background(AppColors.Surface)
             .border(BorderStroke(1.dp, AppColors.Border), RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
