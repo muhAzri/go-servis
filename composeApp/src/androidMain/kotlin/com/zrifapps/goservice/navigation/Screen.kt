@@ -19,12 +19,16 @@ sealed interface Screen {
 
     // Core flow
     @Serializable data object ReminderDetail : Screen
+    @Serializable data object AddReminder : Screen
+    @Serializable data class AddReminderFromContext(val fromContext: Boolean = true) : Screen
     @Serializable data object AddService : Screen
     @Serializable data object InterstitialAd : Screen
     @Serializable data object ServiceSaved : Screen
+    @Serializable data object ServiceDetail : Screen
     @Serializable data object VehicleDetail : Screen
     @Serializable data object UpdateOdometer : Screen
     @Serializable data object Tips : Screen
+    @Serializable data object TipsDetail : Screen
     @Serializable data object EditProfile : Screen
 
     // Component management

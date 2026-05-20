@@ -32,6 +32,8 @@ fun MainTabsScreen(
     onOpenTips: () -> Unit = {},
     onOpenReminderDetail: () -> Unit = {},
     onOpenVehicleDetail: () -> Unit = {},
+    onOpenServiceDetail: () -> Unit = {},
+    onOpenAddReminder: () -> Unit = {},
     onOpenTestScreen: () -> Unit = {},
     onOpenPrivacy: () -> Unit = {},
     onOpenTerms: () -> Unit = {},
@@ -65,8 +67,11 @@ fun MainTabsScreen(
                 )
                 BottomTab.Reminders -> RemindersTab(
                     onOpenReminderDetail = onOpenReminderDetail,
+                    onAddReminder = onOpenAddReminder,
                 )
-                BottomTab.History -> HistoryTab()
+                BottomTab.History -> HistoryTab(
+                    onOpenServiceDetail = onOpenServiceDetail,
+                )
                 BottomTab.Settings -> SettingsTab(
                     userName = userName,
                     userColorArgb = userColorArgb,

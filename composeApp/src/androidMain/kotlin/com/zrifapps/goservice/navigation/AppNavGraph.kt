@@ -26,13 +26,16 @@ import com.zrifapps.goservice.ui.onboarding.OnboardingAddVehicleScreen
 import com.zrifapps.goservice.ui.onboarding.OnboardingScreen
 import com.zrifapps.goservice.ui.onboarding.PickVehicleTypeScreen
 import com.zrifapps.goservice.ui.profile.EditProfileScreen
+import com.zrifapps.goservice.ui.reminders.AddReminderScreen
 import com.zrifapps.goservice.ui.reminders.ReminderDetailScreen
 import com.zrifapps.goservice.ui.service.AddServiceScreen
 import com.zrifapps.goservice.ui.service.InterstitialAdScreen
+import com.zrifapps.goservice.ui.service.ServiceDetailScreen
 import com.zrifapps.goservice.ui.service.ServiceSavedScreen
 import com.zrifapps.goservice.ui.splash.SplashScreen
 import com.zrifapps.goservice.ui.test.TestScreen
 import com.zrifapps.goservice.ui.theme.AppColors
+import com.zrifapps.goservice.ui.tips.TipsDetailScreen
 import com.zrifapps.goservice.ui.tips.TipsScreen
 import com.zrifapps.goservice.ui.vehicle.AddCustomComponentScreen
 import com.zrifapps.goservice.ui.vehicle.AddVehicleScreen
@@ -143,6 +146,8 @@ fun AppNavGraph() {
                 onOpenTips = { navController.navigate(Screen.Tips) },
                 onOpenReminderDetail = { navController.navigate(Screen.ReminderDetail) },
                 onOpenVehicleDetail = { navController.navigate(Screen.VehicleDetail) },
+                onOpenServiceDetail = { navController.navigate(Screen.ServiceDetail) },
+                onOpenAddReminder = { navController.navigate(Screen.AddReminder) },
                 onOpenTestScreen = { navController.navigate(Screen.Test) },
                 onOpenPrivacy = { navController.navigate(Screen.Privacy) },
                 onOpenTerms = { navController.navigate(Screen.Terms) },
@@ -223,6 +228,16 @@ fun AppNavGraph() {
                 onOpenHistory = {
                     navController.popBackStack(Screen.Main, inclusive = false)
                 },
+                onOpenServiceDetail = {
+                    navController.navigate(Screen.ServiceDetail) {
+                        popUpTo(Screen.Main) { inclusive = false }
+                    }
+                },
+                onAddReminderFromContext = {
+                    navController.navigate(Screen.AddReminderFromContext(fromContext = true)) {
+                        popUpTo(Screen.Main) { inclusive = false }
+                    }
+                },
             )
         }
 
@@ -268,7 +283,41 @@ fun AppNavGraph() {
         }
 
         composable<Screen.Tips> {
-            TipsScreen(onBack = { navController.popBackStack() })
+            TipsScreen(
+                onBack = { navController.popBackStack() },
+                onOpenTipDetail = { navController.navigate(Screen.TipsDetail) },
+            )
+        }
+
+        composable<Screen.TipsDetail> {
+            TipsDetailScreen(
+                onBack = { navController.popBackStack() },
+                onOpenAddService = { navController.navigate(Screen.AddService) },
+            )
+        }
+
+        composable<Screen.ServiceDetail> {
+            ServiceDetailScreen(
+                onBack = { navController.popBackStack() },
+                onEdit = { navController.navigate(Screen.AddService) },
+                onOpenNextReminder = { navController.navigate(Screen.ReminderDetail) },
+            )
+        }
+
+        composable<Screen.AddReminder> {
+            AddReminderScreen(
+                onClose = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
+            )
+        }
+
+        composable<Screen.AddReminderFromContext> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.AddReminderFromContext>()
+            AddReminderScreen(
+                onClose = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
+                fromContext = args.fromContext,
+            )
         }
     }
 }
