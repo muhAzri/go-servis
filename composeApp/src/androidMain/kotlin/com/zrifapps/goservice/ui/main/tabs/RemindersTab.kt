@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -52,6 +53,7 @@ enum class ReminderFilter(val label: String) {
 fun RemindersTab(
     modifier: Modifier = Modifier,
     onOpenReminderDetail: () -> Unit = {},
+    onAddReminder: () -> Unit = {},
 ) {
     var selected by remember { mutableStateOf(ReminderFilter.All) }
 
@@ -60,7 +62,7 @@ fun RemindersTab(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        TabHeader(subtitle = "6 pengingat aktif", title = "Pengingat Servis")
+        RemindersHeader(onAddReminder = onAddReminder)
 
         FilterChips(
             selected = selected,
@@ -153,6 +155,43 @@ fun RemindersTab(
             )
         }
         Spacer(Modifier.height(24.dp))
+    }
+}
+
+@Composable
+private fun RemindersHeader(onAddReminder: () -> Unit) {
+    val font = plusJakartaSansFontFamily()
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                PaddingValues(start = 20.dp, end = 16.dp, top = 12.dp, bottom = 16.dp),
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "6 pengingat aktif",
+                color = AppColors.TextMuted,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                fontFamily = font,
+            )
+            Text(
+                text = "Pengingat Servis",
+                color = AppColors.TextPrimary,
+                fontSize = 26.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = (-0.4).sp,
+                fontFamily = font,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+        com.zrifapps.goservice.ui.components.CircleIconButton(
+            icon = FaIcons.PLUS,
+            onClick = onAddReminder,
+            iconColor = AppColors.Primary,
+        )
     }
 }
 
