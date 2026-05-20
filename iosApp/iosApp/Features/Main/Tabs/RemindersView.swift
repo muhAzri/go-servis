@@ -2,13 +2,14 @@ import SwiftUI
 
 struct RemindersView: View {
     var onOpenReminderDetail: () -> Void = {}
+    var onAddReminder: () -> Void = {}
 
     @State private var selectedFilter: ReminderFilter = .all
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                TabHeader(subtitle: "6 pengingat aktif", title: "Pengingat Servis")
+                RemindersHeader(onAddReminder: onAddReminder)
 
                 FilterChips(selected: $selectedFilter)
                     .padding(.horizontal, 20)
@@ -104,6 +105,39 @@ enum ReminderFilter: String, CaseIterable {
     case overdue = "Telat"
     case soon = "Soon"
     case ok = "Aman"
+}
+
+private struct RemindersHeader: View {
+    let onAddReminder: () -> Void
+
+    var body: some View {
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("6 pengingat aktif")
+                    .font(.custom("PlusJakartaSans-Medium", size: 13))
+                    .foregroundColor(.sgTextMuted)
+                Text("Pengingat Servis")
+                    .font(.custom("PlusJakartaSans-ExtraBold", size: 26))
+                    .foregroundColor(.sgTextPrimary)
+                    .kerning(-0.4)
+            }
+            Spacer()
+            Button(action: onAddReminder) {
+                Text("\u{2b}")
+                    .font(.custom("FontAwesome6Free-Solid", size: 16))
+                    .foregroundColor(.sgPrimary)
+                    .frame(width: 40, height: 40)
+                    .background(Color.sgSurface)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .strokeBorder(Color.sgBorder, lineWidth: 1)
+                    )
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(EdgeInsets(top: 12, leading: 20, bottom: 16, trailing: 16))
+    }
 }
 
 private struct FilterChips: View {
