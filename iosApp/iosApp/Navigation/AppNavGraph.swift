@@ -59,6 +59,15 @@ struct AppNavGraph: View {
             ReminderDetailView(
                 onMarkServiced: { router.navigate(to: .addService) }
             )
+        case .addReminder:
+            AddReminderView(
+                onSaved: { router.navigateBack() }
+            )
+        case .addReminderFromContext:
+            AddReminderView(
+                onSaved: { router.navigateBack() },
+                fromContext: true
+            )
         case .addService:
             AddServiceView(
                 onSaved: { router.navigate(to: .interstitialAd) }
@@ -70,7 +79,20 @@ struct AppNavGraph: View {
         case .serviceSaved:
             ServiceSavedView(
                 onBackToHome: { router.popToRoot() },
-                onOpenHistory: { router.popToRoot() }
+                onOpenHistory: { router.popToRoot() },
+                onOpenServiceDetail: {
+                    router.popToRoot()
+                    router.navigate(to: .serviceDetail)
+                },
+                onAddReminderFromContext: {
+                    router.popToRoot()
+                    router.navigate(to: .addReminderFromContext)
+                }
+            )
+        case .serviceDetail:
+            ServiceDetailView(
+                onEdit: { router.navigate(to: .addService) },
+                onOpenNextReminder: { router.navigate(to: .reminderDetail) }
             )
         case .vehicleDetail:
             VehicleDetailView()
@@ -79,7 +101,13 @@ struct AppNavGraph: View {
                 onSave: { router.navigateBack() }
             )
         case .tips:
-            TipsView()
+            TipsView(
+                onOpenTipDetail: { router.navigate(to: .tipsDetail) }
+            )
+        case .tipsDetail:
+            TipsDetailView(
+                onOpenAddService: { router.navigate(to: .addService) }
+            )
         case .editProfile:
             EditProfileView(
                 initialName: userName,

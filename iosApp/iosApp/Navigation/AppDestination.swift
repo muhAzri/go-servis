@@ -11,12 +11,16 @@ enum AppDestination: Hashable {
 
     // Core flow
     case reminderDetail
+    case addReminder
+    case addReminderFromContext
     case addService
     case interstitialAd
     case serviceSaved
+    case serviceDetail
     case vehicleDetail
     case updateOdometer
     case tips
+    case tipsDetail
     case editProfile
 
     // Component management

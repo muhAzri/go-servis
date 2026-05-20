@@ -25,14 +25,17 @@ struct MainTabsView: View {
 
                 case .reminders:
                     RemindersView(
-                        onOpenReminderDetail: { router.navigate(to: .reminderDetail) }
+                        onOpenReminderDetail: { router.navigate(to: .reminderDetail) },
+                        onAddReminder: { router.navigate(to: .addReminder) }
                     )
 
                 case .add:
                     HomeView(userName: userName)
 
                 case .history:
-                    HistoryView()
+                    HistoryView(
+                        onOpenServiceDetail: { router.navigate(to: .serviceDetail) }
+                    )
 
                 case .settings:
                     SettingsView(
