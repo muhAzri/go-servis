@@ -10,18 +10,26 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,18 +38,28 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zrifapps.goservice.ui.components.AppButton
 import com.zrifapps.goservice.ui.components.CircleIconButton
-import com.zrifapps.goservice.ui.components.IconBadge
+import com.zrifapps.goservice.ui.components.DEFAULT_VEHICLE_OPTIONS
+import com.zrifapps.goservice.ui.components.VehiclePickerRow
+import com.zrifapps.goservice.ui.components.VehiclePickerSheet
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
 import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 private data class ServiceTypeChoice(
     val id: String,
@@ -64,7 +82,17 @@ fun AddServiceScreen(
     onClose: () -> Unit,
     onSaved: () -> Unit = {},
 ) {
-    var selected by remember { mutableStateOf("oli") }
+    val vehicles = remember { DEFAULT_VEHICLE_OPTIONS }
+    var selectedVehicle by remember { mutableStateOf(vehicles.first()) }
+    var selectedType by remember { mutableStateOf("oli") }
+    var serviceDateMillis by remember { mutableStateOf(System.currentTimeMillis()) }
+    var kmText by remember { mutableStateOf("") }
+    var workshop by remember { mutableStateOf("") }
+    var costText by remember { mutableStateOf("") }
+    var note by remember { mutableStateOf("") }
+
+    var showVehicleSheet by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -82,18 +110,56 @@ fun AddServiceScreen(
                 .padding(vertical = 8.dp),
         ) {
             FieldLabel("Kendaraan")
-            VehiclePickerRow()
+            VehiclePickerRow(
+                selected = selectedVehicle,
+                onClick = { showVehicleSheet = true },
+            )
             Spacer(Modifier.height(18.dp))
 
             FieldLabel("Jenis servis")
-            ServiceTypeGrid(selected = selected, onSelect = { selected = it })
+            ServiceTypeGrid(selected = selectedType, onSelect = { selectedType = it })
             Spacer(Modifier.height(18.dp))
 
-            PlainField(label = "Tanggal servis", value = "6 Mei 2026", icon = FaIcons.CALENDAR)
-            PlainField(label = "KM saat servis", value = "18.420", icon = FaIcons.GAUGE, monospaced = true)
-            PlainField(label = "Bengkel", value = "AHASS Kebon Jeruk", icon = FaIcons.LOCATION_DOT)
-            PlainField(label = "Biaya", value = "Rp 65.000", icon = null, monospaced = true)
-            PlainField(label = "Catatan", value = "AHM MPX2 0.8L", icon = null, tall = true)
+            DateField(
+                label = "Tanggal servis",
+                dateMillis = serviceDateMillis,
+                onClick = { showDatePicker = true },
+            )
+            EditableField(
+                label = "KM saat servis",
+                value = kmText,
+                onValueChange = { kmText = it.filter { ch -> ch.isDigit() } },
+                placeholder = "cth. 18420",
+                icon = FaIcons.GAUGE,
+                keyboardType = KeyboardType.Number,
+                monospaced = true,
+            )
+            EditableField(
+                label = "Bengkel",
+                value = workshop,
+                onValueChange = { workshop = it },
+                placeholder = "cth. AHASS Kebon Jeruk",
+                icon = FaIcons.LOCATION_DOT,
+            )
+            EditableField(
+                label = "Biaya",
+                value = costText,
+                onValueChange = { costText = it.filter { ch -> ch.isDigit() } },
+                placeholder = "cth. 65000",
+                icon = null,
+                keyboardType = KeyboardType.Number,
+                monospaced = true,
+                prefix = "Rp ",
+            )
+            EditableField(
+                label = "Catatan",
+                value = note,
+                onValueChange = { note = it },
+                placeholder = "cth. AHM MPX2 0.8L",
+                icon = null,
+                singleLine = false,
+                imeAction = ImeAction.Default,
+            )
 
             Spacer(Modifier.height(4.dp))
             AutoReminderInfoCard()
@@ -101,6 +167,49 @@ fun AddServiceScreen(
         }
 
         SaveBar(onSave = onSaved)
+    }
+
+    if (showVehicleSheet) {
+        VehiclePickerSheet(
+            options = vehicles,
+            selectedId = selectedVehicle.id,
+            onDismiss = { showVehicleSheet = false },
+            onPick = { selectedVehicle = it },
+        )
+    }
+
+    if (showDatePicker) {
+        ServiceDatePickerDialog(
+            initialMillis = serviceDateMillis,
+            onDismiss = { showDatePicker = false },
+            onConfirm = { millis ->
+                serviceDateMillis = millis
+                showDatePicker = false
+            },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ServiceDatePickerDialog(
+    initialMillis: Long,
+    onDismiss: () -> Unit,
+    onConfirm: (Long) -> Unit,
+) {
+    val state = rememberDatePickerState(initialSelectedDateMillis = initialMillis)
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = { onConfirm(state.selectedDateMillis ?: initialMillis) }) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Batal") }
+        },
+    ) {
+        DatePicker(state = state)
     }
 }
 
@@ -136,45 +245,6 @@ private fun FieldLabel(text: String) {
         fontFamily = font,
         modifier = Modifier.padding(bottom = 8.dp),
     )
-}
-
-@Composable
-private fun VehiclePickerRow() {
-    val font = plusJakartaSansFontFamily()
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(AppColors.Surface)
-            .border(BorderStroke(1.5.dp, AppColors.Border), RoundedCornerShape(14.dp))
-            .padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        IconBadge(
-            icon = FaIcons.MOTORCYCLE,
-            foreground = AppColors.Primary,
-            background = AppColors.PrimarySoft,
-            size = 40.dp, iconSize = 22.sp, corner = 10.dp,
-        )
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = "Beat Hitam",
-                color = AppColors.TextPrimary,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = font,
-            )
-            Text(
-                text = "B 4521 KZA",
-                color = AppColors.TextMuted,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                fontFamily = FontFamily.Monospace,
-            )
-        }
-        FaIcon(icon = FaIcons.CHEVRON_DOWN, color = AppColors.TextSubtle, size = 14.sp)
-    }
 }
 
 @Composable
@@ -245,14 +315,101 @@ private fun ServiceTypeTile(
 }
 
 @Composable
-private fun PlainField(
+private fun EditableField(
     label: String,
     value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
     icon: String?,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    imeAction: ImeAction = ImeAction.Next,
     monospaced: Boolean = false,
-    tall: Boolean = false,
+    singleLine: Boolean = true,
+    prefix: String = "",
 ) {
     val font = plusJakartaSansFontFamily()
+    var focused by remember { mutableStateOf(false) }
+    val borderColor = if (focused) AppColors.Primary else AppColors.Border
+    val displayFont = if (monospaced) FontFamily.Monospace else font
+
+    Column(modifier = Modifier.padding(bottom = 12.dp)) {
+        Text(
+            text = label,
+            color = AppColors.TextMuted,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = font,
+            modifier = Modifier.padding(bottom = 6.dp),
+        )
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = singleLine,
+            cursorBrush = SolidColor(AppColors.Primary),
+            textStyle = TextStyle(
+                color = AppColors.TextPrimary,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = displayFont,
+            ),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = keyboardType,
+                imeAction = imeAction,
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { focused = it.isFocused },
+            decorationBox = { inner ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(AppColors.Surface)
+                        .border(BorderStroke(1.5.dp, borderColor), RoundedCornerShape(14.dp))
+                        .heightIn(min = if (singleLine) 0.dp else 64.dp)
+                        .padding(horizontal = 16.dp, vertical = if (singleLine) 14.dp else 14.dp),
+                    verticalAlignment = if (singleLine) Alignment.CenterVertically else Alignment.Top,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    if (icon != null) {
+                        FaIcon(icon = icon, color = AppColors.TextMuted, size = 16.sp)
+                    }
+                    if (prefix.isNotEmpty() && value.isNotEmpty()) {
+                        Text(
+                            text = prefix,
+                            color = AppColors.TextPrimary,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = displayFont,
+                        )
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        if (value.isEmpty()) {
+                            Text(
+                                text = placeholder,
+                                color = AppColors.TextSubtle,
+                                fontSize = 15.sp,
+                                fontFamily = font,
+                            )
+                        }
+                        inner()
+                    }
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun DateField(
+    label: String,
+    dateMillis: Long,
+    onClick: () -> Unit,
+) {
+    val font = plusJakartaSansFontFamily()
+    val formatter = remember { SimpleDateFormat("d MMM yyyy", Locale.forLanguageTag("id-ID")) }
+    val displayDate = remember(dateMillis) { formatter.format(Date(dateMillis)) }
+
     Column(modifier = Modifier.padding(bottom = 12.dp)) {
         Text(
             text = label,
@@ -268,20 +425,21 @@ private fun PlainField(
                 .clip(RoundedCornerShape(14.dp))
                 .background(AppColors.Surface)
                 .border(BorderStroke(1.5.dp, AppColors.Border), RoundedCornerShape(14.dp))
-                .padding(horizontal = 16.dp, vertical = if (tall) 18.dp else 14.dp),
+                .clickable(onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            if (icon != null) {
-                FaIcon(icon = icon, color = AppColors.TextMuted, size = 16.sp)
-            }
+            FaIcon(icon = FaIcons.CALENDAR, color = AppColors.TextMuted, size = 16.sp)
             Text(
-                text = value,
+                text = displayDate,
                 color = AppColors.TextPrimary,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
-                fontFamily = if (monospaced) FontFamily.Monospace else font,
+                fontFamily = font,
+                modifier = Modifier.weight(1f),
             )
+            FaIcon(icon = FaIcons.CHEVRON_DOWN, color = AppColors.TextSubtle, size = 12.sp)
         }
     }
 }

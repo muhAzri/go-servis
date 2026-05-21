@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
@@ -21,8 +22,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,19 +39,29 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zrifapps.goservice.ui.components.CircleIconButton
 import com.zrifapps.goservice.ui.components.ContextBanner
 import com.zrifapps.goservice.ui.components.ContextBannerTone
-import com.zrifapps.goservice.ui.components.IconBadge
+import com.zrifapps.goservice.ui.components.DEFAULT_VEHICLE_OPTIONS
+import com.zrifapps.goservice.ui.components.VehiclePickerRow
+import com.zrifapps.goservice.ui.components.VehiclePickerSheet
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
 import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 private data class ServiceChoice(
     val id: String,
@@ -71,12 +89,17 @@ fun AddReminderScreen(
     fromContext: Boolean = false,
     notifPermissionGranted: Boolean = true,
 ) {
+    val vehicles = remember { DEFAULT_VEHICLE_OPTIONS }
+    var selectedVehicle by remember { mutableStateOf(vehicles.first()) }
     var selectedService by remember { mutableStateOf("oli") }
     var trigger by remember { mutableStateOf(TriggerMode.Km) }
-    var targetKm by remember { mutableStateOf("20.420") }
-    var targetDate by remember { mutableStateOf("6 Jul 2026") }
+    var targetKm by remember { mutableStateOf("") }
+    var targetDateMillis by remember { mutableStateOf(System.currentTimeMillis()) }
     var note by remember { mutableStateOf("") }
     var showCtxBanner by remember { mutableStateOf(fromContext) }
+
+    var showVehicleSheet by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -105,7 +128,11 @@ fun AddReminderScreen(
             }
 
             FieldLabel("Kendaraan")
-            VehiclePickerRow(locked = showCtxBanner)
+            VehiclePickerRow(
+                selected = selectedVehicle,
+                locked = showCtxBanner,
+                onClick = { showVehicleSheet = true },
+            )
             Spacer(Modifier.height(18.dp))
 
             FieldLabel("Jenis servis")
@@ -121,26 +148,26 @@ fun AddReminderScreen(
             Spacer(Modifier.height(14.dp))
 
             if (trigger == TriggerMode.Km || trigger == TriggerMode.Both) {
-                NumberField(
+                NumberInputField(
                     label = "Target KM",
                     value = targetKm,
-                    onValueChange = { targetKm = it },
+                    onValueChange = { targetKm = it.filter { ch -> ch.isDigit() } },
                     helper = "Interval pabrikan: 2.000 km · KM saat ini 18.420",
                 )
             }
             if (trigger == TriggerMode.Date || trigger == TriggerMode.Both) {
                 Spacer(Modifier.height(12.dp))
-                DateField(
+                DateInputField(
                     label = "Tanggal",
-                    value = targetDate,
-                    onTap = {},
+                    dateMillis = targetDateMillis,
+                    onTap = { showDatePicker = true },
                     helper = "Pengingat dimulai: 7 hari sebelum",
                 )
             }
             Spacer(Modifier.height(18.dp))
 
             FieldLabel("Catatan (opsional)")
-            NoteField(value = note, onValueChange = { note = it })
+            NoteInputField(value = note, onValueChange = { note = it })
             Spacer(Modifier.height(18.dp))
 
             if (!notifPermissionGranted) {
@@ -157,6 +184,49 @@ fun AddReminderScreen(
         }
 
         BottomSaveBar(onSave = onSaved)
+    }
+
+    if (showVehicleSheet) {
+        VehiclePickerSheet(
+            options = vehicles,
+            selectedId = selectedVehicle.id,
+            onDismiss = { showVehicleSheet = false },
+            onPick = { selectedVehicle = it },
+        )
+    }
+
+    if (showDatePicker) {
+        ReminderDatePickerDialog(
+            initialMillis = targetDateMillis,
+            onDismiss = { showDatePicker = false },
+            onConfirm = { millis ->
+                targetDateMillis = millis
+                showDatePicker = false
+            },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReminderDatePickerDialog(
+    initialMillis: Long,
+    onDismiss: () -> Unit,
+    onConfirm: (Long) -> Unit,
+) {
+    val state = rememberDatePickerState(initialSelectedDateMillis = initialMillis)
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = { onConfirm(state.selectedDateMillis ?: initialMillis) }) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Batal") }
+        },
+    ) {
+        DatePicker(state = state)
     }
 }
 
@@ -205,49 +275,6 @@ private fun FieldLabel(text: String) {
         fontFamily = font,
         modifier = Modifier.padding(bottom = 8.dp),
     )
-}
-
-@Composable
-private fun VehiclePickerRow(locked: Boolean) {
-    val font = plusJakartaSansFontFamily()
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(if (locked) AppColors.SurfaceAlt else AppColors.Surface)
-            .border(BorderStroke(1.5.dp, AppColors.Border), RoundedCornerShape(14.dp))
-            .padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        IconBadge(
-            icon = FaIcons.MOTORCYCLE,
-            foreground = AppColors.Primary,
-            background = AppColors.PrimarySoft,
-            size = 40.dp, iconSize = 22.sp, corner = 10.dp,
-        )
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = "Beat Hitam",
-                color = AppColors.TextPrimary,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = font,
-            )
-            Text(
-                text = "B 4521 KZA",
-                color = AppColors.TextMuted,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                fontFamily = FontFamily.Monospace,
-            )
-        }
-        FaIcon(
-            icon = if (locked) FaIcons.LOCK else FaIcons.CHEVRON_DOWN,
-            color = AppColors.TextSubtle,
-            size = 14.sp,
-        )
-    }
 }
 
 @Composable
@@ -357,42 +384,69 @@ private fun TriggerSegmented(selected: TriggerMode, onSelect: (TriggerMode) -> U
 }
 
 @Composable
-private fun NumberField(
+private fun NumberInputField(
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
     helper: String,
 ) {
     val font = plusJakartaSansFontFamily()
+    var focused by remember { mutableStateOf(false) }
+    val borderColor = if (focused) AppColors.Primary else AppColors.Border
+
     Column {
         FieldLabel(label)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(AppColors.Surface)
-                .border(BorderStroke(1.5.dp, AppColors.Border), RoundedCornerShape(14.dp))
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            FaIcon(icon = FaIcons.GAUGE, color = AppColors.TextMuted, size = 16.sp)
-            Text(
-                text = value,
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            cursorBrush = SolidColor(AppColors.Primary),
+            textStyle = TextStyle(
                 color = AppColors.TextPrimary,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = FontFamily.Monospace,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                text = "km",
-                color = AppColors.TextSubtle,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                fontFamily = font,
-            )
-        }
+            ),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Next,
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { focused = it.isFocused },
+            decorationBox = { inner ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(AppColors.Surface)
+                        .border(BorderStroke(1.5.dp, borderColor), RoundedCornerShape(14.dp))
+                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    FaIcon(icon = FaIcons.GAUGE, color = AppColors.TextMuted, size = 16.sp)
+                    Box(modifier = Modifier.weight(1f)) {
+                        if (value.isEmpty()) {
+                            Text(
+                                text = "cth. 20420",
+                                color = AppColors.TextSubtle,
+                                fontSize = 15.sp,
+                                fontFamily = font,
+                            )
+                        }
+                        inner()
+                    }
+                    Text(
+                        text = "km",
+                        color = AppColors.TextSubtle,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = font,
+                    )
+                }
+            },
+        )
         Text(
             text = helper,
             color = AppColors.TextSubtle,
@@ -405,8 +459,16 @@ private fun NumberField(
 }
 
 @Composable
-private fun DateField(label: String, value: String, onTap: () -> Unit, helper: String) {
+private fun DateInputField(
+    label: String,
+    dateMillis: Long,
+    onTap: () -> Unit,
+    helper: String,
+) {
     val font = plusJakartaSansFontFamily()
+    val formatter = remember { SimpleDateFormat("d MMM yyyy", Locale.forLanguageTag("id-ID")) }
+    val display = remember(dateMillis) { formatter.format(Date(dateMillis)) }
+
     Column {
         FieldLabel(label)
         Row(
@@ -422,7 +484,7 @@ private fun DateField(label: String, value: String, onTap: () -> Unit, helper: S
         ) {
             FaIcon(icon = FaIcons.CALENDAR, color = AppColors.TextMuted, size = 16.sp)
             Text(
-                text = value,
+                text = display,
                 color = AppColors.TextPrimary,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -443,26 +505,54 @@ private fun DateField(label: String, value: String, onTap: () -> Unit, helper: S
 }
 
 @Composable
-private fun NoteField(value: String, onValueChange: (String) -> Unit) {
+private fun NoteInputField(value: String, onValueChange: (String) -> Unit) {
     val font = plusJakartaSansFontFamily()
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(96.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(AppColors.Surface)
-            .border(BorderStroke(1.5.dp, AppColors.Border), RoundedCornerShape(14.dp))
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-    ) {
-        Text(
-            text = if (value.isEmpty()) "Tambah catatan…" else value,
-            color = if (value.isEmpty()) AppColors.TextSubtle else AppColors.TextPrimary,
+    var focused by remember { mutableStateOf(false) }
+    val borderColor = if (focused) AppColors.Primary else AppColors.Border
+
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        singleLine = false,
+        cursorBrush = SolidColor(AppColors.Primary),
+        textStyle = TextStyle(
+            color = AppColors.TextPrimary,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             fontFamily = font,
             lineHeight = 20.sp,
-        )
-    }
+        ),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Text,
+            imeAction = ImeAction.Default,
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .onFocusChanged { focused = it.isFocused },
+        decorationBox = { inner ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 96.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(AppColors.Surface)
+                    .border(BorderStroke(1.5.dp, borderColor), RoundedCornerShape(14.dp))
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+            ) {
+                if (value.isEmpty()) {
+                    Text(
+                        text = "Tambah catatan…",
+                        color = AppColors.TextSubtle,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        fontFamily = font,
+                        lineHeight = 20.sp,
+                    )
+                }
+                inner()
+            }
+        },
+    )
 }
 
 @Composable
