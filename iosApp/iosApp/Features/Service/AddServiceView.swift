@@ -3,25 +3,77 @@ import SwiftUI
 struct AddServiceView: View {
     var onSaved: () -> Void = {}
 
+    @State private var selectedVehicle: VehicleOption = VehicleOptions.defaults[0]
     @State private var selectedService: String = "oli"
+    @State private var serviceDate: Date = Date()
+    @State private var kmText: String = ""
+    @State private var workshop: String = ""
+    @State private var costText: String = ""
+    @State private var note: String = ""
+
+    @State private var showVehiclePicker: Bool = false
+    @State private var showDatePicker: Bool = false
+
+    private static let dateFormatter: DateFormatter = {
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "id_ID")
+        df.dateFormat = "d MMM yyyy"
+        return df
+    }()
 
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     FieldLabel(text: "Kendaraan")
-                    VehiclePickerRow()
-                        .padding(.bottom, 18)
+                    VehiclePickerRow(selected: selectedVehicle) {
+                        showVehiclePicker = true
+                    }
+                    .padding(.bottom, 18)
 
                     FieldLabel(text: "Jenis servis")
                     ServiceTypeGrid(selected: $selectedService)
                         .padding(.bottom, 18)
 
-                    PlainField(label: "Tanggal servis", value: "6 Mei 2026", iconUnicode: "\u{f783}")
-                    PlainField(label: "KM saat servis", value: "18.420", iconUnicode: "\u{f625}", monospaced: true)
-                    PlainField(label: "Bengkel", value: "AHASS Kebon Jeruk", iconUnicode: "\u{f3c5}")
-                    PlainField(label: "Biaya", value: "Rp 65.000", iconUnicode: nil, monospaced: true)
-                    PlainField(label: "Catatan", value: "AHM MPX2 0.8L", iconUnicode: nil, tall: true)
+                    DateRowField(
+                        label: "Tanggal servis",
+                        valueText: Self.dateFormatter.string(from: serviceDate),
+                        onTap: { showDatePicker = true }
+                    )
+
+                    EditableRowField(
+                        label: "KM saat servis",
+                        text: $kmText,
+                        placeholder: "cth. 18420",
+                        iconUnicode: "\u{f625}",
+                        keyboardType: .numberPad,
+                        monospaced: true
+                    )
+
+                    EditableRowField(
+                        label: "Bengkel",
+                        text: $workshop,
+                        placeholder: "cth. AHASS Kebon Jeruk",
+                        iconUnicode: "\u{f3c5}"
+                    )
+
+                    EditableRowField(
+                        label: "Biaya",
+                        text: $costText,
+                        placeholder: "cth. 65000",
+                        iconUnicode: nil,
+                        keyboardType: .numberPad,
+                        monospaced: true,
+                        prefix: "Rp "
+                    )
+
+                    EditableRowField(
+                        label: "Catatan",
+                        text: $note,
+                        placeholder: "cth. AHM MPX2 0.8L",
+                        iconUnicode: nil,
+                        axis: .vertical
+                    )
 
                     AutoReminderInfoCard()
                         .padding(.top, 4)
@@ -36,6 +88,19 @@ struct AddServiceView: View {
         .background(Color.sgBgWarm)
         .navigationTitle("Catat Servis")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showVehiclePicker) {
+            VehiclePickerSheet(
+                options: VehicleOptions.defaults,
+                selectedId: selectedVehicle.id,
+                onPick: { selectedVehicle = $0 }
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showDatePicker) {
+            DatePickerSheet(date: $serviceDate, onDone: { showDatePicker = false })
+                .presentationDetents([.medium])
+        }
     }
 }
 
@@ -46,38 +111,6 @@ private struct FieldLabel: View {
             .font(.custom("PlusJakartaSans-Bold", size: 12))
             .foregroundColor(.sgTextMuted)
             .padding(.bottom, 8)
-    }
-}
-
-private struct VehiclePickerRow: View {
-    var body: some View {
-        HStack(spacing: 12) {
-            IconBadge(
-                iconUnicode: "\u{f21c}",
-                foreground: .sgPrimary,
-                background: .sgPrimarySoft,
-                size: 40, iconSize: 22, corner: 10
-            )
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Beat Hitam")
-                    .font(.custom("PlusJakartaSans-Bold", size: 14))
-                    .foregroundColor(.sgTextPrimary)
-                Text("B 4521 KZA")
-                    .font(.system(size: 12, weight: .medium, design: .monospaced))
-                    .foregroundColor(.sgTextMuted)
-            }
-            Spacer()
-            Text("\u{f078}")
-                .font(.custom("FontAwesome6Free-Solid", size: 14))
-                .foregroundColor(.sgTextSubtle)
-        }
-        .padding(14)
-        .background(Color.sgSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .strokeBorder(Color.sgBorder, lineWidth: 1.5)
-        )
     }
 }
 
@@ -125,46 +158,155 @@ private struct ServiceTypeGrid: View {
     }
 }
 
-private struct PlainField: View {
+private struct EditableRowField: View {
     let label: String
-    let value: String
+    @Binding var text: String
+    let placeholder: String
     let iconUnicode: String?
+    var keyboardType: UIKeyboardType = .default
     var monospaced: Bool = false
-    var tall: Bool = false
+    var prefix: String = ""
+    var axis: Axis = .horizontal
+
+    @FocusState private var focused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
                 .font(.custom("PlusJakartaSans-Bold", size: 12))
                 .foregroundColor(.sgTextMuted)
-            HStack(spacing: 10) {
+            HStack(alignment: axis == .vertical ? .top : .center, spacing: 10) {
                 if let iconUnicode {
                     Text(iconUnicode)
                         .font(.custom("FontAwesome6Free-Solid", size: 16))
                         .foregroundColor(.sgTextMuted)
                 }
-                if monospaced {
-                    Text(value)
-                        .font(.system(size: 15, weight: .semibold, design: .monospaced))
-                        .foregroundColor(.sgTextPrimary)
-                } else {
-                    Text(value)
-                        .font(.custom("PlusJakartaSans-SemiBold", size: 15))
-                        .foregroundColor(.sgTextPrimary)
+                if !prefix.isEmpty && !text.isEmpty {
+                    valueText(prefix)
                 }
-                Spacer()
+                ZStack(alignment: .topLeading) {
+                    if text.isEmpty {
+                        Text(placeholder)
+                            .font(.custom("PlusJakartaSans-Medium", size: 15))
+                            .foregroundColor(.sgTextSubtle)
+                            .allowsHitTesting(false)
+                    }
+                    if axis == .vertical {
+                        TextField("", text: $text, axis: .vertical)
+                            .focused($focused)
+                            .font(monospaced
+                                  ? .system(size: 15, weight: .semibold, design: .monospaced)
+                                  : .custom("PlusJakartaSans-SemiBold", size: 15))
+                            .foregroundColor(.sgTextPrimary)
+                            .keyboardType(keyboardType)
+                            .lineLimit(2...4)
+                    } else {
+                        TextField("", text: $text)
+                            .focused($focused)
+                            .font(monospaced
+                                  ? .system(size: 15, weight: .semibold, design: .monospaced)
+                                  : .custom("PlusJakartaSans-SemiBold", size: 15))
+                            .foregroundColor(.sgTextPrimary)
+                            .keyboardType(keyboardType)
+                    }
+                }
+                Spacer(minLength: 0)
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .frame(maxWidth: .infinity, minHeight: tall ? 56 : nil, alignment: .leading)
+            .padding(.vertical, axis == .vertical ? 14 : 14)
+            .frame(maxWidth: .infinity, minHeight: axis == .vertical ? 56 : nil, alignment: .leading)
             .background(Color.sgSurface)
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(Color.sgBorder, lineWidth: 1.5)
+                    .strokeBorder(focused ? Color.sgPrimary : Color.sgBorder, lineWidth: 1.5)
             )
         }
         .padding(.bottom, 12)
+    }
+
+    @ViewBuilder
+    private func valueText(_ value: String) -> some View {
+        if monospaced {
+            Text(value)
+                .font(.system(size: 15, weight: .semibold, design: .monospaced))
+                .foregroundColor(.sgTextPrimary)
+        } else {
+            Text(value)
+                .font(.custom("PlusJakartaSans-SemiBold", size: 15))
+                .foregroundColor(.sgTextPrimary)
+        }
+    }
+}
+
+private struct DateRowField: View {
+    let label: String
+    let valueText: String
+    let onTap: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(label)
+                .font(.custom("PlusJakartaSans-Bold", size: 12))
+                .foregroundColor(.sgTextMuted)
+            Button(action: onTap) {
+                HStack(spacing: 10) {
+                    Text("\u{f783}")
+                        .font(.custom("FontAwesome6Free-Solid", size: 16))
+                        .foregroundColor(.sgTextMuted)
+                    Text(valueText)
+                        .font(.custom("PlusJakartaSans-SemiBold", size: 15))
+                        .foregroundColor(.sgTextPrimary)
+                    Spacer()
+                    Text("\u{f078}")
+                        .font(.custom("FontAwesome6Free-Solid", size: 12))
+                        .foregroundColor(.sgTextSubtle)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.sgSurface)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .strokeBorder(Color.sgBorder, lineWidth: 1.5)
+                )
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.bottom, 12)
+    }
+}
+
+struct DatePickerSheet: View {
+    @Binding var date: Date
+    let onDone: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("Pilih tanggal")
+                    .font(.custom("PlusJakartaSans-ExtraBold", size: 18))
+                    .foregroundColor(.sgTextPrimary)
+                Spacer()
+                Button("Selesai", action: onDone)
+                    .font(.custom("PlusJakartaSans-Bold", size: 14))
+                    .foregroundColor(.sgPrimary)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .padding(.bottom, 8)
+
+            DatePicker(
+                "",
+                selection: $date,
+                displayedComponents: .date
+            )
+            .datePickerStyle(.graphical)
+            .padding(.horizontal, 12)
+            Spacer()
+        }
+        .background(Color.sgSurface)
     }
 }
 

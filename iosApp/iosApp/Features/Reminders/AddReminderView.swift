@@ -26,12 +26,23 @@ struct AddReminderView: View {
     var fromContext: Bool = false
     var notifPermissionGranted: Bool = true
 
+    @State private var selectedVehicle: VehicleOption = VehicleOptions.defaults[0]
     @State private var selectedService: String = "oli"
     @State private var trigger: TriggerMode = .km
-    @State private var targetKm: String = "20.420"
-    @State private var targetDate: String = "6 Jul 2026"
+    @State private var targetKm: String = ""
+    @State private var targetDate: Date = Date()
     @State private var note: String = ""
     @State private var showCtxBanner: Bool
+
+    @State private var showVehiclePicker: Bool = false
+    @State private var showDatePicker: Bool = false
+
+    private static let dateFormatter: DateFormatter = {
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "id_ID")
+        df.dateFormat = "d MMM yyyy"
+        return df
+    }()
 
     init(
         onSaved: @escaping () -> Void = {},
@@ -61,8 +72,10 @@ struct AddReminderView: View {
                 }
 
                 FieldLabel(text: "Kendaraan")
-                VehiclePickerRow(locked: showCtxBanner)
-                    .padding(.bottom, 18)
+                VehiclePickerRow(selected: selectedVehicle, locked: showCtxBanner) {
+                    showVehiclePicker = true
+                }
+                .padding(.bottom, 18)
 
                 FieldLabel(text: "Jenis servis")
                 ServiceTypeGrid(selected: $selectedService, locked: showCtxBanner)
@@ -73,17 +86,18 @@ struct AddReminderView: View {
                     .padding(.bottom, 14)
 
                 if trigger == .km || trigger == .both {
-                    NumberField(
+                    NumberInputField(
                         label: "Target KM",
                         value: $targetKm,
                         helper: "Interval pabrikan: 2.000 km · KM saat ini 18.420"
                     )
                 }
                 if trigger == .date || trigger == .both {
-                    DateField(
+                    DateInputField(
                         label: "Tanggal",
-                        value: targetDate,
-                        helper: "Pengingat dimulai: 7 hari sebelum"
+                        valueText: Self.dateFormatter.string(from: targetDate),
+                        helper: "Pengingat dimulai: 7 hari sebelum",
+                        onTap: { showDatePicker = true }
                     )
                     .padding(.top, trigger == .both ? 12 : 0)
                 }
@@ -121,6 +135,19 @@ struct AddReminderView: View {
                 }
             }
         }
+        .sheet(isPresented: $showVehiclePicker) {
+            VehiclePickerSheet(
+                options: VehicleOptions.defaults,
+                selectedId: selectedVehicle.id,
+                onPick: { selectedVehicle = $0 }
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showDatePicker) {
+            DatePickerSheet(date: $targetDate, onDone: { showDatePicker = false })
+                .presentationDetents([.medium])
+        }
     }
 }
 
@@ -135,40 +162,6 @@ private struct FieldLabel: View {
             .foregroundColor(.sgTextMuted)
             .padding(.bottom, 8)
             .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-private struct VehiclePickerRow: View {
-    let locked: Bool
-
-    var body: some View {
-        HStack(spacing: 12) {
-            IconBadge(
-                iconUnicode: "\u{f21c}",
-                foreground: .sgPrimary,
-                background: .sgPrimarySoft,
-                size: 40, iconSize: 22, corner: 10
-            )
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Beat Hitam")
-                    .font(.custom("PlusJakartaSans-Bold", size: 14))
-                    .foregroundColor(.sgTextPrimary)
-                Text("B 4521 KZA")
-                    .font(.system(size: 12, weight: .medium, design: .monospaced))
-                    .foregroundColor(.sgTextMuted)
-            }
-            Spacer()
-            Text(locked ? "\u{f023}" : "\u{f078}")
-                .font(.custom("FontAwesome6Free-Solid", size: 14))
-                .foregroundColor(.sgTextSubtle)
-        }
-        .padding(14)
-        .background(locked ? Color.sgSurfaceAlt : Color.sgSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .strokeBorder(Color.sgBorder, lineWidth: 1.5)
-        )
     }
 }
 
@@ -244,10 +237,12 @@ private struct TriggerSegmented: View {
     }
 }
 
-private struct NumberField: View {
+private struct NumberInputField: View {
     let label: String
     @Binding var value: String
     let helper: String
+
+    @FocusState private var focused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -260,10 +255,23 @@ private struct NumberField: View {
                 Text("\u{f625}")
                     .font(.custom("FontAwesome6Free-Solid", size: 16))
                     .foregroundColor(.sgTextMuted)
-                Text(value)
-                    .font(.system(size: 15, weight: .semibold, design: .monospaced))
-                    .foregroundColor(.sgTextPrimary)
-                Spacer()
+                ZStack(alignment: .leading) {
+                    if value.isEmpty {
+                        Text("cth. 20420")
+                            .font(.custom("PlusJakartaSans-Medium", size: 15))
+                            .foregroundColor(.sgTextSubtle)
+                            .allowsHitTesting(false)
+                    }
+                    TextField("", text: $value)
+                        .focused($focused)
+                        .font(.system(size: 15, weight: .semibold, design: .monospaced))
+                        .foregroundColor(.sgTextPrimary)
+                        .keyboardType(.numberPad)
+                        .onChange(of: value) { _, newValue in
+                            value = newValue.filter { $0.isNumber }
+                        }
+                }
+                Spacer(minLength: 0)
                 Text("km")
                     .font(.custom("PlusJakartaSans-SemiBold", size: 13))
                     .foregroundColor(.sgTextSubtle)
@@ -274,7 +282,7 @@ private struct NumberField: View {
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(Color.sgBorder, lineWidth: 1.5)
+                    .strokeBorder(focused ? Color.sgPrimary : Color.sgBorder, lineWidth: 1.5)
             )
             Text(helper)
                 .font(.custom("PlusJakartaSans-Medium", size: 11))
@@ -284,10 +292,11 @@ private struct NumberField: View {
     }
 }
 
-private struct DateField: View {
+private struct DateInputField: View {
     let label: String
-    let value: String
+    let valueText: String
     let helper: String
+    let onTap: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -296,26 +305,30 @@ private struct DateField: View {
                 .kerning(1)
                 .foregroundColor(.sgTextMuted)
                 .padding(.bottom, 2)
-            HStack(spacing: 10) {
-                Text("\u{f783}")
-                    .font(.custom("FontAwesome6Free-Solid", size: 16))
-                    .foregroundColor(.sgTextMuted)
-                Text(value)
-                    .font(.custom("PlusJakartaSans-SemiBold", size: 15))
-                    .foregroundColor(.sgTextPrimary)
-                Spacer()
-                Text("\u{f078}")
-                    .font(.custom("FontAwesome6Free-Solid", size: 12))
-                    .foregroundColor(.sgTextSubtle)
+            Button(action: onTap) {
+                HStack(spacing: 10) {
+                    Text("\u{f783}")
+                        .font(.custom("FontAwesome6Free-Solid", size: 16))
+                        .foregroundColor(.sgTextMuted)
+                    Text(valueText)
+                        .font(.custom("PlusJakartaSans-SemiBold", size: 15))
+                        .foregroundColor(.sgTextPrimary)
+                    Spacer()
+                    Text("\u{f078}")
+                        .font(.custom("FontAwesome6Free-Solid", size: 12))
+                        .foregroundColor(.sgTextSubtle)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.sgSurface)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .strokeBorder(Color.sgBorder, lineWidth: 1.5)
+                )
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 16)
-            .background(Color.sgSurface)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(Color.sgBorder, lineWidth: 1.5)
-            )
+            .buttonStyle(.plain)
             Text(helper)
                 .font(.custom("PlusJakartaSans-Medium", size: 11))
                 .foregroundColor(.sgTextSubtle)
@@ -327,31 +340,33 @@ private struct DateField: View {
 private struct NoteField: View {
     @Binding var value: String
 
+    @FocusState private var focused: Bool
+
     var body: some View {
-        TextEditor(text: $value)
-            .scrollContentBackground(.hidden)
-            .background(Color.sgSurface)
-            .font(.custom("PlusJakartaSans-Medium", size: 14))
-            .foregroundColor(.sgTextPrimary)
-            .frame(height: 96)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Color.sgSurface)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(Color.sgBorder, lineWidth: 1.5)
-            )
-            .overlay(alignment: .topLeading) {
-                if value.isEmpty {
-                    Text("Tambah catatan…")
-                        .font(.custom("PlusJakartaSans-Medium", size: 14))
-                        .foregroundColor(.sgTextSubtle)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
-                        .allowsHitTesting(false)
-                }
+        ZStack(alignment: .topLeading) {
+            if value.isEmpty {
+                Text("Tambah catatan…")
+                    .font(.custom("PlusJakartaSans-Medium", size: 14))
+                    .foregroundColor(.sgTextSubtle)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .allowsHitTesting(false)
             }
+            TextField("", text: $value, axis: .vertical)
+                .focused($focused)
+                .font(.custom("PlusJakartaSans-Medium", size: 14))
+                .foregroundColor(.sgTextPrimary)
+                .lineLimit(3...6)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+        }
+        .frame(maxWidth: .infinity, minHeight: 96, alignment: .topLeading)
+        .background(Color.sgSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .strokeBorder(focused ? Color.sgPrimary : Color.sgBorder, lineWidth: 1.5)
+        )
     }
 }
 
