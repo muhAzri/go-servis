@@ -21,7 +21,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,6 +67,7 @@ fun ComponentDetailScreen(
     var unit by remember { mutableStateOf(IntervalUnit.Km) }
     var kmVal by remember { mutableStateOf(2000) }
     var monthVal by remember { mutableStateOf(2) }
+    var showStopDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -102,7 +105,7 @@ fun ComponentDetailScreen(
             SectionLabel("Terakhir diservis")
             LastServiceCard()
             Spacer(Modifier.height(16.dp))
-            StopMonitoringButton(onClick = onStopMonitoring)
+            StopMonitoringButton(onClick = { showStopDialog = true })
             Spacer(Modifier.height(24.dp))
         }
         Box(
@@ -113,6 +116,28 @@ fun ComponentDetailScreen(
         ) {
             AppButton(text = "Simpan perubahan", onClick = onSave)
         }
+    }
+
+    if (showStopDialog) {
+        AlertDialog(
+            onDismissRequest = { showStopDialog = false },
+            title = { Text(text = "Berhenti pantau ${component.label}?") },
+            text = {
+                Text(text = "Pengingat untuk komponen ini akan dimatikan. Kamu masih bisa mengaktifkannya lagi nanti.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showStopDialog = false
+                    onStopMonitoring()
+                }) {
+                    Text(text = "Berhenti pantau", color = AppColors.Danger)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showStopDialog = false }) { Text("Batal") }
+            },
+            containerColor = AppColors.Surface,
+        )
     }
 }
 

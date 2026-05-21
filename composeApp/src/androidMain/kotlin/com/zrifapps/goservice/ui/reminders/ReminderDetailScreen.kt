@@ -21,10 +21,12 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,8 +56,11 @@ import kotlinx.coroutines.launch
 fun ReminderDetailScreen(
     onBack: () -> Unit,
     onMarkServiced: () -> Unit = {},
+    onEdit: () -> Unit = {},
+    onDelete: () -> Unit = {},
 ) {
     var showSnooze by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
     val snoozeState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
 
@@ -65,7 +70,11 @@ fun ReminderDetailScreen(
             .background(AppColors.BgWarm)
             .windowInsetsPadding(WindowInsets.statusBars),
     ) {
-        ReminderDetailTopBar(onBack = onBack)
+        ReminderDetailTopBar(
+            onBack = onBack,
+            onEdit = onEdit,
+            onDelete = { showDeleteDialog = true },
+        )
 
         Column(
             modifier = Modifier
@@ -102,10 +111,36 @@ fun ReminderDetailScreen(
             })
         }
     }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text(text = "Hapus pengingat?") },
+            text = {
+                Text(text = "Pengingat ini akan dihapus dan tidak akan muncul lagi di lock screen.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteDialog = false
+                    onDelete()
+                }) {
+                    Text(text = "Hapus", color = AppColors.Danger)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) { Text("Batal") }
+            },
+            containerColor = AppColors.Surface,
+        )
+    }
 }
 
 @Composable
-private fun ReminderDetailTopBar(onBack: () -> Unit) {
+private fun ReminderDetailTopBar(
+    onBack: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -115,10 +150,10 @@ private fun ReminderDetailTopBar(onBack: () -> Unit) {
         CircleIconButton(icon = FaIcons.CHEVRON_LEFT, onClick = onBack)
         Spacer(Modifier.weight(1f))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            CircleIconButton(icon = FaIcons.PEN_TO_SQUARE, onClick = {})
+            CircleIconButton(icon = FaIcons.PEN_TO_SQUARE, onClick = onEdit)
             CircleIconButton(
                 icon = FaIcons.TRASH,
-                onClick = {},
+                onClick = onDelete,
                 iconColor = AppColors.Danger,
             )
         }

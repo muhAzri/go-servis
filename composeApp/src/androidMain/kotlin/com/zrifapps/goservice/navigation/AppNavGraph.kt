@@ -204,6 +204,8 @@ fun AppNavGraph() {
             ReminderDetailScreen(
                 onBack = { navController.popBackStack() },
                 onMarkServiced = { navController.navigate(Screen.AddService) },
+                onEdit = { navController.navigate(Screen.AddReminder) },
+                onDelete = { navController.popBackStack() },
             )
         }
 
@@ -300,6 +302,7 @@ fun AppNavGraph() {
             ServiceDetailScreen(
                 onBack = { navController.popBackStack() },
                 onEdit = { navController.navigate(Screen.AddService) },
+                onDelete = { navController.popBackStack() },
                 onOpenNextReminder = { navController.navigate(Screen.ReminderDetail) },
             )
         }
