@@ -6,6 +6,8 @@ struct ServiceDetailView: View {
     var onOpenNextReminder: () -> Void = {}
     var onShare: () -> Void = {}
 
+    @State private var showDeleteConfirm: Bool = false
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
@@ -32,7 +34,7 @@ struct ServiceDetailView: View {
                 NextReminderCard(onTap: onOpenNextReminder)
                     .padding(.horizontal, 16)
 
-                ActionRow(onEdit: onEdit, onDelete: onDelete)
+                ActionRow(onEdit: onEdit, onDelete: { showDeleteConfirm = true })
                     .padding(.horizontal, 16)
                     .padding(.top, 24)
                     .padding(.bottom, 24)
@@ -47,6 +49,16 @@ struct ServiceDetailView: View {
                     Image(systemName: "square.and.arrow.up")
                 }
             }
+        }
+        .confirmationDialog(
+            "Hapus servis?",
+            isPresented: $showDeleteConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Hapus servis", role: .destructive, action: onDelete)
+            Button("Batal", role: .cancel) { }
+        } message: {
+            Text("Catatan servis ini akan dihapus permanen. Aksi ini tidak bisa dibatalkan.")
         }
     }
 }

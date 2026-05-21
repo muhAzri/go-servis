@@ -21,6 +21,7 @@ struct ComponentDetailView: View {
     @State private var unit: IntervalUnit = .km
     @State private var kmVal: Int = 2000
     @State private var monthVal: Int = 2
+    @State private var showStopConfirm: Bool = false
 
     private var component: ComponentInfo {
         ComponentsCatalog.byId(componentId) ?? ComponentsCatalog.all[0]
@@ -74,7 +75,7 @@ struct ComponentDetailView: View {
                     LastServiceCard()
                         .padding(.horizontal, 16)
 
-                    StopMonitoringButton(onTap: onStopMonitoring)
+                    StopMonitoringButton(onTap: { showStopConfirm = true })
                         .padding(.horizontal, 16)
                         .padding(.top, 16)
                         .padding(.bottom, 24)
@@ -91,6 +92,16 @@ struct ComponentDetailView: View {
         .background(Color.sgBgWarm)
         .navigationTitle("Detail komponen")
         .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog(
+            "Berhenti pantau \(component.label)?",
+            isPresented: $showStopConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Berhenti pantau", role: .destructive, action: onStopMonitoring)
+            Button("Batal", role: .cancel) { }
+        } message: {
+            Text("Pengingat untuk komponen ini akan dimatikan. Kamu masih bisa mengaktifkannya lagi nanti.")
+        }
     }
 }
 

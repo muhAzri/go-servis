@@ -57,7 +57,9 @@ struct AppNavGraph: View {
 
         case .reminderDetail:
             ReminderDetailView(
-                onMarkServiced: { router.navigate(to: .addService) }
+                onMarkServiced: { router.navigate(to: .addService) },
+                onEdit: { router.navigate(to: .addReminder) },
+                onDelete: { router.navigateBack() }
             )
         case .addReminder:
             AddReminderView(
@@ -92,6 +94,7 @@ struct AppNavGraph: View {
         case .serviceDetail:
             ServiceDetailView(
                 onEdit: { router.navigate(to: .addService) },
+                onDelete: { router.navigateBack() },
                 onOpenNextReminder: { router.navigate(to: .reminderDetail) }
             )
         case .vehicleDetail:

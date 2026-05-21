@@ -2,8 +2,11 @@ import SwiftUI
 
 struct ReminderDetailView: View {
     var onMarkServiced: () -> Void = {}
+    var onEdit: () -> Void = {}
+    var onDelete: () -> Void = {}
 
     @State private var isSnoozeSheetPresented = false
+    @State private var showDeleteConfirm: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -45,10 +48,10 @@ struct ReminderDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
-                Button(action: {}) {
+                Button(action: onEdit) {
                     Image(systemName: "square.and.pencil")
                 }
-                Button(action: {}) {
+                Button(action: { showDeleteConfirm = true }) {
                     Image(systemName: "trash")
                 }
                 .tint(.sgDanger)
@@ -58,6 +61,16 @@ struct ReminderDetailView: View {
             SnoozeSheet(onDismiss: { isSnoozeSheetPresented = false })
                 .presentationDetents([.fraction(0.55)])
                 .presentationDragIndicator(.hidden)
+        }
+        .confirmationDialog(
+            "Hapus pengingat?",
+            isPresented: $showDeleteConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Hapus pengingat", role: .destructive, action: onDelete)
+            Button("Batal", role: .cancel) { }
+        } message: {
+            Text("Pengingat ini akan dihapus dan tidak akan muncul lagi di lock screen.")
         }
     }
 }
