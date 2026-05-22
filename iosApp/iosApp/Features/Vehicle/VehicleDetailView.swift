@@ -5,6 +5,7 @@ struct VehicleDetailView: View {
     var subtype: String = "matic"
 
     @Environment(AppRouter.self) private var router
+    @State private var showShareSheet: Bool = false
 
     private var components: [ComponentInfo] {
         ComponentsCatalog.forSubtype(subtype)
@@ -56,13 +57,26 @@ struct VehicleDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
-                Button(action: {}) {
+                Button(action: { showShareSheet = true }) {
                     Image(systemName: "square.and.arrow.up")
                 }
-                Button(action: {}) {
+                Button(action: { router.navigate(to: .editVehicle) }) {
                     Image(systemName: "square.and.pencil")
                 }
             }
+        }
+        .sheet(isPresented: $showShareSheet) {
+            ShareVehicleSheet(
+                vehicleName: "Beat Hitam",
+                onDismiss: { showShareSheet = false },
+                onCopy: { showShareSheet = false },
+                onExportImage: {
+                    showShareSheet = false
+                    router.navigate(to: .shareImageCard)
+                },
+                onSystemShare: { showShareSheet = false }
+            )
+            .presentationDetents([.medium])
         }
     }
 }

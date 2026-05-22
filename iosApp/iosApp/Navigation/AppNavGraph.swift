@@ -58,7 +58,7 @@ struct AppNavGraph: View {
         case .reminderDetail:
             ReminderDetailView(
                 onMarkServiced: { router.navigate(to: .addService) },
-                onEdit: { router.navigate(to: .addReminder) },
+                onEdit: { router.navigate(to: .editReminder) },
                 onDelete: { router.navigateBack() }
             )
         case .addReminder:
@@ -95,7 +95,8 @@ struct AppNavGraph: View {
             ServiceDetailView(
                 onEdit: { router.navigate(to: .addService) },
                 onDelete: { router.navigateBack() },
-                onOpenNextReminder: { router.navigate(to: .reminderDetail) }
+                onOpenNextReminder: { router.navigate(to: .reminderDetail) },
+                onShare: { router.navigate(to: .shareImageCard) }
             )
         case .vehicleDetail:
             VehicleDetailView()
@@ -129,11 +130,36 @@ struct AppNavGraph: View {
             ComponentDetailView(
                 componentId: componentId,
                 onSave: { router.navigateBack() },
-                onStopMonitoring: { router.navigateBack() }
+                onStopMonitoring: { router.navigateBack() },
+                onLogServiceForComponent: { router.navigate(to: .addService) },
+                onCreateReminderForComponent: { router.navigate(to: .addReminder) }
             )
         case .addCustomComponent:
             AddCustomComponentView(
                 onAdd: { _ in router.navigateBack() }
+            )
+
+        case .editVehicle:
+            EditVehicleView(
+                onBack: { router.navigateBack() },
+                onSave: { _ in router.navigateBack() },
+                onDelete: { router.popToRoot() }
+            )
+        case .editReminder:
+            EditReminderView(
+                onBack: { router.navigateBack() },
+                onSave: { router.navigateBack() },
+                onDelete: { router.popToRoot() }
+            )
+        case .vehicleList:
+            VehicleListView(
+                onBack: { router.navigateBack() },
+                onOpenVehicle: { _ in router.navigate(to: .vehicleDetail) },
+                onAddVehicle: { router.navigate(to: .addVehicle) }
+            )
+        case .shareImageCard:
+            ShareImageCardView(
+                onBack: { router.navigateBack() }
             )
         }
     }

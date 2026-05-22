@@ -27,4 +27,10 @@ enum AppDestination: Hashable {
     case vehicleComponents
     case componentDetail(componentId: String)
     case addCustomComponent
+
+    // New plot-hole screens
+    case editVehicle
+    case editReminder
+    case vehicleList
+    case shareImageCard
 }
