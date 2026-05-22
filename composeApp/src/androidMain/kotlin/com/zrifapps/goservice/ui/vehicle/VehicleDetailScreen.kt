@@ -23,6 +23,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,12 +59,15 @@ fun VehicleDetailScreen(
     onManageComponents: () -> Unit = {},
     onOpenComponent: (String) -> Unit = {},
     onAddComponent: () -> Unit = {},
+    onEdit: () -> Unit = {},
+    onShareImage: () -> Unit = {},
     vehicleType: String = DEFAULT_VEHICLE_TYPE,
     subtype: String = DEFAULT_SUBTYPE,
 ) {
     val components = ComponentsCatalog.forSubtype(subtype)
     val tilePreview = components.take(6)
     val subLabel = VehicleSubtypes.labelOf(vehicleType, subtype)
+    var showShareSheet by remember { androidx.compose.runtime.mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -70,7 +76,11 @@ fun VehicleDetailScreen(
             .windowInsetsPadding(WindowInsets.statusBars)
             .verticalScroll(rememberScrollState()),
     ) {
-        VehicleDetailTopBar(onBack = onBack)
+        VehicleDetailTopBar(
+            onBack = onBack,
+            onShare = { showShareSheet = true },
+            onEdit = onEdit,
+        )
         VehicleHeroCard()
         Spacer(Modifier.height(16.dp))
         ComponentsSectionHeader(
@@ -91,10 +101,27 @@ fun VehicleDetailScreen(
         LastServicesList()
         Spacer(Modifier.height(24.dp))
     }
+
+    if (showShareSheet) {
+        ShareVehicleSheet(
+            vehicleName = "Beat Hitam",
+            onDismiss = { showShareSheet = false },
+            onCopy = { showShareSheet = false },
+            onExportImage = {
+                showShareSheet = false
+                onShareImage()
+            },
+            onSystemShare = { showShareSheet = false },
+        )
+    }
 }
 
 @Composable
-private fun VehicleDetailTopBar(onBack: () -> Unit) {
+private fun VehicleDetailTopBar(
+    onBack: () -> Unit,
+    onShare: () -> Unit,
+    onEdit: () -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -104,8 +131,8 @@ private fun VehicleDetailTopBar(onBack: () -> Unit) {
         CircleIconButton(icon = FaIcons.CHEVRON_LEFT, onClick = onBack)
         Spacer(Modifier.weight(1f))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            CircleIconButton(icon = FaIcons.SHARE, onClick = {})
-            CircleIconButton(icon = FaIcons.PEN_TO_SQUARE, onClick = {})
+            CircleIconButton(icon = FaIcons.SHARE, onClick = onShare)
+            CircleIconButton(icon = FaIcons.PEN_TO_SQUARE, onClick = onEdit)
         }
     }
 }

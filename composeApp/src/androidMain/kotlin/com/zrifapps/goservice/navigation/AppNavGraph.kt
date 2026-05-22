@@ -37,12 +37,16 @@ import com.zrifapps.goservice.ui.test.TestScreen
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.tips.TipsDetailScreen
 import com.zrifapps.goservice.ui.tips.TipsScreen
+import com.zrifapps.goservice.ui.reminders.EditReminderScreen
+import com.zrifapps.goservice.ui.service.ShareImageCardScreen
 import com.zrifapps.goservice.ui.vehicle.AddCustomComponentScreen
 import com.zrifapps.goservice.ui.vehicle.AddVehicleScreen
 import com.zrifapps.goservice.ui.vehicle.ComponentDetailScreen
+import com.zrifapps.goservice.ui.vehicle.EditVehicleScreen
 import com.zrifapps.goservice.ui.vehicle.UpdateOdometerScreen
 import com.zrifapps.goservice.ui.vehicle.VehicleComponentsScreen
 import com.zrifapps.goservice.ui.vehicle.VehicleDetailScreen
+import com.zrifapps.goservice.ui.vehicle.VehicleListScreen
 
 @Composable
 fun AppNavGraph() {
@@ -154,6 +158,7 @@ fun AppNavGraph() {
                 onOpenAbout = { navController.navigate(Screen.About) },
                 onOpenHelp = { navController.navigate(Screen.Help) },
                 onOpenEditProfile = { navController.navigate(Screen.EditProfile) },
+                onOpenVehicleList = { navController.navigate(Screen.VehicleList) },
             )
         }
 
@@ -204,7 +209,7 @@ fun AppNavGraph() {
             ReminderDetailScreen(
                 onBack = { navController.popBackStack() },
                 onMarkServiced = { navController.navigate(Screen.AddService) },
-                onEdit = { navController.navigate(Screen.AddReminder) },
+                onEdit = { navController.navigate(Screen.EditReminder) },
                 onDelete = { navController.popBackStack() },
             )
         }
@@ -249,6 +254,8 @@ fun AppNavGraph() {
                 onManageComponents = { navController.navigate(Screen.VehicleComponents) },
                 onOpenComponent = { id -> navController.navigate(Screen.ComponentDetail(id)) },
                 onAddComponent = { navController.navigate(Screen.AddCustomComponent) },
+                onEdit = { navController.navigate(Screen.EditVehicle) },
+                onShareImage = { navController.navigate(Screen.ShareImageCard) },
             )
         }
 
@@ -267,6 +274,8 @@ fun AppNavGraph() {
                 onBack = { navController.popBackStack() },
                 onSave = { navController.popBackStack() },
                 onStopMonitoring = { navController.popBackStack() },
+                onLogServiceForComponent = { navController.navigate(Screen.AddService) },
+                onCreateReminderForComponent = { navController.navigate(Screen.AddReminder) },
             )
         }
 
@@ -274,6 +283,40 @@ fun AppNavGraph() {
             AddCustomComponentScreen(
                 onBack = { navController.popBackStack() },
                 onAdd = { _ -> navController.popBackStack() },
+            )
+        }
+
+        composable<Screen.EditVehicle> {
+            EditVehicleScreen(
+                onBack = { navController.popBackStack() },
+                onSave = { navController.popBackStack() },
+                onDelete = {
+                    navController.popBackStack(Screen.Main, inclusive = false)
+                },
+            )
+        }
+
+        composable<Screen.EditReminder> {
+            EditReminderScreen(
+                onBack = { navController.popBackStack() },
+                onSave = { navController.popBackStack() },
+                onDelete = {
+                    navController.popBackStack(Screen.Main, inclusive = false)
+                },
+            )
+        }
+
+        composable<Screen.VehicleList> {
+            VehicleListScreen(
+                onBack = { navController.popBackStack() },
+                onOpenVehicle = { navController.navigate(Screen.VehicleDetail) },
+                onAddVehicle = { navController.navigate(Screen.AddVehicleForm) },
+            )
+        }
+
+        composable<Screen.ShareImageCard> {
+            ShareImageCardScreen(
+                onBack = { navController.popBackStack() },
             )
         }
 
@@ -304,6 +347,7 @@ fun AppNavGraph() {
                 onEdit = { navController.navigate(Screen.AddService) },
                 onDelete = { navController.popBackStack() },
                 onOpenNextReminder = { navController.navigate(Screen.ReminderDetail) },
+                onShare = { navController.navigate(Screen.ShareImageCard) },
             )
         }
 

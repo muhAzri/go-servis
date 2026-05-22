@@ -1,0 +1,222 @@
+package com.zrifapps.goservice.ui.vehicle
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.zrifapps.goservice.ui.components.ActionSheet
+import com.zrifapps.goservice.ui.components.ActionSheetOption
+import com.zrifapps.goservice.ui.components.ActionSheetSelectionMode
+import com.zrifapps.goservice.ui.components.DetailToolbar
+import com.zrifapps.goservice.ui.components.DetailToolbarAction
+import com.zrifapps.goservice.ui.components.IconBadge
+import com.zrifapps.goservice.ui.components.SortChip
+import com.zrifapps.goservice.ui.theme.AppColors
+import com.zrifapps.goservice.ui.theme.FaIcon
+import com.zrifapps.goservice.ui.theme.FaIcons
+import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
+
+private data class VehicleListItem(
+    val id: String,
+    val icon: String,
+    val accent: Color,
+    val name: String,
+    val plateAndKm: String,
+)
+
+private val sampleVehicles = listOf(
+    VehicleListItem("v1", FaIcons.MOTORCYCLE, Color(0xFF2E8B57), "Beat Hitam", "B 4521 KZA · 18.420 km"),
+    VehicleListItem("v2", FaIcons.MOTORCYCLE, Color(0xFFD6453A), "Vario Merah", "B 6789 SKR · 8.100 km"),
+    VehicleListItem("v3", FaIcons.CAR, Color(0xFF3F4D5C), "Avanza Putih", "B 1234 ABC · 62.300 km"),
+    VehicleListItem("v4", FaIcons.CAR, Color(0xFF3FB1D6), "Brio Biru", "B 9876 XYZ · 24.500 km"),
+)
+
+private val sortOptions = listOf(
+    "input" to "Urutan input",
+    "az" to "A → Z",
+    "km_asc" to "KM terendah",
+    "km_desc" to "KM tertinggi",
+    "status" to "Status",
+)
+
+@Composable
+fun VehicleListScreen(
+    modifier: Modifier = Modifier,
+    onBack: () -> Unit = {},
+    onOpenVehicle: (String) -> Unit = {},
+    onAddVehicle: () -> Unit = {},
+) {
+    val font = plusJakartaSansFontFamily()
+    var sortValue by remember { mutableStateOf("input") }
+    var showSortSheet by remember { mutableStateOf(false) }
+    val sortLabel = sortOptions.firstOrNull { it.first == sortValue }?.second ?: "Urutan input"
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(AppColors.BgWarm)
+            .windowInsetsPadding(WindowInsets.statusBars),
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            DetailToolbar(
+                title = "Garasi Saya",
+                onBack = onBack,
+                actions = listOf(
+                    DetailToolbarAction(icon = FaIcons.PLUS, onTap = onAddVehicle),
+                ),
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "${sampleVehicles.size} kendaraan",
+                    color = AppColors.TextMuted,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = font,
+                    modifier = Modifier.weight(1f),
+                )
+                SortChip(
+                    label = sortLabel,
+                    onClick = { showSortSheet = true },
+                )
+            }
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                    top = 4.dp,
+                    bottom = 96.dp,
+                ),
+            ) {
+                items(sampleVehicles) { item ->
+                    VehicleListRow(item = item, onClick = { onOpenVehicle(item.id) })
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .windowInsetsPadding(WindowInsets.navigationBars)
+                .padding(20.dp)
+                .clip(RoundedCornerShape(100.dp))
+                .background(AppColors.Primary)
+                .clickable(onClick = onAddVehicle)
+                .padding(horizontal = 18.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FaIcon(icon = FaIcons.PLUS, color = Color.White, size = 14.sp)
+            Text(
+                text = "Tambah Kendaraan",
+                color = Color.White,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = font,
+            )
+        }
+    }
+
+    if (showSortSheet) {
+        ActionSheet(
+            title = "Urutkan kendaraan",
+            options = sortOptions.map { (id, label) ->
+                ActionSheetOption(value = id, label = label)
+            },
+            selectionMode = ActionSheetSelectionMode.Radio,
+            initiallySelected = sortValue,
+            primaryLabel = "Terapkan",
+            onPrimary = { sortValue = it },
+            onDismiss = { showSortSheet = false },
+            onSelect = {},
+        )
+    }
+}
+
+@Composable
+private fun VehicleListRow(item: VehicleListItem, onClick: () -> Unit) {
+    val font = plusJakartaSansFontFamily()
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(AppColors.Surface)
+            .border(BorderStroke(1.dp, AppColors.Border), RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        IconBadge(
+            icon = item.icon,
+            foreground = item.accent,
+            background = item.accent.copy(alpha = 0.13f),
+            size = 48.dp,
+            iconSize = 24.sp,
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = item.name,
+                color = AppColors.TextPrimary,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = font,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = item.plateAndKm,
+                color = AppColors.TextMuted,
+                fontSize = 12.sp,
+                fontFamily = FontFamily.Monospace,
+            )
+        }
+        FaIcon(icon = FaIcons.CHEVRON_RIGHT, color = AppColors.TextSubtle, size = 14.sp)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun VehicleListScreenPreview() {
+    VehicleListScreen()
+}

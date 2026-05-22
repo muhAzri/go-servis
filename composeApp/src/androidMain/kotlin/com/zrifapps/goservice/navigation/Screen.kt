@@ -35,4 +35,10 @@ sealed interface Screen {
     @Serializable data object VehicleComponents : Screen
     @Serializable data class ComponentDetail(val componentId: String) : Screen
     @Serializable data object AddCustomComponent : Screen
+
+    // New screens from plot-hole design
+    @Serializable data object EditVehicle : Screen
+    @Serializable data object EditReminder : Screen
+    @Serializable data object VehicleList : Screen
+    @Serializable data object ShareImageCard : Screen
 }
