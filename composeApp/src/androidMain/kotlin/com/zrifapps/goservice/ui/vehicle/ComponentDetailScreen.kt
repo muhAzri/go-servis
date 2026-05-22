@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -56,6 +57,8 @@ fun ComponentDetailScreen(
     onBack: () -> Unit,
     onSave: () -> Unit,
     onStopMonitoring: () -> Unit,
+    onLogServiceForComponent: () -> Unit = {},
+    onCreateReminderForComponent: () -> Unit = {},
     vehicleType: String = "motor",
 ) {
     val component: ComponentInfo = remember(componentId) {
@@ -104,7 +107,12 @@ fun ComponentDetailScreen(
             Spacer(Modifier.height(16.dp))
             SectionLabel("Terakhir diservis")
             LastServiceCard()
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(20.dp))
+            ComponentCtaSection(
+                onLogService = onLogServiceForComponent,
+                onCreateReminder = onCreateReminderForComponent,
+            )
+            Spacer(Modifier.height(20.dp))
             StopMonitoringButton(onClick = { showStopDialog = true })
             Spacer(Modifier.height(24.dp))
         }
@@ -480,6 +488,77 @@ private fun LastServiceCard() {
                 color = AppColors.TextPrimary,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
+                fontFamily = font,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ComponentCtaSection(
+    onLogService: () -> Unit,
+    onCreateReminder: () -> Unit,
+) {
+    val font = plusJakartaSansFontFamily()
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(AppColors.Primary)
+                .clickable(onClick = onLogService),
+            contentAlignment = Alignment.Center,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FaIcon(icon = FaIcons.PLUS, color = Color.White, size = 16.sp)
+                Text(
+                    text = "Catat servis untuk komponen ini",
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = font,
+                )
+            }
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Box(modifier = Modifier.weight(1f).height(1.dp).background(AppColors.Border))
+            Text(
+                text = "atau",
+                color = AppColors.TextSubtle,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = font,
+            )
+            Box(modifier = Modifier.weight(1f).height(1.dp).background(AppColors.Border))
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color.Transparent)
+                .border(BorderStroke(1.5.dp, AppColors.Primary), RoundedCornerShape(14.dp))
+                .clickable(onClick = onCreateReminder),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            FaIcon(icon = FaIcons.BELL, color = AppColors.Primary, size = 14.sp)
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = "Buat pengingat manual",
+                color = AppColors.Primary,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
                 fontFamily = font,
             )
         }

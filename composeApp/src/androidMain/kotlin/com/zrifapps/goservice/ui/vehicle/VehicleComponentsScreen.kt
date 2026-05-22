@@ -32,9 +32,18 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.zrifapps.goservice.ui.components.CircleIconButton
+import com.zrifapps.goservice.ui.components.EmptyState
+import com.zrifapps.goservice.ui.components.FilterChipBar
+import com.zrifapps.goservice.ui.components.FilterChipItem
 import com.zrifapps.goservice.ui.components.IconBadge
 import com.zrifapps.goservice.ui.components.ReminderUrgency
+import com.zrifapps.goservice.ui.components.Skeleton
+import com.zrifapps.goservice.ui.components.SkeletonLeading
 import com.zrifapps.goservice.ui.components.StatusDot
 import com.zrifapps.goservice.ui.components.color
 import com.zrifapps.goservice.ui.theme.AppColors
@@ -51,6 +60,22 @@ private const val DEFAULT_SUBTYPE = "matic"
 private const val VEHICLE_NAME = "Beat Hitam"
 private val accent = Color(0xFF2E8B57)
 
+private enum class CompCategory(val id: String, val label: String) {
+    All("all", "Semua"),
+    Mesin("mesin", "Mesin"),
+    Kelistrikan("kelistrikan", "Kelistrikan"),
+    KakiKaki("kaki", "Kaki-kaki"),
+    Pendingin("pendingin", "Pendingin"),
+}
+
+private fun categoryOf(id: String): CompCategory = when (id) {
+    "oli_mesin", "busi", "filter_udara", "filter_oli", "tune_up", "timing_belt", "vbelt", "roller" -> CompCategory.Mesin
+    "aki" -> CompCategory.Kelistrikan
+    "ban", "kampas_rem", "shock", "rantai", "kampas_kopling", "oli_kopling" -> CompCategory.KakiKaki
+    "radiator", "oli_gardan", "minyak_rem", "wiper", "filter_ac" -> CompCategory.Pendingin
+    else -> CompCategory.Mesin
+}
+
 @Composable
 fun VehicleComponentsScreen(
     onBack: () -> Unit,
@@ -59,10 +84,63 @@ fun VehicleComponentsScreen(
     onChangeSubtype: () -> Unit = {},
     vehicleType: String = DEFAULT_VEHICLE_TYPE,
     subtype: String = DEFAULT_SUBTYPE,
+    isEmpty: Boolean = false,
+    isLoading: Boolean = false,
 ) {
-    val components = ComponentsCatalog.forSubtype(subtype)
+    val allComponents = ComponentsCatalog.forSubtype(subtype)
     val subLabel = VehicleSubtypes.labelOf(vehicleType, subtype)
     val typeLabel = if (vehicleType == "mobil") "Mobil" else "Motor"
+    var activeCategory by remember { mutableStateOf("all") }
+
+    val components = remember(allComponents, activeCategory) {
+        if (activeCategory == "all") allComponents
+        else allComponents.filter { categoryOf(it.id).id == activeCategory }
+    }
+
+    if (isLoading) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AppColors.BgWarm)
+                .windowInsetsPadding(WindowInsets.statusBars),
+        ) {
+            TopBar(title = "Komponen", subtitle = "Memuat…", onBack = onBack, onAdd = onAdd)
+            Spacer(Modifier.height(12.dp))
+            Skeleton.Tile(count = 6)
+            Spacer(Modifier.height(12.dp))
+            Skeleton.Row(leading = SkeletonLeading.Icon, lines = 2)
+            Skeleton.Row(leading = SkeletonLeading.Icon, lines = 2)
+        }
+        return
+    }
+
+    if (isEmpty) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AppColors.BgWarm)
+                .windowInsetsPadding(WindowInsets.statusBars),
+        ) {
+            TopBar(title = "Komponen", subtitle = "$VEHICLE_NAME · belum ada komponen", onBack = onBack, onAdd = onAdd)
+            EmptyState(
+                modifier = Modifier.weight(1f),
+                icon = FaIcons.WRENCH,
+                title = "Belum ada komponen dipantau",
+                body = "Pilih komponen yang ingin kamu pantau usianya — kami pakai interval pabrikan.",
+                ctaLabel = "Pilih Komponen",
+                onCta = onAdd,
+            )
+        }
+        return
+    }
+
+    val chips = listOf(
+        FilterChipItem(id = "all",         label = "Semua",       count = allComponents.size),
+        FilterChipItem(id = "mesin",       label = "Mesin",       count = allComponents.count { categoryOf(it.id) == CompCategory.Mesin }),
+        FilterChipItem(id = "kelistrikan", label = "Kelistrikan", count = allComponents.count { categoryOf(it.id) == CompCategory.Kelistrikan }),
+        FilterChipItem(id = "kaki",        label = "Kaki-kaki",   count = allComponents.count { categoryOf(it.id) == CompCategory.KakiKaki }),
+        FilterChipItem(id = "pendingin",   label = "Pendingin",   count = allComponents.count { categoryOf(it.id) == CompCategory.Pendingin }),
+    ).filter { it.id == "all" || (it.count ?: 0) > 0 }
 
     Column(
         modifier = Modifier
@@ -73,7 +151,7 @@ fun VehicleComponentsScreen(
     ) {
         TopBar(
             title = "Komponen",
-            subtitle = "$VEHICLE_NAME · ${components.size} dipantau",
+            subtitle = "$VEHICLE_NAME · ${allComponents.size} dipantau",
             onBack = onBack,
             onAdd = onAdd,
         )
@@ -83,6 +161,12 @@ fun VehicleComponentsScreen(
             onChange = onChangeSubtype,
         )
         Spacer(Modifier.height(12.dp))
+        FilterChipBar(
+            chips = chips,
+            activeId = activeCategory,
+            onSelect = { activeCategory = it },
+        )
+        Spacer(Modifier.height(8.dp))
         ComponentsList(
             components = components,
             vehicleType = vehicleType,
