@@ -4,7 +4,6 @@ struct ShareVehicleSheet: View {
     let vehicleName: String
     var onDismiss: () -> Void = {}
     var onCopy: () -> Void = {}
-    var onExportImage: () -> Void = {}
     var onSystemShare: () -> Void = {}
 
     var body: some View {
@@ -26,8 +25,6 @@ struct ShareVehicleSheet: View {
             ScrollView {
                 VStack(spacing: 0) {
                     row(icon: "\u{f15c}", label: "Salin ringkasan teks", sub: "\"\(vehicleName) · 18.420 km · …\"", action: onCopy)
-                    Divider().background(Color.sgBorder).padding(.leading, 70)
-                    row(icon: "\u{f03e}", label: "Ekspor sebagai gambar (PNG)", sub: "Kartu kendaraan untuk dibagikan", action: onExportImage)
                     Divider().background(Color.sgBorder).padding(.leading, 70)
                     row(icon: "\u{f1e0}", label: "Bagikan via aplikasi lain", sub: "WhatsApp, email, dll.", action: onSystemShare)
                 }

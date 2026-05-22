@@ -60,7 +60,6 @@ fun VehicleDetailScreen(
     onOpenComponent: (String) -> Unit = {},
     onAddComponent: () -> Unit = {},
     onEdit: () -> Unit = {},
-    onShareImage: () -> Unit = {},
     vehicleType: String = DEFAULT_VEHICLE_TYPE,
     subtype: String = DEFAULT_SUBTYPE,
 ) {
@@ -107,10 +106,6 @@ fun VehicleDetailScreen(
             vehicleName = "Beat Hitam",
             onDismiss = { showShareSheet = false },
             onCopy = { showShareSheet = false },
-            onExportImage = {
-                showShareSheet = false
-                onShareImage()
-            },
             onSystemShare = { showShareSheet = false },
         )
     }

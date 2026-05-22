@@ -32,5 +32,4 @@ enum AppDestination: Hashable {
     case editVehicle
     case editReminder
     case vehicleList
-    case shareImageCard
 }

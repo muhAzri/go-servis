@@ -11,7 +11,6 @@ fun ShareVehicleSheet(
     vehicleName: String,
     onDismiss: () -> Unit,
     onCopy: () -> Unit = {},
-    onExportImage: () -> Unit = {},
     onSystemShare: () -> Unit = {},
 ) {
     ActionSheet(
@@ -25,12 +24,6 @@ fun ShareVehicleSheet(
                 icon = FaIcons.COPY,
             ),
             ActionSheetOption(
-                value = "image",
-                label = "Ekspor sebagai gambar (PNG)",
-                subtitle = "Cocok untuk story / status",
-                icon = FaIcons.IMAGE,
-            ),
-            ActionSheetOption(
                 value = "system",
                 label = "Bagikan via aplikasi lain",
                 subtitle = "Buka share sheet sistem",
@@ -42,7 +35,6 @@ fun ShareVehicleSheet(
         onSelect = { opt ->
             when (opt.value) {
                 "copy" -> onCopy()
-                "image" -> onExportImage()
                 "system" -> onSystemShare()
             }
         },

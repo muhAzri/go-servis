@@ -38,7 +38,6 @@ import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.tips.TipsDetailScreen
 import com.zrifapps.goservice.ui.tips.TipsScreen
 import com.zrifapps.goservice.ui.reminders.EditReminderScreen
-import com.zrifapps.goservice.ui.service.ShareImageCardScreen
 import com.zrifapps.goservice.ui.vehicle.AddCustomComponentScreen
 import com.zrifapps.goservice.ui.vehicle.AddVehicleScreen
 import com.zrifapps.goservice.ui.vehicle.ComponentDetailScreen
@@ -255,7 +254,6 @@ fun AppNavGraph() {
                 onOpenComponent = { id -> navController.navigate(Screen.ComponentDetail(id)) },
                 onAddComponent = { navController.navigate(Screen.AddCustomComponent) },
                 onEdit = { navController.navigate(Screen.EditVehicle) },
-                onShareImage = { navController.navigate(Screen.ShareImageCard) },
             )
         }
 
@@ -314,12 +312,6 @@ fun AppNavGraph() {
             )
         }
 
-        composable<Screen.ShareImageCard> {
-            ShareImageCardScreen(
-                onBack = { navController.popBackStack() },
-            )
-        }
-
         composable<Screen.UpdateOdometer> {
             UpdateOdometerScreen(
                 onClose = { navController.popBackStack() },
@@ -347,7 +339,6 @@ fun AppNavGraph() {
                 onEdit = { navController.navigate(Screen.AddService) },
                 onDelete = { navController.popBackStack() },
                 onOpenNextReminder = { navController.navigate(Screen.ReminderDetail) },
-                onShare = { navController.navigate(Screen.ShareImageCard) },
             )
         }
 

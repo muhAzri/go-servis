@@ -40,5 +40,4 @@ sealed interface Screen {
     @Serializable data object EditVehicle : Screen
     @Serializable data object EditReminder : Screen
     @Serializable data object VehicleList : Screen
-    @Serializable data object ShareImageCard : Screen
 }

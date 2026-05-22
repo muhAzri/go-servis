@@ -51,7 +51,6 @@ fun ServiceDetailScreen(
     onEdit: () -> Unit = {},
     onDelete: () -> Unit = {},
     onOpenNextReminder: () -> Unit = {},
-    onShare: () -> Unit = {},
 ) {
     val font = plusJakartaSansFontFamily()
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -62,7 +61,7 @@ fun ServiceDetailScreen(
             .background(AppColors.BgWarm)
             .windowInsetsPadding(WindowInsets.statusBars),
     ) {
-        TopBar(onBack = onBack, onShare = onShare)
+        TopBar(onBack = onBack)
 
         Column(
             modifier = Modifier
@@ -130,7 +129,7 @@ private fun ConfirmDeleteDialog(
 }
 
 @Composable
-private fun TopBar(onBack: () -> Unit, onShare: () -> Unit) {
+private fun TopBar(onBack: () -> Unit) {
     val font = plusJakartaSansFontFamily()
     Row(
         modifier = Modifier
@@ -148,7 +147,6 @@ private fun TopBar(onBack: () -> Unit, onShare: () -> Unit) {
             fontFamily = font,
             modifier = Modifier.weight(1f),
         )
-        CircleIconButton(icon = FaIcons.SHARE, onClick = onShare)
     }
 }
 

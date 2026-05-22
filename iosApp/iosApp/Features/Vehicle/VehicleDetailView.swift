@@ -70,10 +70,6 @@ struct VehicleDetailView: View {
                 vehicleName: "Beat Hitam",
                 onDismiss: { showShareSheet = false },
                 onCopy: { showShareSheet = false },
-                onExportImage: {
-                    showShareSheet = false
-                    router.navigate(to: .shareImageCard)
-                },
                 onSystemShare: { showShareSheet = false }
             )
             .presentationDetents([.medium])

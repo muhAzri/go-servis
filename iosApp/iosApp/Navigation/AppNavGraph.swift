@@ -95,8 +95,7 @@ struct AppNavGraph: View {
             ServiceDetailView(
                 onEdit: { router.navigate(to: .addService) },
                 onDelete: { router.navigateBack() },
-                onOpenNextReminder: { router.navigate(to: .reminderDetail) },
-                onShare: { router.navigate(to: .shareImageCard) }
+                onOpenNextReminder: { router.navigate(to: .reminderDetail) }
             )
         case .vehicleDetail:
             VehicleDetailView()
@@ -156,10 +155,6 @@ struct AppNavGraph: View {
                 onBack: { router.navigateBack() },
                 onOpenVehicle: { _ in router.navigate(to: .vehicleDetail) },
                 onAddVehicle: { router.navigate(to: .addVehicle) }
-            )
-        case .shareImageCard:
-            ShareImageCardView(
-                onBack: { router.navigateBack() }
             )
         }
     }

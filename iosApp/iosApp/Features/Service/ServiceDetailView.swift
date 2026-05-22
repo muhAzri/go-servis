@@ -4,7 +4,6 @@ struct ServiceDetailView: View {
     var onEdit: () -> Void = {}
     var onDelete: () -> Void = {}
     var onOpenNextReminder: () -> Void = {}
-    var onShare: () -> Void = {}
 
     @State private var showDeleteConfirm: Bool = false
 
@@ -43,13 +42,6 @@ struct ServiceDetailView: View {
         .background(Color.sgBgWarm)
         .navigationTitle("Detail Servis")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                Button(action: onShare) {
-                    Image(systemName: "square.and.arrow.up")
-                }
-            }
-        }
         .confirmationDialog(
             "Hapus servis?",
             isPresented: $showDeleteConfirm,
