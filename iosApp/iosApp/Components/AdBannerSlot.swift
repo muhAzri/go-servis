@@ -5,10 +5,14 @@ struct AdBannerSlot: View {
 
     @State private var loadState: AdLoadState = .loading
 
+    private var isLoaded: Bool { loadState == .loaded }
+
     var body: some View {
         AdsBannerView(maxHeight: maxHeight, state: $loadState)
-            .padding(.horizontal, loadState == .loaded ? 16 : 0)
-            .opacity(loadState == .loaded ? 1 : 0)
+            .padding(.horizontal, 16)
+            .frame(height: isLoaded ? nil : 0)
+            .clipped()
+            .opacity(isLoaded ? 1 : 0)
             .animation(.easeOut(duration: 0.22), value: loadState)
     }
 }

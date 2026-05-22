@@ -7,10 +7,10 @@ struct NativeAdCard: View {
 
     var body: some View {
         AdsNativeCardView(state: $loadState)
+            .padding(.horizontal, 16)
             .frame(maxWidth: .infinity)
             .frame(height: isLoaded ? nil : 0)
             .clipped()
-            .padding(.horizontal, isLoaded ? 16 : 0)
             .opacity(isLoaded ? 1 : 0)
             .animation(.easeOut(duration: 0.22), value: loadState)
     }
