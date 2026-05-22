@@ -129,4 +129,11 @@ object FaIcons {
     const val PEN_TO_SQUARE    = "\uF044"
     const val FILE_LINES       = "\uF15C"
     const val CIRCLE_QUESTION  = "\uF059"
+
+    // Plot-holes primitives additions
+    const val MAGNIFYING_GLASS = "\uF002"
+    const val ROTATE           = "\uF2F1"
+    const val ARROW_ROTATE_RIGHT = "\uF2F9"
+    const val SLIDERS          = "\uF1DE"
+    const val ARROW_DOWN_SHORT_WIDE = "\uF884"
 }
