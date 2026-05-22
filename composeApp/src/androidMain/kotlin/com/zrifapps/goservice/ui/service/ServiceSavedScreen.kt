@@ -23,6 +23,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -95,18 +100,8 @@ fun ServiceSavedScreen(
             Spacer(Modifier.height(24.dp))
             SavedSummaryCard(onClick = onOpenServiceDetail)
 
-            Spacer(Modifier.height(12.dp))
-            Box(
-                modifier = Modifier.clickable(onClick = onAddReminderFromContext),
-            ) {
-                Text(
-                    text = "+ Buat pengingat berikutnya",
-                    color = AppColors.Primary,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = font,
-                )
-            }
+            Spacer(Modifier.height(16.dp))
+            NextReminderCtaCard(onCustomize = onAddReminderFromContext)
         }
 
         Column(
@@ -148,6 +143,135 @@ fun ServiceSavedScreen(
                         color = AppColors.TextMuted,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
+                        fontFamily = font,
+                    )
+                }
+            }
+        }
+    }
+}
+
+private enum class NextReminderState { Cta, Animating, Saved }
+
+@Composable
+private fun NextReminderCtaCard(onCustomize: () -> Unit) {
+    val font = plusJakartaSansFontFamily()
+    var state by remember { mutableStateOf(NextReminderState.Cta) }
+
+    LaunchedEffect(state) {
+        if (state == NextReminderState.Animating) {
+            kotlinx.coroutines.delay(400)
+            state = NextReminderState.Saved
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(AppColors.PrimarySofter)
+            .border(BorderStroke(1.dp, AppColors.Primary.copy(alpha = 0.2f)), RoundedCornerShape(18.dp))
+            .padding(16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(AppColors.Primary),
+                contentAlignment = Alignment.Center,
+            ) {
+                FaIcon(icon = FaIcons.BELL, color = Color.White, size = 16.sp)
+            }
+            Spacer(Modifier.size(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Pengingat berikutnya",
+                    color = AppColors.TextPrimary,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = font,
+                )
+                Text(
+                    text = "20.420 km · 6 Juli 2026",
+                    color = AppColors.TextMuted,
+                    fontSize = 11.sp,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                )
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        when (state) {
+            NextReminderState.Cta -> {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(40.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(AppColors.Primary)
+                            .clickable { state = NextReminderState.Animating },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = "Set otomatis",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = font,
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(40.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .border(BorderStroke(1.5.dp, AppColors.Primary), RoundedCornerShape(10.dp))
+                            .clickable(onClick = onCustomize),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = "Ubah dulu",
+                            color = AppColors.Primary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = font,
+                        )
+                    }
+                }
+            }
+            NextReminderState.Animating -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(AppColors.PrimarySoft),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    androidx.compose.material3.CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = AppColors.Primary,
+                        strokeWidth = 2.5.dp,
+                    )
+                }
+            }
+            NextReminderState.Saved -> {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(AppColors.PrimarySoft)
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    FaIcon(icon = FaIcons.CHECK, color = AppColors.Primary, size = 14.sp)
+                    Text(
+                        text = "Reminder dibuat: 5.000 km / 6 bulan",
+                        color = AppColors.Primary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
                         fontFamily = font,
                     )
                 }

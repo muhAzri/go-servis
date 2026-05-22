@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -50,7 +51,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zrifapps.goservice.ui.components.AppButton
 import com.zrifapps.goservice.ui.components.CircleIconButton
+import com.zrifapps.goservice.ui.components.ContextBanner
+import com.zrifapps.goservice.ui.components.ContextBannerTone
 import com.zrifapps.goservice.ui.components.DEFAULT_VEHICLE_OPTIONS
+import com.zrifapps.goservice.ui.components.MultiPicker
+import com.zrifapps.goservice.ui.components.MultiPickerGroup
+import com.zrifapps.goservice.ui.components.MultiPickerItem
 import com.zrifapps.goservice.ui.components.VehiclePickerRow
 import com.zrifapps.goservice.ui.components.VehiclePickerSheet
 import com.zrifapps.goservice.ui.theme.AppColors
@@ -77,10 +83,24 @@ private val serviceTypes = listOf(
     ServiceTypeChoice("radiator", "Radiator/\nCoolant",  FaIcons.TEMPERATURE_HALF,Color(0xFF3FB1D6)),
 )
 
+enum class AddServiceContext { Manual, FromReminder, FromComponent }
+
+private val trackedComponents = listOf(
+    MultiPickerItem(id = "oli_mesin",   label = "Oli mesin",     subtitle = "2.000 km", icon = FaIcons.OIL_CAN,  color = Color(0xFFE89C2E)),
+    MultiPickerItem(id = "filter_oli",  label = "Filter oli",    subtitle = "4.000 km", icon = FaIcons.FILTER,   color = Color(0xFF7B6FE8)),
+    MultiPickerItem(id = "filter_udara",label = "Filter udara",  subtitle = "8.000 km", icon = FaIcons.FILTER,   color = Color(0xFF7B6FE8)),
+    MultiPickerItem(id = "busi",        label = "Busi & tune-up",subtitle = "6.000 km", icon = FaIcons.BOLT,     color = Color(0xFFE8B62E)),
+    MultiPickerItem(id = "aki",         label = "Aki",            subtitle = "1–2 tahun", icon = FaIcons.CAR_BATTERY, color = Color(0xFFD6453A)),
+    MultiPickerItem(id = "kampas_rem",  label = "Kampas rem",     subtitle = "8.000 km", icon = FaIcons.CIRCLE_NOTCH, color = AppColors.Primary),
+    MultiPickerItem(id = "ban",         label = "Ban",            subtitle = "10.000 km", icon = FaIcons.LIFE_RING, color = Color(0xFF3F4D5C)),
+    MultiPickerItem(id = "radiator",    label = "Radiator / coolant", subtitle = "tahunan", icon = FaIcons.TEMPERATURE_HALF, color = Color(0xFF3FB1D6)),
+)
+
 @Composable
 fun AddServiceScreen(
     onClose: () -> Unit,
     onSaved: () -> Unit = {},
+    context: AddServiceContext = AddServiceContext.Manual,
 ) {
     val vehicles = remember { DEFAULT_VEHICLE_OPTIONS }
     var selectedVehicle by remember { mutableStateOf(vehicles.first()) }
@@ -90,9 +110,13 @@ fun AddServiceScreen(
     var workshop by remember { mutableStateOf("") }
     var costText by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
+    var selectedComponents by remember { mutableStateOf(setOf("oli_mesin", "filter_oli")) }
 
     var showVehicleSheet by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var showComponentPicker by remember { mutableStateOf(false) }
+    var contextDismissed by remember { mutableStateOf(false) }
+    val contextActive = !contextDismissed && context != AddServiceContext.Manual
 
     Column(
         modifier = Modifier
@@ -109,16 +133,52 @@ fun AddServiceScreen(
                 .padding(horizontal = 20.dp)
                 .padding(vertical = 8.dp),
         ) {
+            if (contextActive) {
+                ContextBanner(
+                    title = when (context) {
+                        AddServiceContext.FromReminder -> "Dari reminder"
+                        AddServiceContext.FromComponent -> "Untuk komponen: Oli mesin"
+                        else -> ""
+                    },
+                    body = when (context) {
+                        AddServiceContext.FromReminder -> "Ganti Oli Mesin · Beat Hitam — field di bawah sudah diisi otomatis."
+                        AddServiceContext.FromComponent -> "Servis ini akan tercatat sebagai update komponen yang dipantau."
+                        else -> ""
+                    },
+                    icon = if (context == AddServiceContext.FromReminder) FaIcons.BELL else FaIcons.WRENCH,
+                    tone = ContextBannerTone.Info,
+                    onDismiss = { contextDismissed = true },
+                )
+                Spacer(Modifier.height(14.dp))
+            }
             FieldLabel("Kendaraan")
             VehiclePickerRow(
                 selected = selectedVehicle,
-                onClick = { showVehicleSheet = true },
+                locked = contextActive,
+                onClick = { if (!contextActive) showVehicleSheet = true },
             )
             Spacer(Modifier.height(18.dp))
 
             FieldLabel("Jenis servis")
-            ServiceTypeGrid(selected = selectedType, onSelect = { selectedType = it })
+            ServiceTypeGrid(selected = selectedType, onSelect = { if (!contextActive) selectedType = it })
             Spacer(Modifier.height(18.dp))
+
+            FieldLabel("Komponen yang diservis · ${selectedComponents.size}")
+            ComponentChipsRow(
+                selectedIds = selectedComponents,
+                allItems = trackedComponents,
+                onRemove = { id -> selectedComponents = selectedComponents - id },
+                onAdd = { showComponentPicker = true },
+            )
+            Text(
+                text = "Daftar diambil dari komponen yang kamu pantau. Tambah di Detail Kendaraan → Komponen.",
+                color = AppColors.TextSubtle,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                fontFamily = plusJakartaSansFontFamily(),
+                lineHeight = 16.sp,
+                modifier = Modifier.padding(top = 6.dp, bottom = 18.dp),
+            )
 
             DateField(
                 label = "Tanggal servis",
@@ -187,6 +247,96 @@ fun AddServiceScreen(
                 showDatePicker = false
             },
         )
+    }
+
+    if (showComponentPicker) {
+        MultiPicker(
+            title = "Pilih komponen yang diservis",
+            subtitle = "${selectedComponents.size} terpilih dari ${trackedComponents.size} dipantau",
+            groups = listOf(MultiPickerGroup(title = "Dipantau", items = trackedComponents)),
+            initiallySelected = selectedComponents,
+            onDismiss = { showComponentPicker = false },
+            onConfirm = { picked ->
+                selectedComponents = picked
+                showComponentPicker = false
+            },
+        )
+    }
+}
+
+@Composable
+private fun ComponentChipsRow(
+    selectedIds: Set<String>,
+    allItems: List<MultiPickerItem>,
+    onRemove: (String) -> Unit,
+    onAdd: () -> Unit,
+) {
+    val font = plusJakartaSansFontFamily()
+    val pickedItems = allItems.filter { it.id in selectedIds }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(AppColors.Surface)
+            .border(BorderStroke(1.5.dp, AppColors.Border), RoundedCornerShape(14.dp))
+            .padding(10.dp),
+    ) {
+        if (pickedItems.isNotEmpty()) {
+            androidx.compose.foundation.layout.FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                pickedItems.forEach { item ->
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(100.dp))
+                            .background(AppColors.PrimarySoft)
+                            .padding(start = 10.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        if (item.icon != null) {
+                            FaIcon(icon = item.icon, color = AppColors.Primary, size = 11.sp)
+                        }
+                        Text(
+                            text = item.label,
+                            color = AppColors.Primary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = font,
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(18.dp)
+                                .clip(RoundedCornerShape(100.dp))
+                                .background(Color.Black.copy(alpha = 0.06f))
+                                .clickable { onRemove(item.id) },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            FaIcon(icon = FaIcons.XMARK, color = AppColors.Primary, size = 9.sp)
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+        Row(
+            modifier = Modifier
+                .clickable(onClick = onAdd)
+                .padding(horizontal = 4.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FaIcon(icon = FaIcons.PLUS, color = AppColors.Primary, size = 12.sp)
+            Text(
+                text = "Pilih komponen (${selectedIds.size} / ${allItems.size} dipantau)",
+                color = AppColors.Primary,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = font,
+            )
+        }
     }
 }
 
