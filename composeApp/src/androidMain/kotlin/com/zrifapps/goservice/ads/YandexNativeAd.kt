@@ -4,6 +4,12 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -32,6 +38,7 @@ import com.zrifapps.goservice.R
 @Composable
 fun YandexNativeAd(
     adUnitId: String = AdsConfig.NATIVE_CONTENT_UNIT_ID,
+    onLoadStateChange: (AdLoadState) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -48,8 +55,11 @@ fun YandexNativeAd(
             object : NativeAdLoadListener {
                 override fun onAdLoaded(nativeAd: NativeAd) {
                     loadedAd = nativeAd
+                    onLoadStateChange(AdLoadState.Loaded)
                 }
-                override fun onAdFailedToLoad(error: AdRequestError) = Unit
+                override fun onAdFailedToLoad(error: AdRequestError) {
+                    onLoadStateChange(AdLoadState.Failed)
+                }
             },
         )
     }
@@ -62,10 +72,17 @@ fun YandexNativeAd(
         }
     }
 
-    val ad = loadedAd ?: return
-    AndroidView(
-        modifier = modifier.fillMaxWidth(),
-        factory = { ctx ->
+    val ad = loadedAd
+    AnimatedVisibility(
+        visible = ad != null,
+        enter = fadeIn(animationSpec = tween(220)) +
+            expandVertically(animationSpec = tween(220)),
+        exit = fadeOut() + shrinkVertically(),
+    ) {
+        if (ad == null) return@AnimatedVisibility
+        AndroidView(
+            modifier = modifier.fillMaxWidth(),
+            factory = { ctx ->
             val view = LayoutInflater.from(ctx)
                 .inflate(R.layout.yandex_native_ad, null, false) as NativeAdView
             view.layoutParams = ViewGroup.LayoutParams(
@@ -97,5 +114,6 @@ fun YandexNativeAd(
                 is AdBindingResult.Failure -> Unit
             }
         },
-    )
+        )
+    }
 }

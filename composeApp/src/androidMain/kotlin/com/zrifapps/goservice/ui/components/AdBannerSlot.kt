@@ -12,6 +12,8 @@ fun AdBannerSlot(
     modifier: Modifier = Modifier,
     maxHeightDp: Int = 100,
 ) {
+    // YandexBannerInline keeps a zero-height, alpha-0 footprint until fill, then
+    // fades + expands into place. On no-fill / failure it stays invisible.
     YandexBannerInline(
         maxHeightDp = maxHeightDp,
         modifier = modifier

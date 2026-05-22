@@ -4,16 +4,18 @@ import YandexMobileAds
 struct AdsBannerView: View {
     var unitId: String = AdsConfig.bannerUnitId
     var maxHeight: CGFloat = 250
+    @Binding var state: AdLoadState
 
     var body: some View {
         GeometryReader { proxy in
             BannerAdRepresentable(
                 unitId: unitId,
                 width: proxy.size.width,
-                maxHeight: maxHeight
+                maxHeight: maxHeight,
+                state: $state
             )
         }
-        .frame(height: maxHeight)
+        .frame(height: state == .loaded ? maxHeight : 0)
     }
 }
 
@@ -21,9 +23,9 @@ private struct BannerAdRepresentable: UIViewRepresentable {
     let unitId: String
     let width: CGFloat
     let maxHeight: CGFloat
+    @Binding var state: AdLoadState
 
-    func makeCoordinator() -> Coordinator { Coordinator() }
-
+    func makeCoordinator() -> Coordinator { Coordinator(state: $state) }
 
     func makeUIView(context: Context) -> BannerAdView {
         let size = BannerAdSize.inline(width: max(width, 50), maxHeight: maxHeight)
@@ -42,9 +44,22 @@ private struct BannerAdRepresentable: UIViewRepresentable {
 
     @MainActor
     final class Coordinator: NSObject, BannerAdViewDelegate {
-        func bannerAdViewDidLoad(_ bannerAdView: BannerAdView) {}
-        func bannerAdViewDidFailLoading(_ bannerAdView: BannerAdView, error: Error) {}
+        let state: Binding<AdLoadState>
+
+        init(state: Binding<AdLoadState>) {
+            self.state = state
+        }
+
+        func bannerAdViewDidLoad(_ bannerAdView: BannerAdView) {
+            state.wrappedValue = .loaded
+        }
+
+        func bannerAdViewDidFailLoading(_ bannerAdView: BannerAdView, error: Error) {
+            state.wrappedValue = .failed
+        }
+
         func bannerAdViewDidClick(_ bannerAdView: BannerAdView) {}
+
         func bannerAdView(_ bannerAdView: BannerAdView, didTrackImpression impressionData: ImpressionData?) {}
     }
 }

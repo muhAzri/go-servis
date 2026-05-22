@@ -6,6 +6,8 @@ struct TestView: View {
     @State private var showContent = false
     @State private var showBanner = false
     @State private var showNative = false
+    @State private var bannerLoadState: AdLoadState = .loading
+    @State private var nativeLoadState: AdLoadState = .loading
     @State private var interstitial = InterstitialController.shared
 
     var body: some View {
@@ -40,11 +42,11 @@ struct TestView: View {
                 }
 
                 if showBanner {
-                    AdsBannerView()
+                    AdsBannerView(state: $bannerLoadState)
                         .frame(maxWidth: .infinity)
                 }
                 if showNative {
-                    AdsNativeCardView()
+                    AdsNativeCardView(state: $nativeLoadState)
                         .frame(height: 360)
                 }
 

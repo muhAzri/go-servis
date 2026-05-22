@@ -9,6 +9,8 @@ import com.zrifapps.goservice.ads.YandexNativeAd
 
 @Composable
 fun NativeAdCard(modifier: Modifier = Modifier) {
+    // YandexNativeAd renders zero-height while loading and fades in once the
+    // ad fills. If no fill, nothing is ever drawn.
     YandexNativeAd(
         modifier = modifier
             .fillMaxWidth()
