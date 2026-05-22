@@ -3,13 +3,52 @@ import SwiftUI
 struct RemindersView: View {
     var onOpenReminderDetail: () -> Void = {}
     var onAddReminder: () -> Void = {}
+    var isEmpty: Bool = false
+    var isLoading: Bool = false
+    var isRefreshing: Bool = false
 
     @State private var selectedFilter: ReminderFilter = .all
+    @State private var searchQuery: String = ""
 
     var body: some View {
+        if isLoading {
+            VStack(alignment: .leading, spacing: 0) {
+                RemindersHeader(onAddReminder: onAddReminder)
+                Skeleton.Row(leading: .icon)
+                Skeleton.Row(leading: .icon)
+                Skeleton.Row(leading: .icon)
+                Spacer()
+            }
+        } else if isEmpty {
+            VStack(alignment: .leading, spacing: 0) {
+                RemindersHeader(onAddReminder: onAddReminder)
+                EmptyState(
+                    iconUnicode: "\u{f0f3}",
+                    title: "Belum ada pengingat aktif",
+                    body: "Buat pengingat berdasarkan KM atau tanggal supaya servis tepat waktu.",
+                    ctaLabel: "+ Buat Pengingat",
+                    onCta: onAddReminder
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        } else {
+            scrollContent
+        }
+    }
+
+    private var scrollContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 RemindersHeader(onAddReminder: onAddReminder)
+
+                StickySearchHeader(
+                    placeholder: "Cari pengingat…",
+                    text: $searchQuery
+                )
+
+                if isRefreshing {
+                    PullRefreshIndicator(state: .refreshing)
+                }
 
                 FilterChips(selected: $selectedFilter)
                     .padding(.horizontal, 20)

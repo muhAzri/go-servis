@@ -17,6 +17,7 @@ struct MainTabsView: View {
                         onOpenReminders: { selectedTab = .reminders },
                         onOpenReminderDetail: { router.navigate(to: .reminderDetail) },
                         onOpenVehicleDetail: { router.navigate(to: .vehicleDetail) },
+                        onOpenVehicleList: { router.navigate(to: .vehicleList) },
                         onAddService: { router.navigate(to: .addService) },
                         onAddVehicle: { router.navigate(to: .addVehicle) },
                         onUpdateOdometer: { router.navigate(to: .updateOdometer) },

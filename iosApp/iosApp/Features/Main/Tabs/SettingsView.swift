@@ -11,6 +11,8 @@ struct SettingsView: View {
     var onOpenEditProfile: () -> Void = {}
 
     @State private var notifPengingatOn = true
+    @State private var showExportSheet = false
+    @State private var showWipeFlow = false
 
     var body: some View {
         ScrollView {
@@ -29,14 +31,14 @@ struct SettingsView: View {
                     SettingsRow(
                         icon: "\u{f15b}",
                         label: "Ekspor Data (CSV)",
-                        action: {}
+                        action: { showExportSheet = true }
                     )
                     SectionDivider()
                     SettingsRow(
                         icon: "\u{f1f8}",
                         label: "Hapus Semua Data",
                         isDanger: true,
-                        action: {}
+                        action: { showWipeFlow = true }
                     )
                 }
 
@@ -61,6 +63,21 @@ struct SettingsView: View {
                 }
 
                 SettingsFooter()
+            }
+        }
+        .sheet(isPresented: $showExportSheet) {
+            ExportCsvSheet(
+                onDismiss: { showExportSheet = false },
+                onShare: { showExportSheet = false }
+            )
+            .presentationDetents([.large])
+        }
+        .overlay {
+            if showWipeFlow {
+                WipeDataFlow(
+                    isPresented: $showWipeFlow,
+                    onConfirmed: { showWipeFlow = false }
+                )
             }
         }
     }

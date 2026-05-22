@@ -5,15 +5,69 @@ struct HomeView: View {
     var onOpenReminders: () -> Void = {}
     var onOpenReminderDetail: () -> Void = {}
     var onOpenVehicleDetail: () -> Void = {}
+    var onOpenVehicleList: () -> Void = {}
     var onAddService: () -> Void = {}
     var onAddVehicle: () -> Void = {}
     var onUpdateOdometer: () -> Void = {}
     var onOpenTips: () -> Void = {}
+    var notifPermissionGranted: Bool = false
+    var isEmpty: Bool = false
+    var isLoading: Bool = false
+
+    @State private var bannerDismissed: Bool = false
+    @State private var showNotifSheet: Bool = false
+
+    private var showBanner: Bool {
+        !notifPermissionGranted && !bannerDismissed && !isEmpty && !isLoading
+    }
 
     var body: some View {
+        if isLoading {
+            VStack(alignment: .leading, spacing: 0) {
+                HomeHeader(userName: userName, onOpenReminders: onOpenReminders)
+                Skeleton.Card(height: 150)
+                Skeleton.Row(leading: .icon)
+                Skeleton.Row(leading: .icon)
+                Skeleton.Row(leading: .icon)
+                Spacer()
+            }
+        } else if isEmpty {
+            VStack(alignment: .leading, spacing: 0) {
+                HomeHeader(userName: userName, onOpenReminders: onOpenReminders)
+                EmptyState(
+                    iconUnicode: "\u{f21c}",
+                    title: "Belum ada kendaraan",
+                    body: "Tambah motor atau mobilmu untuk mulai catat servis & dapat pengingat.",
+                    ctaLabel: "+ Tambah Kendaraan",
+                    onCta: onAddVehicle,
+                    secondaryLabel: "Pelajari dulu",
+                    onSecondary: onOpenTips
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        } else {
+            scrollContent
+        }
+    }
+
+    private var scrollContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 HomeHeader(userName: userName, onOpenReminders: onOpenReminders)
+
+                if showBanner {
+                    ContextBanner(
+                        title: "Notif belum aktif",
+                        body: "Pengingat servis tidak akan muncul di lock screen. Aktifkan supaya tidak kelewat.",
+                        iconUnicode: "\u{f0f3}",
+                        tone: .warning,
+                        ctaLabel: "Aktifkan →",
+                        onCta: { showNotifSheet = true },
+                        onDismiss: { bannerDismissed = true }
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 8)
+                }
 
                 HeroStatusCard(onOpenVehicleDetail: onOpenVehicleDetail)
                     .padding(.horizontal, 16)
@@ -62,7 +116,7 @@ struct HomeView: View {
                 NativeAdCard()
                     .padding(.bottom, 12)
 
-                SectionHeading(title: "Kendaraan saya", actionLabel: nil, action: {})
+                SectionHeading(title: "Kendaraan saya", actionLabel: "Lihat semua", action: onOpenVehicleList)
 
                 VStack(spacing: 8) {
                     VehicleSummaryRow(
@@ -97,6 +151,13 @@ struct HomeView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
             }
+        }
+        .sheet(isPresented: $showNotifSheet) {
+            NotifPermissionSheet(
+                onDismiss: { showNotifSheet = false },
+                onOpenSettings: { showNotifSheet = false }
+            )
+            .presentationDetents([.medium])
         }
     }
 }
