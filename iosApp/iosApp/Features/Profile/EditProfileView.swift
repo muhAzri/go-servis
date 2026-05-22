@@ -24,7 +24,10 @@ struct EditProfileView: View {
 
     @State private var draftName: String = ""
     @State private var draftColorId: String = "primary"
+    @State private var draftEmail: String = ""
+    @State private var emailError: String = ""
     @FocusState private var isFocused: Bool
+    @FocusState private var emailFocused: Bool
 
     private var selectedColor: Color {
         palette.first(where: { $0.id == draftColorId })?.color ?? .sgPrimary
@@ -171,19 +174,63 @@ struct EditProfileView: View {
     private var emailField: some View {
         VStack(alignment: .leading, spacing: 6) {
             sectionLabel("Email (opsional · untuk backup)")
-            Text("tambahkan untuk backup ke Drive")
-                .font(.custom("PlusJakartaSans-Regular", size: 15))
-                .foregroundColor(.sgTextSubtle)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .strokeBorder(Color.sgBorder, lineWidth: 1.5)
-                )
+            HStack(spacing: 10) {
+                Text("\u{f0e0}")
+                    .font(.custom("FontAwesome6Free-Solid", size: 16))
+                    .foregroundColor(.sgTextMuted)
+                TextField("alamat@email.com", text: $draftEmail)
+                    .focused($emailFocused)
+                    .keyboardType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .font(.custom("PlusJakartaSans-SemiBold", size: 15))
+                    .foregroundColor(.sgTextPrimary)
+                    .onChange(of: draftEmail) { _, newValue in
+                        validateEmail(newValue)
+                    }
+                if !draftEmail.isEmpty && emailError.isEmpty {
+                    Text("\u{f00c}")
+                        .font(.custom("FontAwesome6Free-Solid", size: 14))
+                        .foregroundColor(.sgPrimary)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.sgSurface)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .strokeBorder(emailError.isEmpty ? (emailFocused ? Color.sgPrimary : Color.sgBorder) : Color.sgDanger, lineWidth: 1.5)
+            )
+
+            if !emailError.isEmpty {
+                HStack(spacing: 6) {
+                    Text("\u{f06a}")
+                        .font(.custom("FontAwesome6Free-Solid", size: 11))
+                        .foregroundColor(.sgDanger)
+                    Text(emailError)
+                        .font(.custom("PlusJakartaSans-SemiBold", size: 11))
+                        .foregroundColor(.sgDanger)
+                }
+                .padding(.leading, 4)
+            } else {
+                Text("Dipakai untuk recovery data kalau kamu ganti HP atau hapus app.")
+                    .font(.custom("PlusJakartaSans-Regular", size: 11))
+                    .foregroundColor(.sgTextSubtle)
+                    .padding(.leading, 4)
+            }
         }
+    }
+
+    private func validateEmail(_ value: String) {
+        if value.isEmpty {
+            emailError = ""
+            return
+        }
+        let pattern = #"^[^\s@]+@[^\s@]+\.[^\s@]+$"#
+        let valid = value.range(of: pattern, options: .regularExpression) != nil
+        emailError = valid ? "" : "Format email tidak valid"
     }
 
     private var statsCard: some View {
