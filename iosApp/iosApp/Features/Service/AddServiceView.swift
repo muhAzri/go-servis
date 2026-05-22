@@ -1,7 +1,29 @@
 import SwiftUI
 
+enum AddServiceContext { case manual, fromReminder, fromComponent }
+
+private struct TrackedComponent: Identifiable, Hashable {
+    let id: String
+    let label: String
+    let subtitle: String
+    let iconUnicode: String
+    let color: Color
+}
+
+private let trackedComponents: [TrackedComponent] = [
+    .init(id: "oli_mesin",    label: "Oli mesin",     subtitle: "2.000 km", iconUnicode: "\u{f613}", color: Color(red: 0.91, green: 0.61, blue: 0.18)),
+    .init(id: "filter_oli",   label: "Filter oli",    subtitle: "4.000 km", iconUnicode: "\u{f0b0}", color: Color(red: 0.48, green: 0.44, blue: 0.91)),
+    .init(id: "filter_udara", label: "Filter udara",  subtitle: "8.000 km", iconUnicode: "\u{f0b0}", color: Color(red: 0.48, green: 0.44, blue: 0.91)),
+    .init(id: "busi",         label: "Busi & tune-up",subtitle: "6.000 km", iconUnicode: "\u{f0e7}", color: Color(red: 0.91, green: 0.71, blue: 0.18)),
+    .init(id: "aki",          label: "Aki",            subtitle: "1–2 tahun", iconUnicode: "\u{f5df}", color: Color(red: 0.84, green: 0.27, blue: 0.23)),
+    .init(id: "kampas_rem",   label: "Kampas rem",     subtitle: "8.000 km", iconUnicode: "\u{f1ce}", color: .sgPrimary),
+    .init(id: "ban",          label: "Ban",            subtitle: "10.000 km", iconUnicode: "\u{f1cd}", color: Color(red: 0.25, green: 0.30, blue: 0.36)),
+    .init(id: "radiator",     label: "Radiator",       subtitle: "tahunan",   iconUnicode: "\u{f2c9}", color: Color(red: 0.25, green: 0.69, blue: 0.84)),
+]
+
 struct AddServiceView: View {
     var onSaved: () -> Void = {}
+    var context: AddServiceContext = .manual
 
     @State private var selectedVehicle: VehicleOption = VehicleOptions.defaults[0]
     @State private var selectedService: String = "oli"
@@ -10,9 +32,16 @@ struct AddServiceView: View {
     @State private var workshop: String = ""
     @State private var costText: String = ""
     @State private var note: String = ""
+    @State private var selectedComponents: Set<String> = ["oli_mesin", "filter_oli"]
+    @State private var contextDismissed: Bool = false
 
     @State private var showVehiclePicker: Bool = false
     @State private var showDatePicker: Bool = false
+    @State private var showComponentPicker: Bool = false
+
+    private var contextActive: Bool {
+        !contextDismissed && context != .manual
+    }
 
     private static let dateFormatter: DateFormatter = {
         let df = DateFormatter()
@@ -25,14 +54,41 @@ struct AddServiceView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
+                    if contextActive {
+                        ContextBanner(
+                            title: context == .fromReminder ? "Dari reminder" : "Untuk komponen: Oli mesin",
+                            body: context == .fromReminder
+                                ? "Ganti Oli Mesin · Beat Hitam — field di bawah sudah diisi otomatis."
+                                : "Servis ini akan tercatat sebagai update komponen yang dipantau.",
+                            iconUnicode: context == .fromReminder ? "\u{f0f3}" : "\u{f0ad}",
+                            tone: .info,
+                            onDismiss: { contextDismissed = true }
+                        )
+                        .padding(.bottom, 14)
+                    }
+
                     FieldLabel(text: "Kendaraan")
-                    VehiclePickerRow(selected: selectedVehicle) {
-                        showVehiclePicker = true
+                    VehiclePickerRow(selected: selectedVehicle, locked: contextActive) {
+                        if !contextActive { showVehiclePicker = true }
                     }
                     .padding(.bottom, 18)
 
                     FieldLabel(text: "Jenis servis")
                     ServiceTypeGrid(selected: $selectedService)
+                        .padding(.bottom, 18)
+
+                    FieldLabel(text: "Komponen yang diservis · \(selectedComponents.count)")
+                    ComponentChipsRow(
+                        selectedIds: selectedComponents,
+                        allItems: trackedComponents,
+                        onRemove: { id in selectedComponents.remove(id) },
+                        onAdd: { showComponentPicker = true }
+                    )
+                    Text("Daftar diambil dari komponen yang kamu pantau. Tambah di Detail Kendaraan → Komponen.")
+                        .font(.custom("PlusJakartaSans-Medium", size: 11))
+                        .foregroundColor(.sgTextSubtle)
+                        .lineSpacing(2)
+                        .padding(.top, 6)
                         .padding(.bottom, 18)
 
                     DateRowField(
@@ -101,6 +157,173 @@ struct AddServiceView: View {
             DatePickerSheet(date: $serviceDate, onDone: { showDatePicker = false })
                 .presentationDetents([.medium])
         }
+        .sheet(isPresented: $showComponentPicker) {
+            ComponentPickerSheet(
+                allItems: trackedComponents,
+                initiallySelected: selectedComponents,
+                onApply: { picked in
+                    selectedComponents = picked
+                    showComponentPicker = false
+                },
+                onDismiss: { showComponentPicker = false }
+            )
+            .presentationDetents([.large])
+        }
+    }
+}
+
+private struct ComponentChipsRow: View {
+    let selectedIds: Set<String>
+    let allItems: [TrackedComponent]
+    let onRemove: (String) -> Void
+    let onAdd: () -> Void
+
+    private var pickedItems: [TrackedComponent] {
+        allItems.filter { selectedIds.contains($0.id) }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if !pickedItems.isEmpty {
+                FlowLayout(spacing: 6) {
+                    ForEach(pickedItems) { item in
+                        HStack(spacing: 6) {
+                            Text(item.iconUnicode)
+                                .font(.custom("FontAwesome6Free-Solid", size: 11))
+                                .foregroundColor(.sgPrimary)
+                            Text(item.label)
+                                .font(.custom("PlusJakartaSans-Bold", size: 11))
+                                .foregroundColor(.sgPrimary)
+                            Button(action: { onRemove(item.id) }) {
+                                Text("\u{f00d}")
+                                    .font(.custom("FontAwesome6Free-Solid", size: 9))
+                                    .foregroundColor(.sgPrimary)
+                                    .frame(width: 16, height: 16)
+                                    .background(Color.black.opacity(0.06))
+                                    .clipShape(Circle())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.leading, 10)
+                        .padding(.trailing, 4)
+                        .padding(.vertical, 4)
+                        .background(Color.sgPrimarySoft)
+                        .clipShape(Capsule())
+                    }
+                }
+            }
+            Button(action: onAdd) {
+                HStack(spacing: 8) {
+                    Text("\u{2b}")
+                        .font(.custom("FontAwesome6Free-Solid", size: 12))
+                        .foregroundColor(.sgPrimary)
+                    Text("Pilih komponen (\(selectedIds.count) / \(allItems.count) dipantau)")
+                        .font(.custom("PlusJakartaSans-Bold", size: 13))
+                        .foregroundColor(.sgPrimary)
+                }
+                .padding(.horizontal, 4)
+                .padding(.vertical, 6)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.sgSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .strokeBorder(Color.sgBorder, lineWidth: 1.5)
+        )
+    }
+}
+
+private struct ComponentPickerSheet: View {
+    let allItems: [TrackedComponent]
+    let initiallySelected: Set<String>
+    let onApply: (Set<String>) -> Void
+    let onDismiss: () -> Void
+
+    @State private var draft: Set<String> = []
+    @State private var query: String = ""
+
+    private var filtered: [TrackedComponent] {
+        query.isEmpty ? allItems : allItems.filter { $0.label.localizedCaseInsensitiveContains(query) }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Pilih komponen yang diservis")
+                .font(.custom("PlusJakartaSans-ExtraBold", size: 18))
+                .foregroundColor(.sgTextPrimary)
+                .padding(.horizontal, 20)
+                .padding(.top, 18)
+            Text("\(draft.count) terpilih dari \(allItems.count) dipantau")
+                .font(.custom("PlusJakartaSans-Medium", size: 12))
+                .foregroundColor(.sgTextMuted)
+                .padding(.horizontal, 20)
+                .padding(.top, 2)
+                .padding(.bottom, 12)
+
+            StickySearchHeader(placeholder: "Cari komponen…", text: $query)
+
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(filtered) { item in
+                        Button(action: {
+                            if draft.contains(item.id) { draft.remove(item.id) } else { draft.insert(item.id) }
+                        }) {
+                            HStack(spacing: 12) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .strokeBorder(draft.contains(item.id) ? Color.sgPrimary : Color.sgBorder, lineWidth: 2)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 6)
+                                                .fill(draft.contains(item.id) ? Color.sgPrimary : Color.clear)
+                                        )
+                                        .frame(width: 22, height: 22)
+                                    if draft.contains(item.id) {
+                                        Text("\u{f00c}")
+                                            .font(.custom("FontAwesome6Free-Solid", size: 12))
+                                            .foregroundColor(.white)
+                                    }
+                                }
+                                Text(item.iconUnicode)
+                                    .font(.custom("FontAwesome6Free-Solid", size: 18))
+                                    .foregroundColor(item.color)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(item.label)
+                                        .font(.custom("PlusJakartaSans-SemiBold", size: 14))
+                                        .foregroundColor(.sgTextPrimary)
+                                    Text(item.subtitle)
+                                        .font(.system(size: 11, weight: .regular, design: .monospaced))
+                                        .foregroundColor(.sgTextSubtle)
+                                }
+                                Spacer()
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.bottom, 12)
+            }
+
+            Button(action: { onApply(draft) }) {
+                Text("Pilih (\(draft.count))")
+                    .font(.custom("PlusJakartaSans-Bold", size: 15))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(Color.sgPrimary)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 24)
+        }
+        .background(Color.sgSurface)
+        .onAppear { draft = initiallySelected }
     }
 }
 
