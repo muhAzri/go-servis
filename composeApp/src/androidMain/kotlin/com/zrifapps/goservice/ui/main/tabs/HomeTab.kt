@@ -30,11 +30,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.zrifapps.goservice.ui.components.AdBannerSlot
+import com.zrifapps.goservice.ui.components.ContextBanner
+import com.zrifapps.goservice.ui.components.ContextBannerTone
+import com.zrifapps.goservice.ui.components.EmptyState
 import com.zrifapps.goservice.ui.components.IconBadge
 import com.zrifapps.goservice.ui.components.NativeAdCard
 import com.zrifapps.goservice.ui.components.ReminderUrgency
+import com.zrifapps.goservice.ui.components.Skeleton
+import com.zrifapps.goservice.ui.components.SkeletonLeading
 import com.zrifapps.goservice.ui.components.StatusPill
+import com.zrifapps.goservice.ui.onboarding.NotifPermissionSheet
 import com.zrifapps.goservice.ui.components.color
 import com.zrifapps.goservice.ui.components.softColor
 import com.zrifapps.goservice.ui.theme.AppColors
@@ -49,17 +59,68 @@ fun HomeTab(
     onOpenReminders: () -> Unit = {},
     onOpenReminderDetail: () -> Unit = {},
     onOpenVehicleDetail: () -> Unit = {},
+    onOpenVehicleList: () -> Unit = {},
     onAddService: () -> Unit = {},
     onAddVehicle: () -> Unit = {},
     onUpdateOdometer: () -> Unit = {},
     onOpenTips: () -> Unit = {},
+    notifPermissionGranted: Boolean = false,
+    isEmpty: Boolean = false,
+    isLoading: Boolean = false,
 ) {
+    var bannerDismissed by remember { mutableStateOf(false) }
+    var showNotifSheet by remember { mutableStateOf(false) }
+    val showBanner = !notifPermissionGranted && !bannerDismissed && !isEmpty && !isLoading
+
+    if (isLoading) {
+        Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            HomeHeader(userName = userName, onOpenReminders = onOpenReminders)
+            Spacer(Modifier.height(8.dp))
+            Skeleton.Card(height = 150.dp, lines = 3)
+            Spacer(Modifier.height(12.dp))
+            Skeleton.Row(leading = SkeletonLeading.Icon, lines = 2)
+            Skeleton.Row(leading = SkeletonLeading.Icon, lines = 2)
+            Skeleton.Row(leading = SkeletonLeading.Icon, lines = 2)
+        }
+        return
+    }
+
+    if (isEmpty) {
+        Column(modifier = modifier.fillMaxSize()) {
+            HomeHeader(userName = userName, onOpenReminders = onOpenReminders)
+            EmptyState(
+                modifier = Modifier.weight(1f),
+                icon = FaIcons.MOTORCYCLE,
+                title = "Belum ada kendaraan",
+                body = "Tambah motor atau mobilmu untuk mulai catat servis & dapat pengingat.",
+                ctaLabel = "+ Tambah Kendaraan",
+                onCta = onAddVehicle,
+                secondaryLabel = "Pelajari dulu",
+                onSecondary = onOpenTips,
+            )
+        }
+        return
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
         HomeHeader(userName = userName, onOpenReminders = onOpenReminders)
+
+        if (showBanner) {
+            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                ContextBanner(
+                    title = "Notif belum aktif",
+                    body = "Pengingat servis tidak akan muncul di lock screen. Aktifkan supaya tidak kelewat.",
+                    tone = ContextBannerTone.Warning,
+                    ctaLabel = "Aktifkan →",
+                    onCta = { showNotifSheet = true },
+                    onDismiss = { bannerDismissed = true },
+                )
+            }
+        }
         HeroStatusCard(onOpenVehicleDetail = onOpenVehicleDetail)
         Spacer(Modifier.height(16.dp))
         AdBannerSlot()
@@ -101,7 +162,7 @@ fun HomeTab(
         Spacer(Modifier.height(12.dp))
         NativeAdCard()
         Spacer(Modifier.height(12.dp))
-        SectionHeading(title = "Kendaraan saya", actionLabel = null, onAction = {})
+        SectionHeading(title = "Kendaraan saya", actionLabel = "Lihat semua", onAction = onOpenVehicleList)
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -136,6 +197,13 @@ fun HomeTab(
             )
         }
         Spacer(Modifier.height(20.dp))
+    }
+
+    if (showNotifSheet) {
+        NotifPermissionSheet(
+            onDismiss = { showNotifSheet = false },
+            onOpenSystemSettings = { showNotifSheet = false },
+        )
     }
 }
 

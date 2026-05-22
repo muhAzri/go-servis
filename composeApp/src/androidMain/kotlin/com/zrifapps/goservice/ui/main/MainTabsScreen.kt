@@ -40,6 +40,7 @@ fun MainTabsScreen(
     onOpenAbout: () -> Unit = {},
     onOpenHelp: () -> Unit = {},
     onOpenEditProfile: () -> Unit = {},
+    onOpenVehicleList: () -> Unit = {},
 ) {
     var selectedTab by remember { mutableStateOf(BottomTab.Home) }
 
@@ -60,6 +61,7 @@ fun MainTabsScreen(
                     onOpenReminders = { selectedTab = BottomTab.Reminders },
                     onOpenReminderDetail = onOpenReminderDetail,
                     onOpenVehicleDetail = onOpenVehicleDetail,
+                    onOpenVehicleList = onOpenVehicleList,
                     onAddService = onAddService,
                     onAddVehicle = onAddVehicle,
                     onUpdateOdometer = onUpdateOdometer,

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,19 +33,71 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.zrifapps.goservice.ui.components.EmptyState
 import com.zrifapps.goservice.ui.components.IconBadge
 import com.zrifapps.goservice.ui.components.NativeAdCard
+import com.zrifapps.goservice.ui.components.Skeleton
+import com.zrifapps.goservice.ui.components.SkeletonLeading
+import com.zrifapps.goservice.ui.components.SortChip
+import com.zrifapps.goservice.ui.components.StickySearchHeader
+import com.zrifapps.goservice.ui.components.PullRefreshIndicator
+import com.zrifapps.goservice.ui.components.PullRefreshState
+import com.zrifapps.goservice.ui.main.sheets.HistoryFilterSheet
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
 import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
 
+private val sortOptions = listOf(
+    "date_desc" to "Terbaru dulu",
+    "date_asc" to "Terlama dulu",
+    "cost_desc" to "Termahal dulu",
+    "cost_asc" to "Termurah dulu",
+    "vehicle" to "Per kendaraan",
+)
+
 @Composable
 fun HistoryTab(
     modifier: Modifier = Modifier,
     onOpenServiceDetail: () -> Unit = {},
+    onAddService: () -> Unit = {},
+    isEmpty: Boolean = false,
+    isLoading: Boolean = false,
+    isRefreshing: Boolean = false,
 ) {
     var selectedFilter by remember { mutableStateOf("Semua kendaraan") }
+    var searchQuery by remember { mutableStateOf("") }
+    var sortKey by remember { mutableStateOf("date_desc") }
+    var showSortSheet by remember { mutableStateOf(false) }
+    var showFilterSheet by remember { mutableStateOf(false) }
+    val sortLabel = sortOptions.firstOrNull { it.first == sortKey }?.second ?: "Terbaru"
+
+    if (isLoading) {
+        Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            TabHeader(subtitle = null, title = "Riwayat Servis")
+            Spacer(Modifier.height(12.dp))
+            Skeleton.Row(leading = SkeletonLeading.Icon, lines = 2)
+            Skeleton.Row(leading = SkeletonLeading.Icon, lines = 2)
+            Skeleton.Row(leading = SkeletonLeading.Icon, lines = 2)
+            Skeleton.Row(leading = SkeletonLeading.Icon, lines = 2)
+        }
+        return
+    }
+
+    if (isEmpty) {
+        Column(modifier = modifier.fillMaxSize()) {
+            TabHeader(subtitle = "Belum ada catatan", title = "Riwayat Servis")
+            EmptyState(
+                modifier = Modifier.weight(1f),
+                icon = FaIcons.WRENCH,
+                title = "Belum ada servis tercatat",
+                body = "Catat servis pertama untuk mulai melacak biaya & interval per komponen.",
+                ctaLabel = "Catat Servis",
+                onCta = onAddService,
+            )
+        }
+        return
+    }
 
     Column(
         modifier = modifier
@@ -56,10 +109,46 @@ fun HistoryTab(
             title = "Riwayat Servis",
         )
 
+        StickySearchHeader(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            placeholder = "Cari servis, bengkel, kendaraan…",
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SortChip(label = sortLabel, onClick = { showSortSheet = true })
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(AppColors.Surface)
+                    .border(BorderStroke(1.dp, AppColors.Border), CircleShape)
+                    .clickable { showFilterSheet = true }
+                    .padding(horizontal = 12.dp, vertical = 7.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FaIcon(icon = FaIcons.FILTER, color = AppColors.TextMuted, size = 12.sp)
+                    Text(
+                        text = "Filter",
+                        color = AppColors.TextPrimary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = plusJakartaSansFontFamily(),
+                    )
+                }
+            }
+        }
         VehicleFilterScroller(
             selected = selectedFilter,
             onSelect = { selectedFilter = it },
         )
+        if (isRefreshing) {
+            PullRefreshIndicator(state = PullRefreshState.Refreshing)
+        }
         Spacer(Modifier.height(14.dp))
 
         MonthSeparator("Mei 2026")
@@ -150,6 +239,86 @@ fun HistoryTab(
             onClick = onOpenServiceDetail,
         )
         Spacer(Modifier.height(24.dp))
+    }
+
+    if (showSortSheet) {
+        SortOptionsSheet(
+            options = sortOptions,
+            selectedKey = sortKey,
+            onSelect = { sortKey = it; showSortSheet = false },
+            onDismiss = { showSortSheet = false },
+        )
+    }
+    if (showFilterSheet) {
+        HistoryFilterSheet(
+            onDismiss = { showFilterSheet = false },
+            onApply = { _ -> showFilterSheet = false },
+        )
+    }
+}
+
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun SortOptionsSheet(
+    options: List<Pair<String, String>>,
+    selectedKey: String,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val font = plusJakartaSansFontFamily()
+    androidx.compose.material3.ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = AppColors.Surface,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp),
+        ) {
+            Text(
+                text = "Urutkan riwayat",
+                color = AppColors.TextPrimary,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.ExtraBold,
+                fontFamily = font,
+                modifier = Modifier.padding(bottom = 14.dp),
+            )
+            options.forEach { (key, label) ->
+                val active = key == selectedKey
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(if (active) AppColors.PrimarySoft else AppColors.SurfaceAlt)
+                        .clickable { onSelect(key) }
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clip(CircleShape)
+                            .background(if (active) AppColors.Primary else Color.Transparent)
+                            .border(BorderStroke(2.dp, if (active) AppColors.Primary else AppColors.Border), CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (active) Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color.White))
+                    }
+                    Text(
+                        text = label,
+                        color = AppColors.TextPrimary,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = font,
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+            }
+        }
     }
 }
 

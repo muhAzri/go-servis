@@ -65,9 +65,12 @@ fun SettingsTab(
     onOpenHelp: () -> Unit = {},
     onOpenTestScreen: () -> Unit = {},
     onOpenEditProfile: () -> Unit = {},
+    onOpenNotifSheet: () -> Unit = {},
 ) {
     var notifPengingatOn by remember { mutableStateOf(true) }
     val userColor = remember(userColorArgb) { Color(userColorArgb) }
+    var showExportSheet by remember { mutableStateOf(false) }
+    var showWipeDialog by remember { mutableStateOf(false) }
 
     val sections = listOf(
         SettingSection(
@@ -76,13 +79,13 @@ fun SettingsTab(
                 SettingItem(
                     icon = FaIcons.FILE,
                     label = "Ekspor Data (CSV)",
-                    onClick = {},
+                    onClick = { showExportSheet = true },
                 ),
                 SettingItem(
                     icon = FaIcons.TRASH,
                     label = "Hapus Semua Data",
                     danger = true,
-                    onClick = {},
+                    onClick = { showWipeDialog = true },
                 ),
             ),
         ),
@@ -165,6 +168,19 @@ fun SettingsTab(
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
         Spacer(Modifier.height(24.dp))
+    }
+
+    if (showExportSheet) {
+        com.zrifapps.goservice.ui.main.sheets.ExportCsvSheet(
+            onDismiss = { showExportSheet = false },
+            onShare = { showExportSheet = false },
+        )
+    }
+    if (showWipeDialog) {
+        com.zrifapps.goservice.ui.main.sheets.WipeDataFlow(
+            onDismiss = { showWipeDialog = false },
+            onConfirmed = { showWipeDialog = false },
+        )
     }
 }
 

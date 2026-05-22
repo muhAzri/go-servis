@@ -34,8 +34,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zrifapps.goservice.ui.components.AdBannerSlot
+import com.zrifapps.goservice.ui.components.EmptyState
 import com.zrifapps.goservice.ui.components.IconBadge
+import com.zrifapps.goservice.ui.components.PullRefreshIndicator
+import com.zrifapps.goservice.ui.components.PullRefreshState
 import com.zrifapps.goservice.ui.components.ReminderUrgency
+import com.zrifapps.goservice.ui.components.Skeleton
+import com.zrifapps.goservice.ui.components.SkeletonLeading
+import com.zrifapps.goservice.ui.components.StickySearchHeader
 import com.zrifapps.goservice.ui.components.color
 import com.zrifapps.goservice.ui.components.softColor
 import com.zrifapps.goservice.ui.theme.AppColors
@@ -54,8 +60,38 @@ fun RemindersTab(
     modifier: Modifier = Modifier,
     onOpenReminderDetail: () -> Unit = {},
     onAddReminder: () -> Unit = {},
+    isEmpty: Boolean = false,
+    isLoading: Boolean = false,
+    isRefreshing: Boolean = false,
 ) {
     var selected by remember { mutableStateOf(ReminderFilter.All) }
+    var searchQuery by remember { mutableStateOf("") }
+
+    if (isLoading) {
+        Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            RemindersHeader(onAddReminder = onAddReminder)
+            Spacer(Modifier.height(12.dp))
+            Skeleton.Row(leading = SkeletonLeading.Icon, lines = 2)
+            Skeleton.Row(leading = SkeletonLeading.Icon, lines = 2)
+            Skeleton.Row(leading = SkeletonLeading.Icon, lines = 2)
+        }
+        return
+    }
+
+    if (isEmpty) {
+        Column(modifier = modifier.fillMaxSize()) {
+            RemindersHeader(onAddReminder = onAddReminder)
+            EmptyState(
+                modifier = Modifier.weight(1f),
+                icon = FaIcons.BELL,
+                title = "Belum ada pengingat aktif",
+                body = "Buat pengingat berdasarkan KM atau tanggal supaya servis tepat waktu.",
+                ctaLabel = "+ Buat Pengingat",
+                onCta = onAddReminder,
+            )
+        }
+        return
+    }
 
     Column(
         modifier = modifier
@@ -63,6 +99,16 @@ fun RemindersTab(
             .verticalScroll(rememberScrollState()),
     ) {
         RemindersHeader(onAddReminder = onAddReminder)
+
+        StickySearchHeader(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            placeholder = "Cari pengingat…",
+        )
+
+        if (isRefreshing) {
+            PullRefreshIndicator(state = PullRefreshState.Refreshing)
+        }
 
         FilterChips(
             selected = selected,
