@@ -30,10 +30,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.zrifapps.goservice.ui.components.AdBannerSlot
 import com.zrifapps.goservice.ui.components.ContextBanner
 import com.zrifapps.goservice.ui.components.ContextBannerTone
@@ -64,13 +70,26 @@ fun HomeTab(
     onAddVehicle: () -> Unit = {},
     onUpdateOdometer: () -> Unit = {},
     onOpenTips: () -> Unit = {},
-    notifPermissionGranted: Boolean = false,
     isEmpty: Boolean = false,
     isLoading: Boolean = false,
 ) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var notifGranted by remember {
+        mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled())
+    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                notifGranted = NotificationManagerCompat.from(context).areNotificationsEnabled()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     var bannerDismissed by remember { mutableStateOf(false) }
     var showNotifSheet by remember { mutableStateOf(false) }
-    val showBanner = !notifPermissionGranted && !bannerDismissed && !isEmpty && !isLoading
+    val showBanner = !notifGranted && !bannerDismissed && !isEmpty && !isLoading
 
     if (isLoading) {
         Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {

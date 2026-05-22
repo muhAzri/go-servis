@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 struct HomeView: View {
     var userName: String = ""
@@ -10,44 +11,61 @@ struct HomeView: View {
     var onAddVehicle: () -> Void = {}
     var onUpdateOdometer: () -> Void = {}
     var onOpenTips: () -> Void = {}
-    var notifPermissionGranted: Bool = false
     var isEmpty: Bool = false
     var isLoading: Bool = false
 
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var notifAuthorized: Bool = true
     @State private var bannerDismissed: Bool = false
     @State private var showNotifSheet: Bool = false
 
     private var showBanner: Bool {
-        !notifPermissionGranted && !bannerDismissed && !isEmpty && !isLoading
+        !notifAuthorized && !bannerDismissed && !isEmpty && !isLoading
     }
 
     var body: some View {
-        if isLoading {
-            VStack(alignment: .leading, spacing: 0) {
-                HomeHeader(userName: userName, onOpenReminders: onOpenReminders)
-                Skeleton.Card(height: 150)
-                Skeleton.Row(leading: .icon)
-                Skeleton.Row(leading: .icon)
-                Skeleton.Row(leading: .icon)
-                Spacer()
+        Group {
+            if isLoading {
+                VStack(alignment: .leading, spacing: 0) {
+                    HomeHeader(userName: userName, onOpenReminders: onOpenReminders)
+                    Skeleton.Card(height: 150)
+                    Skeleton.Row(leading: .icon)
+                    Skeleton.Row(leading: .icon)
+                    Skeleton.Row(leading: .icon)
+                    Spacer()
+                }
+            } else if isEmpty {
+                VStack(alignment: .leading, spacing: 0) {
+                    HomeHeader(userName: userName, onOpenReminders: onOpenReminders)
+                    EmptyState(
+                        iconUnicode: "\u{f21c}",
+                        title: "Belum ada kendaraan",
+                        body: "Tambah motor atau mobilmu untuk mulai catat servis & dapat pengingat.",
+                        ctaLabel: "+ Tambah Kendaraan",
+                        onCta: onAddVehicle,
+                        secondaryLabel: "Pelajari dulu",
+                        onSecondary: onOpenTips
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            } else {
+                scrollContent
             }
-        } else if isEmpty {
-            VStack(alignment: .leading, spacing: 0) {
-                HomeHeader(userName: userName, onOpenReminders: onOpenReminders)
-                EmptyState(
-                    iconUnicode: "\u{f21c}",
-                    title: "Belum ada kendaraan",
-                    body: "Tambah motor atau mobilmu untuk mulai catat servis & dapat pengingat.",
-                    ctaLabel: "+ Tambah Kendaraan",
-                    onCta: onAddVehicle,
-                    secondaryLabel: "Pelajari dulu",
-                    onSecondary: onOpenTips
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-        } else {
-            scrollContent
         }
+        .task { await refreshNotifAuthorization() }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                Task { await refreshNotifAuthorization() }
+            }
+        }
+    }
+
+    private func refreshNotifAuthorization() async {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        let granted = settings.authorizationStatus == .authorized
+            || settings.authorizationStatus == .provisional
+            || settings.authorizationStatus == .ephemeral
+        await MainActor.run { notifAuthorized = granted }
     }
 
     private var scrollContent: some View {
