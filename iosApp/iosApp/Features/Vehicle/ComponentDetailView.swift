@@ -16,6 +16,8 @@ struct ComponentDetailView: View {
     var vehicleType: String = "motor"
     var onSave: () -> Void = {}
     var onStopMonitoring: () -> Void = {}
+    var onLogServiceForComponent: () -> Void = {}
+    var onCreateReminderForComponent: () -> Void = {}
 
     @State private var mode: IntervalMode = .preset
     @State private var unit: IntervalUnit = .km
@@ -75,9 +77,16 @@ struct ComponentDetailView: View {
                     LastServiceCard()
                         .padding(.horizontal, 16)
 
+                    ComponentCtaSection(
+                        onLogService: onLogServiceForComponent,
+                        onCreateReminder: onCreateReminderForComponent
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.top, 20)
+
                     StopMonitoringButton(onTap: { showStopConfirm = true })
                         .padding(.horizontal, 16)
-                        .padding(.top, 16)
+                        .padding(.top, 20)
                         .padding(.bottom, 24)
                 }
             }
@@ -346,6 +355,58 @@ private struct LastServiceCard: View {
             RoundedRectangle(cornerRadius: 16)
                 .strokeBorder(Color.sgBorder, lineWidth: 1)
         )
+    }
+}
+
+private struct ComponentCtaSection: View {
+    let onLogService: () -> Void
+    let onCreateReminder: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Button(action: onLogService) {
+                HStack(spacing: 8) {
+                    Text("\u{2b}")
+                        .font(.custom("FontAwesome6Free-Solid", size: 16))
+                        .foregroundColor(.white)
+                    Text("Catat servis untuk komponen ini")
+                        .font(.custom("PlusJakartaSans-Bold", size: 14))
+                        .foregroundColor(.white)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 52)
+                .background(Color.sgPrimary)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+            .buttonStyle(.plain)
+
+            HStack(spacing: 10) {
+                Rectangle().fill(Color.sgBorder).frame(height: 1)
+                Text("atau")
+                    .font(.custom("PlusJakartaSans-SemiBold", size: 11))
+                    .foregroundColor(.sgTextSubtle)
+                Rectangle().fill(Color.sgBorder).frame(height: 1)
+            }
+            .padding(.vertical, 12)
+
+            Button(action: onCreateReminder) {
+                HStack(spacing: 8) {
+                    Text("\u{f0f3}")
+                        .font(.custom("FontAwesome6Free-Solid", size: 14))
+                        .foregroundColor(.sgPrimary)
+                    Text("Buat pengingat manual")
+                        .font(.custom("PlusJakartaSans-Bold", size: 14))
+                        .foregroundColor(.sgPrimary)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .strokeBorder(Color.sgPrimary, lineWidth: 1.5)
+                )
+            }
+            .buttonStyle(.plain)
+        }
     }
 }
 
