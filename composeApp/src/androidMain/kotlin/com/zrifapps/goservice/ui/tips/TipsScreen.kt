@@ -31,8 +31,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.zrifapps.goservice.ui.components.AdBannerSlot
 import com.zrifapps.goservice.ui.components.CircleIconButton
+import com.zrifapps.goservice.ui.components.FilterChipBar
+import com.zrifapps.goservice.ui.components.FilterChipItem
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
@@ -53,6 +59,20 @@ fun TipsScreen(
     onBack: () -> Unit,
     onOpenTipDetail: () -> Unit = {},
 ) {
+    var activeTag by remember { mutableStateOf("all") }
+    val visibleTips = remember(activeTag) {
+        if (activeTag == "all") tips else tips.filter { it.tag.equals(activeTag, ignoreCase = true) }
+    }
+    val tagCounts = remember { tips.groupingBy { it.tag.lowercase() }.eachCount() }
+    val chips = remember(tagCounts) {
+        listOf(FilterChipItem(id = "all", label = "Semua", count = tips.size)) +
+            listOf("oli", "ban", "aki", "rem", "servis", "tips").mapNotNull { tag ->
+                val count = tagCounts[tag] ?: 0
+                if (count > 0) FilterChipItem(id = tag, label = tag.replaceFirstChar { it.uppercase() }, count = count)
+                else null
+            }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -63,13 +83,18 @@ fun TipsScreen(
         TipsTopBar(onBack = onBack)
         HeroTip(onClick = onOpenTipDetail)
         Spacer(Modifier.height(14.dp))
+        FilterChipBar(
+            chips = chips,
+            activeId = activeTag,
+            onSelect = { activeTag = it },
+        )
         AdBannerSlot()
         Spacer(Modifier.height(14.dp))
         Column(
             modifier = Modifier.padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            tips.forEach { TipRow(it, onClick = onOpenTipDetail) }
+            visibleTips.forEach { TipRow(it, onClick = onOpenTipDetail) }
         }
         Spacer(Modifier.height(24.dp))
     }

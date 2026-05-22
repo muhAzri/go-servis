@@ -3,6 +3,40 @@ import SwiftUI
 struct TipsView: View {
     var onOpenTipDetail: () -> Void = {}
 
+    @State private var activeTag: String = "all"
+
+    private struct TipItem: Identifiable {
+        let id = UUID()
+        let tag: String
+        let title: String
+        let readTime: String
+    }
+
+    private let allTips: [TipItem] = [
+        .init(tag: "Oli",     title: "Kapan harus ganti oli motor matic?",   readTime: "2 menit"),
+        .init(tag: "Ban",     title: "Cara cek tekanan ban yang benar",       readTime: "3 menit"),
+        .init(tag: "Aki",     title: "Tanda-tanda aki mobil mau soak",        readTime: "4 menit"),
+        .init(tag: "Tips",    title: "5 hal sebelum mudik dengan motor",      readTime: "5 menit"),
+        .init(tag: "Servis",  title: "Beda servis berkala 1.000 vs 5.000 km", readTime: "3 menit"),
+    ]
+
+    private var visibleTips: [TipItem] {
+        activeTag == "all" ? allTips : allTips.filter { $0.tag.lowercased() == activeTag }
+    }
+
+    private var chips: [FilterChipItem] {
+        var result: [FilterChipItem] = [
+            FilterChipItem(id: "all", label: "Semua", count: allTips.count),
+        ]
+        for tag in ["oli", "ban", "aki", "rem", "servis", "tips"] {
+            let count = allTips.filter { $0.tag.lowercased() == tag }.count
+            if count > 0 {
+                result.append(FilterChipItem(id: tag, label: tag.capitalized, count: count))
+            }
+        }
+        return result
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
@@ -14,15 +48,16 @@ struct TipsView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 14)
 
+                FilterChipBar(items: chips, activeId: $activeTag)
+                    .padding(.bottom, 8)
+
                 AdBannerSlot()
                     .padding(.bottom, 14)
 
                 VStack(spacing: 8) {
-                    TipRow(tag: "Oli",     title: "Kapan harus ganti oli motor matic?",   readTime: "2 menit", onTap: onOpenTipDetail)
-                    TipRow(tag: "Ban",     title: "Cara cek tekanan ban yang benar",       readTime: "3 menit", onTap: onOpenTipDetail)
-                    TipRow(tag: "Aki",     title: "Tanda-tanda aki mobil mau soak",        readTime: "4 menit", onTap: onOpenTipDetail)
-                    TipRow(tag: "Tips",    title: "5 hal sebelum mudik dengan motor",      readTime: "5 menit", onTap: onOpenTipDetail)
-                    TipRow(tag: "Servis",  title: "Beda servis berkala 1.000 vs 5.000 km", readTime: "3 menit", onTap: onOpenTipDetail)
+                    ForEach(visibleTips) { t in
+                        TipRow(tag: t.tag, title: t.title, readTime: t.readTime, onTap: onOpenTipDetail)
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 24)
