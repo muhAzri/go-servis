@@ -41,12 +41,12 @@ import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
 @Composable
 fun NotifPermScreen(
     onBack: () -> Unit,
-    onComplete: () -> Unit,
+    onComplete: (granted: Boolean) -> Unit,
 ) {
     val font = plusJakartaSansFontFamily()
     val notifLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
-        onResult = { onComplete() },
+        onResult = { granted -> onComplete(granted) },
     )
 
     Column(
@@ -97,14 +97,14 @@ fun NotifPermScreen(
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 } else {
-                    onComplete()
+                    onComplete(true)
                 }
             },
         )
 
         Spacer(Modifier.height(4.dp))
 
-        AppTextButton(text = "Nanti saja", onClick = onComplete)
+        AppTextButton(text = "Nanti saja", onClick = { onComplete(false) })
 
         Spacer(Modifier.height(24.dp))
     }

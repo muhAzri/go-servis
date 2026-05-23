@@ -23,17 +23,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.zrifapps.goservice.R
+import com.zrifapps.goservice.feature.onboarding.presentation.AppGate
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
 import kotlinx.coroutines.delay
 
 private val PrimaryGreen = Color(0xFF2E8B57)
+private const val MIN_SPLASH_MS = 900L
 
 @Composable
-fun SplashScreen(onComplete: () -> Unit) {
-    LaunchedEffect(Unit) {
-        delay(1500)
-        onComplete()
+fun SplashScreen(
+    gate: AppGate,
+    onResolved: (AppGate) -> Unit,
+) {
+    LaunchedEffect(gate) {
+        if (gate is AppGate.Loading) return@LaunchedEffect
+        delay(MIN_SPLASH_MS)
+        onResolved(gate)
     }
 
     Box(

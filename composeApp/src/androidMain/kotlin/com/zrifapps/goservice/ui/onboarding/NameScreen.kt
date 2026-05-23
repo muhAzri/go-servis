@@ -15,10 +15,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,13 +36,15 @@ private const val MAX_NAME_LEN = 20
 
 @Composable
 fun NameScreen(
+    initialName: String,
+    isSubmitting: Boolean,
     onBack: () -> Unit,
-    onNext: (String) -> Unit,
+    onNameChange: (String) -> Unit,
+    onNext: () -> Unit,
     onSkip: () -> Unit,
 ) {
     val font = plusJakartaSansFontFamily()
-    var name by remember { mutableStateOf("") }
-    val trimmed = name.trim()
+    val trimmed = initialName.trim()
     val initial = (trimmed.firstOrNull() ?: 'B').uppercase()
 
     Column(
@@ -92,11 +90,11 @@ fun NameScreen(
 
         AppTextField(
             label = "Nama panggilan",
-            value = name,
-            onValueChange = { if (it.length <= MAX_NAME_LEN) name = it },
+            value = initialName,
+            onValueChange = { if (it.length <= MAX_NAME_LEN) onNameChange(it) },
             placeholder = "Misal: Budi",
             imeAction = ImeAction.Done,
-            onImeAction = { if (trimmed.isNotEmpty()) onNext(trimmed) },
+            onImeAction = { if (trimmed.isNotEmpty()) onNext() },
         )
 
         Spacer(Modifier.height(8.dp))
@@ -114,7 +112,7 @@ fun NameScreen(
                 modifier = Modifier.weight(1f),
             )
             Text(
-                text = "${name.length}/$MAX_NAME_LEN",
+                text = "${initialName.length}/$MAX_NAME_LEN",
                 color = AppColors.TextSubtle,
                 fontSize = 11.sp,
                 fontFamily = font,
@@ -125,8 +123,8 @@ fun NameScreen(
 
         AppButton(
             text = "Lanjut",
-            onClick = { onNext(trimmed) },
-            enabled = trimmed.isNotEmpty(),
+            onClick = onNext,
+            enabled = trimmed.isNotEmpty() && !isSubmitting,
             trailingIcon = FaIcons.CHEVRON_RIGHT,
         )
 
@@ -141,5 +139,12 @@ fun NameScreen(
 @Preview(showBackground = true)
 @Composable
 private fun NameScreenPreview() {
-    NameScreen(onBack = {}, onNext = {}, onSkip = {})
+    NameScreen(
+        initialName = "",
+        isSubmitting = false,
+        onBack = {},
+        onNameChange = {},
+        onNext = {},
+        onSkip = {},
+    )
 }

@@ -17,8 +17,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.zrifapps.goservice.feature.onboarding.presentation.OnboardingVehicleInput
+import com.zrifapps.goservice.feature.vehicle.domain.model.VehicleType
 import com.zrifapps.goservice.ui.components.AppButton
 import com.zrifapps.goservice.ui.components.AppInfoBanner
+import com.zrifapps.goservice.ui.components.AppTextButton
 import com.zrifapps.goservice.ui.onboarding.components.OnboardingStepHeader
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.vehicle.components.VehicleForm
@@ -27,8 +30,10 @@ import com.zrifapps.goservice.ui.vehicle.components.VehicleFormState
 @Composable
 fun OnboardingAddVehicleScreen(
     vehicleType: String,
+    isSubmitting: Boolean,
     onBack: () -> Unit,
-    onComplete: (VehicleFormState) -> Unit,
+    onSkip: () -> Unit,
+    onComplete: (OnboardingVehicleInput) -> Unit,
 ) {
     var formState by remember { mutableStateOf(VehicleFormState(type = vehicleType)) }
 
@@ -65,16 +70,38 @@ fun OnboardingAddVehicleScreen(
 
         AppButton(
             text = "Lanjut",
-            onClick = { onComplete(formState) },
-            enabled = formState.isValid,
+            onClick = { onComplete(formState.toOnboardingInput()) },
+            enabled = formState.isValid && !isSubmitting,
         )
+
+        Spacer(Modifier.height(4.dp))
+
+        AppTextButton(text = "Lewati — tambah kendaraan nanti", onClick = onSkip)
 
         Spacer(Modifier.height(32.dp))
     }
 }
 
+private fun VehicleFormState.toOnboardingInput(): OnboardingVehicleInput =
+    OnboardingVehicleInput(
+        type = VehicleType.fromKey(type),
+        nickname = nama,
+        brand = merek,
+        model = model,
+        year = tahun.toIntOrNull(),
+        plateNumber = platNomor,
+        odometerKm = odometer.toLongOrNull() ?: 0L,
+        colorHex = warna,
+    )
+
 @Preview(showBackground = true)
 @Composable
 private fun OnboardingAddVehicleScreenPreview() {
-    OnboardingAddVehicleScreen(vehicleType = "motor", onBack = {}, onComplete = {})
+    OnboardingAddVehicleScreen(
+        vehicleType = "motor",
+        isSubmitting = false,
+        onBack = {},
+        onSkip = {},
+        onComplete = {},
+    )
 }

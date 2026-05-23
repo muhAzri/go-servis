@@ -1,20 +1,22 @@
 package com.zrifapps.goservice.navigation
 
-import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.zrifapps.goservice.ads.AdsManager
+import com.zrifapps.goservice.feature.onboarding.domain.model.OnboardingStep
+import com.zrifapps.goservice.feature.onboarding.presentation.AppGate
+import com.zrifapps.goservice.feature.onboarding.presentation.AppGateViewModel
+import com.zrifapps.goservice.feature.onboarding.presentation.OnboardingEvent
+import com.zrifapps.goservice.feature.onboarding.presentation.OnboardingFlowViewModel
+import com.zrifapps.goservice.feature.vehicle.domain.model.VehicleType
 import com.zrifapps.goservice.ui.legal.AboutScreen
 import com.zrifapps.goservice.ui.legal.HelpScreen
 import com.zrifapps.goservice.ui.legal.PrivacyScreen
@@ -27,6 +29,7 @@ import com.zrifapps.goservice.ui.onboarding.OnboardingScreen
 import com.zrifapps.goservice.ui.onboarding.PickVehicleTypeScreen
 import com.zrifapps.goservice.ui.profile.EditProfileScreen
 import com.zrifapps.goservice.ui.reminders.AddReminderScreen
+import com.zrifapps.goservice.ui.reminders.EditReminderScreen
 import com.zrifapps.goservice.ui.reminders.ReminderDetailScreen
 import com.zrifapps.goservice.ui.service.AddServiceScreen
 import com.zrifapps.goservice.ui.service.InterstitialAdScreen
@@ -37,7 +40,6 @@ import com.zrifapps.goservice.ui.test.TestScreen
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.tips.TipsDetailScreen
 import com.zrifapps.goservice.ui.tips.TipsScreen
-import com.zrifapps.goservice.ui.reminders.EditReminderScreen
 import com.zrifapps.goservice.ui.vehicle.AddCustomComponentScreen
 import com.zrifapps.goservice.ui.vehicle.AddVehicleScreen
 import com.zrifapps.goservice.ui.vehicle.ComponentDetailScreen
@@ -46,16 +48,39 @@ import com.zrifapps.goservice.ui.vehicle.UpdateOdometerScreen
 import com.zrifapps.goservice.ui.vehicle.VehicleComponentsScreen
 import com.zrifapps.goservice.ui.vehicle.VehicleDetailScreen
 import com.zrifapps.goservice.ui.vehicle.VehicleListScreen
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun AppNavGraph() {
     val navController = rememberNavController()
-    val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("servisgo_prefs", Context.MODE_PRIVATE) }
-    val onboardingDone = remember { prefs.getBoolean("onboarding_done", false) }
+    val appGateVm: AppGateViewModel = koinViewModel()
+    val onboardingVm: OnboardingFlowViewModel = koinViewModel()
+    val gate by appGateVm.gate.collectAsStateWithLifecycle()
+    val onboardingState by onboardingVm.state.collectAsStateWithLifecycle()
 
-    var userName by remember { mutableStateOf("") }
-    var userColorArgb by remember { mutableStateOf(AppColors.Primary.toArgb()) }
+    LaunchedEffect(onboardingVm) {
+        onboardingVm.events.collect { event ->
+            when (event) {
+                is OnboardingEvent.GoTo -> when (event.step) {
+                    OnboardingStep.Welcome -> Unit
+                    OnboardingStep.ProfileName -> navController.navigate(Screen.Name)
+                    OnboardingStep.PickVehicleType -> navController.navigate(Screen.PickVehicleType)
+                    OnboardingStep.AddVehicle -> {
+                        val type = onboardingVm.state.value.pickedVehicleType?.key ?: "motor"
+                        navController.navigate(Screen.AddVehicle(type))
+                    }
+                    OnboardingStep.NotificationPermission -> navController.navigate(Screen.NotifPermission)
+                    OnboardingStep.Done -> Unit
+                }
+                OnboardingEvent.CompletedFlow -> {
+                    navController.navigate(Screen.Main) {
+                        popUpTo<Screen.Splash> { inclusive = true }
+                    }
+                }
+                is OnboardingEvent.Failed -> Unit
+            }
+        }
+    }
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -68,52 +93,45 @@ fun AppNavGraph() {
         startDestination = Screen.Splash,
     ) {
         composable<Screen.Splash> {
-            SplashScreen {
-                if (onboardingDone) {
-                    navController.navigate(Screen.Main) {
-                        popUpTo<Screen.Splash> { inclusive = true }
+            SplashScreen(
+                gate = gate,
+                onResolved = { resolved ->
+                    when (resolved) {
+                        is AppGate.Main -> navController.navigate(Screen.Main) {
+                            popUpTo<Screen.Splash> { inclusive = true }
+                        }
+                        is AppGate.Onboarding -> navController.navigate(Screen.Onboarding) {
+                            popUpTo<Screen.Splash> { inclusive = true }
+                        }
+                        AppGate.Loading -> Unit
                     }
-                } else {
-                    navController.navigate(Screen.Onboarding) {
-                        popUpTo<Screen.Splash> { inclusive = true }
-                    }
-                }
-            }
+                },
+            )
         }
 
         composable<Screen.Onboarding> {
             OnboardingScreen(
-                onSkip = {
-                    prefs.edit().putBoolean("onboarding_done", true).apply()
-                    navController.navigate(Screen.Main) {
-                        popUpTo<Screen.Onboarding> { inclusive = true }
-                    }
-                },
-                onFinish = {
-                    navController.navigate(Screen.Name)
-                },
+                onSkip = { onboardingVm.skipAll() },
+                onFinish = { onboardingVm.finishCarousel() },
             )
         }
 
         composable<Screen.Name> {
             NameScreen(
+                initialName = onboardingState.nameInput,
+                isSubmitting = onboardingState.isSubmitting,
                 onBack = { navController.popBackStack() },
-                onNext = { typedName ->
-                    userName = typedName
-                    navController.navigate(Screen.PickVehicleType)
-                },
-                onSkip = {
-                    userName = ""
-                    navController.navigate(Screen.PickVehicleType)
-                },
+                onNameChange = onboardingVm::setNameInput,
+                onNext = { onboardingVm.submitName() },
+                onSkip = { onboardingVm.skipName() },
             )
         }
 
         composable<Screen.PickVehicleType> {
             PickVehicleTypeScreen(
                 onBack = { navController.popBackStack() },
-                onPickType = {
-                    navController.navigate(Screen.AddVehicle(it))
+                onPickType = { typeKey ->
+                    onboardingVm.pickVehicleType(VehicleType.fromKey(typeKey))
                 },
             )
         }
@@ -122,27 +140,26 @@ fun AppNavGraph() {
             val screen = backStackEntry.toRoute<Screen.AddVehicle>()
             OnboardingAddVehicleScreen(
                 vehicleType = screen.type,
+                isSubmitting = onboardingState.isSubmitting,
                 onBack = { navController.popBackStack() },
-                onComplete = { navController.navigate(Screen.NotifPermission) },
+                onSkip = { onboardingVm.skipVehicle() },
+                onComplete = { input -> onboardingVm.submitVehicle(input) },
             )
         }
 
         composable<Screen.NotifPermission> {
             NotifPermScreen(
                 onBack = { navController.popBackStack() },
-                onComplete = {
-                    prefs.edit().putBoolean("onboarding_done", true).apply()
-                    navController.navigate(Screen.Main) {
-                        popUpTo<Screen.Onboarding> { inclusive = true }
-                    }
+                onComplete = { granted ->
+                    onboardingVm.recordNotificationPermission(asked = true, granted = granted)
                 },
             )
         }
 
         composable<Screen.Main> {
             MainTabsScreen(
-                userName = userName,
-                userColorArgb = userColorArgb,
+                userName = onboardingState.persistedName.orEmpty(),
+                userColorArgb = AppColors.Primary.toArgb(),
                 onAddService = { navController.navigate(Screen.AddService) },
                 onAddVehicle = { navController.navigate(Screen.AddVehicleForm) },
                 onUpdateOdometer = { navController.navigate(Screen.UpdateOdometer) },
@@ -163,12 +180,10 @@ fun AppNavGraph() {
 
         composable<Screen.EditProfile> {
             EditProfileScreen(
-                initialName = userName,
-                initialColorArgb = userColorArgb,
+                initialName = onboardingState.persistedName.orEmpty(),
+                initialColorArgb = AppColors.Primary.toArgb(),
                 onBack = { navController.popBackStack() },
-                onSave = { name, colorArgb ->
-                    userName = name
-                    userColorArgb = colorArgb
+                onSave = { _, _ ->
                     navController.popBackStack()
                 },
             )
