@@ -33,6 +33,8 @@ kotlin {
             implementation(libs.androidx.room.runtime)
             implementation(libs.androidx.sqlite.bundled)
             api(libs.koin.core)
+            api(libs.koin.core.viewmodel)
+            api(libs.androidx.lifecycle.viewmodel)
         }
         androidMain.dependencies {
             implementation(libs.koin.android)
