@@ -25,6 +25,8 @@ kotlin {
             implementation(libs.androidx.lifecycle.process)
             implementation(libs.yandex.mobileads)
             implementation(libs.yandex.mobileads.compose)
+            implementation(libs.koin.android)
+            implementation(libs.koin.androidx.compose)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)

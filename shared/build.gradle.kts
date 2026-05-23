@@ -32,6 +32,10 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.androidx.room.runtime)
             implementation(libs.androidx.sqlite.bundled)
+            api(libs.koin.core)
+        }
+        androidMain.dependencies {
+            implementation(libs.koin.android)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
