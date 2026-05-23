@@ -1,4 +1,5 @@
 import SwiftUI
+import Shared
 
 private let vehicleColors = ["#1A2418", "#D6453A", "#3FB1D6", "#E89C2E", "#F2EEE6", "#7B6FE8"]
 
@@ -27,6 +28,22 @@ struct VehicleFormState {
     var isValid: Bool {
         !nama.trimmingCharacters(in: .whitespaces).isEmpty &&
         !merek.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+}
+
+extension VehicleFormState {
+    func toOnboardingInput(typeKey: String? = nil) -> OnboardingVehicleInput {
+        let parsedYear: KotlinInt? = Int32(tahun).map { KotlinInt(value: $0) }
+        return PresentationFactory.shared.vehicleInput(
+            typeKey: typeKey ?? type,
+            nickname: nama,
+            brand: merek,
+            model: model,
+            year: parsedYear,
+            plateNumber: platNomor,
+            odometerKm: Int64(odometer) ?? 0,
+            colorHex: warna
+        )
     }
 }
 

@@ -3,7 +3,7 @@ import UserNotifications
 
 struct NotifPermissionView: View {
     let onBack: () -> Void
-    let onComplete: () -> Void
+    let onComplete: (Bool) -> Void
 
     var body: some View {
         ZStack {
@@ -45,14 +45,14 @@ struct NotifPermissionView: View {
                     AppButton(title: "Aktifkan Notifikasi", action: {
                         UNUserNotificationCenter.current().requestAuthorization(
                             options: [.alert, .badge, .sound]
-                        ) { _, _ in
-                            DispatchQueue.main.async { onComplete() }
+                        ) { granted, _ in
+                            DispatchQueue.main.async { onComplete(granted) }
                         }
                     })
 
                     Spacer().frame(height: 4)
 
-                    AppTextButton(title: "Nanti saja", action: onComplete)
+                    AppTextButton(title: "Nanti saja", action: { onComplete(false) })
 
                     Spacer().frame(height: 24)
                 }
@@ -140,5 +140,5 @@ private struct NotifPreviewCard: View {
 }
 
 #Preview {
-    NotifPermissionView(onBack: {}, onComplete: {})
+    NotifPermissionView(onBack: {}, onComplete: { _ in })
 }

@@ -1,15 +1,23 @@
 import SwiftUI
+import Shared
 
 struct OnboardingAddVehicleView: View {
     let vehicleType: String
     let onBack: () -> Void
+    let onSkip: () -> Void
     let onComplete: (VehicleFormState) -> Void
 
     @State private var formState: VehicleFormState
 
-    init(vehicleType: String, onBack: @escaping () -> Void, onComplete: @escaping (VehicleFormState) -> Void) {
+    init(
+        vehicleType: String,
+        onBack: @escaping () -> Void,
+        onSkip: @escaping () -> Void,
+        onComplete: @escaping (VehicleFormState) -> Void
+    ) {
         self.vehicleType = vehicleType
         self.onBack = onBack
+        self.onSkip = onSkip
         self.onComplete = onComplete
         _formState = State(initialValue: VehicleFormState(type: vehicleType))
     }
@@ -38,6 +46,8 @@ struct OnboardingAddVehicleView: View {
                             action: { onComplete(formState) },
                             isEnabled: formState.isValid
                         )
+                        Spacer().frame(height: 4)
+                        AppTextButton(title: "Lewati — tambah kendaraan nanti", action: onSkip)
                         Spacer().frame(height: 32)
                     }
                     .padding(.horizontal, 24)
@@ -49,5 +59,10 @@ struct OnboardingAddVehicleView: View {
 }
 
 #Preview {
-    OnboardingAddVehicleView(vehicleType: "motor", onBack: {}, onComplete: { _ in })
+    OnboardingAddVehicleView(
+        vehicleType: "motor",
+        onBack: {},
+        onSkip: {},
+        onComplete: { _ in }
+    )
 }

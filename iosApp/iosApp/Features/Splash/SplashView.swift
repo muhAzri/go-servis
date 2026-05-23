@@ -1,8 +1,10 @@
 import SwiftUI
+import Shared
 
 struct SplashView: View {
-    let onComplete: () -> Void
-    
+    let gate: any AppGate
+    let onResolved: (any AppGate) -> Void
+
     var body: some View {
         ZStack {
             Color.sgPrimary
@@ -34,13 +36,23 @@ struct SplashView: View {
             }
         }
         .ignoresSafeArea()
-        .task {
-            try? await Task.sleep(nanoseconds: 1_500_000_000)
-            onComplete()
+        .task(id: gateKey) {
+            if gate is AppGateLoading { return }
+            try? await Task.sleep(nanoseconds: 900_000_000)
+            onResolved(gate)
+        }
+    }
+
+    private var gateKey: String {
+        switch gate {
+        case is AppGateLoading: return "loading"
+        case is AppGateMain: return "main"
+        case let onb as AppGateOnboarding: return "onb-\(onb.resumeStep.name)"
+        default: return "unknown"
         }
     }
 }
 
 #Preview {
-    SplashView(onComplete: {})
+    SplashView(gate: AppGateLoading.shared, onResolved: { _ in })
 }

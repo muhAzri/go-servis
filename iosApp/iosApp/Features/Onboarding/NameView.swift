@@ -1,19 +1,20 @@
 import SwiftUI
+import Shared
 
 private let maxNameLen = 20
 
 struct NameView: View {
+    @ObservedObject var flow: OnboardingFlowModel
     let onBack: () -> Void
-    let onNext: (String) -> Void
+    let onNext: () -> Void
     let onSkip: () -> Void
 
-    @State private var name: String = ""
     @FocusState private var isFocused: Bool
 
+    private var name: String { flow.state.nameInput }
     private var trimmed: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
-    private var initial: String {
-        String(trimmed.first ?? "B").uppercased()
-    }
+    private var initial: String { String(trimmed.first ?? "B").uppercased() }
+    private var isSubmitting: Bool { flow.state.isSubmitting }
 
     var body: some View {
         ZStack {
@@ -57,17 +58,20 @@ struct NameView: View {
                                     .foregroundColor(.sgTextSubtle)
                                     .padding(.horizontal, 16)
                             }
-                            TextField("", text: $name)
+                            TextField("", text: Binding(
+                                get: { name },
+                                set: { value in
+                                    let clipped = value.count > maxNameLen
+                                        ? String(value.prefix(maxNameLen))
+                                        : value
+                                    flow.setNameInput(clipped)
+                                }
+                            ))
                                 .font(.custom("PlusJakartaSans-Regular", size: 15))
                                 .foregroundColor(.sgTextPrimary)
                                 .focused($isFocused)
                                 .submitLabel(.done)
                                 .onSubmit { submit() }
-                                .onChange(of: name) { _, newValue in
-                                    if newValue.count > maxNameLen {
-                                        name = String(newValue.prefix(maxNameLen))
-                                    }
-                                }
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 14)
                         }
@@ -99,7 +103,7 @@ struct NameView: View {
                     AppButton(
                         title: "Lanjut",
                         action: submit,
-                        isEnabled: !trimmed.isEmpty,
+                        isEnabled: !trimmed.isEmpty && !isSubmitting,
                         trailingIcon: "\u{f054}"
                     )
 
@@ -120,10 +124,6 @@ struct NameView: View {
 
     private func submit() {
         guard !trimmed.isEmpty else { return }
-        onNext(trimmed)
+        onNext()
     }
-}
-
-#Preview {
-    NameView(onBack: {}, onNext: { _ in }, onSkip: {})
 }

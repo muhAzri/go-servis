@@ -1,36 +1,48 @@
 import SwiftUI
+import Shared
 
 struct AppNavGraph: View {
-    @AppStorage("onboarding_done") private var onboardingDone = false
+    @StateObject private var gateModel = AppGateModel()
+    @StateObject private var onboardingModel = OnboardingFlowModel()
     @State private var router = AppRouter()
-    @State private var isShowingSplash = true
-    @State private var userName: String = ""
-    @State private var userColorId: String = "primary"
+    @State private var splashResolved = false
+    @State private var resolvedGate: any AppGate = AppGateLoading.shared
 
     var body: some View {
-        if isShowingSplash {
-            SplashView {
-                isShowingSplash = false
-            }
-        } else if !onboardingDone {
-            OnboardingFlowView(
-                onComplete: { typedName in
-                    userName = typedName
-                    onboardingDone = true
+        Group {
+            if !splashResolved {
+                SplashView(gate: gateModel.gate) { gate in
+                    resolvedGate = gate
+                    splashResolved = true
                 }
-            )
-            .transition(.asymmetric(
-                insertion: .move(edge: .trailing),
-                removal: .move(edge: .leading)
-            ))
-        } else {
-            NavigationStack(path: $router.path) {
-                MainTabsView(userName: userName, userColorId: userColorId)
+            } else if resolvedGate is AppGateOnboarding {
+                let resumeStep = (resolvedGate as? AppGateOnboarding)?.resumeStep ?? OnboardingStep.welcome
+                OnboardingFlowView(
+                    flow: onboardingModel,
+                    initialStep: resumeStep,
+                    onComplete: { resolvedGate = AppGateMain.shared }
+                )
+                .transition(.asymmetric(
+                    insertion: .move(edge: .trailing),
+                    removal: .move(edge: .leading)
+                ))
+            } else {
+                NavigationStack(path: $router.path) {
+                    MainTabsView(
+                        userName: onboardingModel.state.persistedName ?? "",
+                        userColorId: "primary"
+                    )
                     .navigationDestination(for: AppDestination.self) { destination in
                         destinationView(for: destination)
                     }
+                }
+                .environment(router)
             }
-            .environment(router)
+        }
+        .onReceive(gateModel.$gate) { newGate in
+            if splashResolved, newGate is AppGateMain {
+                resolvedGate = AppGateMain.shared
+            }
         }
     }
 
@@ -38,7 +50,10 @@ struct AppNavGraph: View {
     private func destinationView(for destination: AppDestination) -> some View {
         switch destination {
         case .main:
-            MainTabsView(userName: userName, userColorId: userColorId)
+            MainTabsView(
+                userName: onboardingModel.state.persistedName ?? "",
+                userColorId: "primary"
+            )
         case .addVehicle:
             AddVehicleView(
                 onBack: { router.navigateBack() },
@@ -113,13 +128,9 @@ struct AppNavGraph: View {
             )
         case .editProfile:
             EditProfileView(
-                initialName: userName,
-                initialColorId: userColorId,
-                onSave: { name, colorId in
-                    userName = name
-                    userColorId = colorId
-                    router.navigateBack()
-                },
+                initialName: onboardingModel.state.persistedName ?? "",
+                initialColorId: "primary",
+                onSave: { _, _ in router.navigateBack() },
                 onCancel: { router.navigateBack() }
             )
 
@@ -160,23 +171,37 @@ struct AppNavGraph: View {
     }
 }
 
-struct OnboardingFlowView: View {
-    let onComplete: (_ name: String) -> Void
+private enum FlowStep: Equatable {
+    case carousel, name, pickType, addVehicle(String), notifPerm
 
-    enum Step { case carousel, name, pickType, addVehicle(String), notifPerm }
-    @State private var step: Step = .carousel
-    @State private var selectedVehicleType: String = ""
-    @State private var typedName: String = ""
+    static func from(_ step: OnboardingStep, lastType: String) -> FlowStep {
+        switch step {
+        case OnboardingStep.welcome: return .carousel
+        case OnboardingStep.profilename: return .name
+        case OnboardingStep.pickvehicletype: return .pickType
+        case OnboardingStep.addvehicle: return .addVehicle(lastType)
+        case OnboardingStep.notificationpermission: return .notifPerm
+        case OnboardingStep.done: return .carousel
+        default: return .carousel
+        }
+    }
+}
+
+struct OnboardingFlowView: View {
+    @ObservedObject var flow: OnboardingFlowModel
+    let initialStep: OnboardingStep
+    let onComplete: () -> Void
+
+    @State private var step: FlowStep = .carousel
+    @State private var selectedVehicleType: String = "motor"
 
     var body: some View {
         ZStack {
             switch step {
             case .carousel:
                 OnboardingView(
-                    onSkip: { onComplete("") },
-                    onFinish: {
-                        withAnimation(.easeInOut(duration: 0.3)) { step = .name }
-                    }
+                    onSkip: { flow.skipAll() },
+                    onFinish: { flow.finishCarousel() }
                 )
                 .transition(.asymmetric(
                     insertion: .move(edge: .trailing),
@@ -185,17 +210,10 @@ struct OnboardingFlowView: View {
 
             case .name:
                 NameView(
-                    onBack: {
-                        withAnimation(.easeInOut(duration: 0.3)) { step = .carousel }
-                    },
-                    onNext: { name in
-                        typedName = name
-                        withAnimation(.easeInOut(duration: 0.3)) { step = .pickType }
-                    },
-                    onSkip: {
-                        typedName = ""
-                        withAnimation(.easeInOut(duration: 0.3)) { step = .pickType }
-                    }
+                    flow: flow,
+                    onBack: { withAnimation(.easeInOut(duration: 0.3)) { step = .carousel } },
+                    onNext: { flow.submitName() },
+                    onSkip: { flow.skipName() }
                 )
                 .transition(.asymmetric(
                     insertion: .move(edge: .trailing),
@@ -204,12 +222,10 @@ struct OnboardingFlowView: View {
 
             case .pickType:
                 PickVehicleTypeView(
-                    onBack: {
-                        withAnimation(.easeInOut(duration: 0.3)) { step = .name }
-                    },
+                    onBack: { withAnimation(.easeInOut(duration: 0.3)) { step = .name } },
                     onPickType: { type in
                         selectedVehicleType = type
-                        withAnimation(.easeInOut(duration: 0.3)) { step = .addVehicle(type) }
+                        flow.pickVehicleType(type)
                     }
                 )
                 .transition(.asymmetric(
@@ -220,11 +236,10 @@ struct OnboardingFlowView: View {
             case .addVehicle(let type):
                 OnboardingAddVehicleView(
                     vehicleType: type,
-                    onBack: {
-                        withAnimation(.easeInOut(duration: 0.3)) { step = .pickType }
-                    },
-                    onComplete: { _ in
-                        withAnimation(.easeInOut(duration: 0.3)) { step = .notifPerm }
+                    onBack: { withAnimation(.easeInOut(duration: 0.3)) { step = .pickType } },
+                    onSkip: { flow.skipVehicle() },
+                    onComplete: { state in
+                        flow.submitVehicle(state.toOnboardingInput(typeKey: type))
                     }
                 )
                 .transition(.asymmetric(
@@ -234,16 +249,39 @@ struct OnboardingFlowView: View {
 
             case .notifPerm:
                 NotifPermissionView(
-                    onBack: {
-                        withAnimation(.easeInOut(duration: 0.3)) { step = .addVehicle(selectedVehicleType) }
-                    },
-                    onComplete: { onComplete(typedName) }
+                    onBack: { withAnimation(.easeInOut(duration: 0.3)) { step = .addVehicle(selectedVehicleType) } },
+                    onComplete: { granted in
+                        flow.recordNotificationPermission(asked: true, granted: granted)
+                    }
                 )
                 .transition(.asymmetric(
                     insertion: .move(edge: .trailing),
                     removal: .move(edge: .leading)
                 ))
             }
+        }
+        .onAppear {
+            selectedVehicleType = flow.state.pickedVehicleType?.key ?? selectedVehicleType
+            step = FlowStep.from(initialStep, lastType: selectedVehicleType)
+            flow.onEvent = { event in
+                handle(event: event)
+            }
+        }
+        .onDisappear { flow.onEvent = nil }
+    }
+
+    private func handle(event: any OnboardingEvent) {
+        switch event {
+        case let go as OnboardingEventGoTo:
+            withAnimation(.easeInOut(duration: 0.3)) {
+                let lastType = flow.state.pickedVehicleType?.key ?? selectedVehicleType
+                selectedVehicleType = lastType
+                step = FlowStep.from(go.step, lastType: lastType)
+            }
+        case is OnboardingEventCompletedFlow:
+            onComplete()
+        default:
+            break
         }
     }
 }
