@@ -5,6 +5,7 @@ import com.zrifapps.goservice.feature.profile.data.local.ProfileDao
 import com.zrifapps.goservice.feature.profile.data.repository.ProfileRepositoryImpl
 import com.zrifapps.goservice.feature.profile.domain.repository.ProfileRepository
 import com.zrifapps.goservice.feature.profile.domain.usecase.CreateProfileIfMissing
+import com.zrifapps.goservice.feature.profile.domain.usecase.EnsureProfileSeeded
 import com.zrifapps.goservice.feature.profile.domain.usecase.ObserveProfile
 import com.zrifapps.goservice.feature.profile.domain.usecase.ResetProfile
 import com.zrifapps.goservice.feature.profile.domain.usecase.UpdateProfile
@@ -16,6 +17,7 @@ val profileModule = module {
 
     factory { ObserveProfile(get()) }
     factory { CreateProfileIfMissing(get()) }
+    factory { EnsureProfileSeeded(get()) }
     factory { UpdateProfile(get()) }
     factory { ResetProfile(get()) }
 }
