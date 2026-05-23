@@ -9,6 +9,9 @@ import com.zrifapps.goservice.feature.onboarding.domain.usecase.CompleteOnboardi
 import com.zrifapps.goservice.feature.onboarding.domain.usecase.ObserveOnboarding
 import com.zrifapps.goservice.feature.onboarding.domain.usecase.RecordNotificationPermission
 import com.zrifapps.goservice.feature.onboarding.domain.usecase.SetOnboardingProfileName
+import com.zrifapps.goservice.feature.onboarding.presentation.AppGateViewModel
+import com.zrifapps.goservice.feature.onboarding.presentation.OnboardingFlowViewModel
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val onboardingModule = module {
@@ -20,4 +23,18 @@ val onboardingModule = module {
     factory { SetOnboardingProfileName(get()) }
     factory { RecordNotificationPermission(get()) }
     factory { CompleteOnboarding(get()) }
+
+    viewModel { AppGateViewModel(get()) }
+    viewModel {
+        OnboardingFlowViewModel(
+            observeOnboarding = get(),
+            advanceOnboarding = get(),
+            setOnboardingProfileName = get(),
+            recordNotifPermission = get(),
+            completeOnboarding = get(),
+            ensureProfileSeeded = get(),
+            addVehicle = get(),
+            onboardingRepository = get(),
+        )
+    }
 }
