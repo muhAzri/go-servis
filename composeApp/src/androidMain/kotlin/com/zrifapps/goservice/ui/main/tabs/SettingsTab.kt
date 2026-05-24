@@ -35,9 +35,14 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zrifapps.goservice.feature.profile.presentation.ProfileViewModel
+import com.zrifapps.goservice.feature.service.presentation.ServiceHistoryViewModel
+import com.zrifapps.goservice.feature.vehicle.presentation.VehicleListViewModel
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
+import org.koin.androidx.compose.koinViewModel
 
 private data class SettingItem(
     val icon: String,
@@ -57,8 +62,6 @@ private data class SettingSection(
 @Composable
 fun SettingsTab(
     modifier: Modifier = Modifier,
-    userName: String = "",
-    userColorArgb: Int = AppColors.Primary.toArgb(),
     onOpenPrivacy: () -> Unit = {},
     onOpenTerms: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
@@ -66,9 +69,22 @@ fun SettingsTab(
     onOpenTestScreen: () -> Unit = {},
     onOpenEditProfile: () -> Unit = {},
     onOpenNotifSheet: () -> Unit = {},
+    profileVm: ProfileViewModel = koinViewModel(),
+    vehicleVm: VehicleListViewModel = koinViewModel(),
+    serviceVm: ServiceHistoryViewModel = koinViewModel(),
 ) {
+    val profileState by profileVm.state.collectAsStateWithLifecycle()
+    val vehicleState by vehicleVm.state.collectAsStateWithLifecycle()
+    val serviceState by serviceVm.state.collectAsStateWithLifecycle()
+
+    val displayName = profileState.displayName
+    val userColor = remember(profileState.avatarColorHex) {
+        profileState.avatarColorHex?.let(::parseHexColorOrNull) ?: AppColors.Primary
+    }
+    val vehicleCount = vehicleState.vehicles.size
+    val serviceCount = serviceState.records.size
+
     var notifPengingatOn by remember { mutableStateOf(true) }
-    val userColor = remember(userColorArgb) { Color(userColorArgb) }
     var showExportSheet by remember { mutableStateOf(false) }
     var showWipeDialog by remember { mutableStateOf(false) }
 
@@ -140,8 +156,10 @@ fun SettingsTab(
         TabHeader(subtitle = null, title = "Pengaturan")
 
         ProfileHeaderCard(
-            userName = userName,
+            userName = displayName,
             avatarColor = userColor,
+            vehicleCount = vehicleCount,
+            serviceCount = serviceCount,
             onClick = onOpenEditProfile,
         )
 
@@ -188,6 +206,8 @@ fun SettingsTab(
 private fun ProfileHeaderCard(
     userName: String,
     avatarColor: Color,
+    vehicleCount: Int,
+    serviceCount: Int,
     onClick: () -> Unit,
 ) {
     val displayName = userName.ifBlank { "Kamu" }
@@ -227,7 +247,7 @@ private fun ProfileHeaderCard(
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = "Profil lokal · 4 kendaraan · 12 servis tercatat",
+                text = "Profil lokal · $vehicleCount kendaraan · $serviceCount servis tercatat",
                 color = AppColors.TextMuted,
                 fontSize = 12.sp,
             )
@@ -369,4 +389,10 @@ private fun ToggleSwitch(
                 .background(Color.White),
         )
     }
+}
+
+private fun parseHexColorOrNull(hex: String): Color? = try {
+    Color(android.graphics.Color.parseColor(hex))
+} catch (_: Throwable) {
+    null
 }

@@ -40,6 +40,13 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zrifapps.goservice.feature.reminder.domain.model.Reminder
+import com.zrifapps.goservice.feature.reminder.domain.model.ReminderUrgency as DomainReminderUrgency
+import com.zrifapps.goservice.feature.reminder.presentation.ReminderListViewModel
+import com.zrifapps.goservice.feature.vehicle.domain.model.Vehicle
+import com.zrifapps.goservice.feature.vehicle.domain.model.VehicleType
+import com.zrifapps.goservice.feature.vehicle.presentation.VehicleListViewModel
 import com.zrifapps.goservice.ui.components.AdBannerSlot
 import com.zrifapps.goservice.ui.components.ContextBanner
 import com.zrifapps.goservice.ui.components.ContextBannerTone
@@ -57,6 +64,7 @@ import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
 import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun HomeTab(
@@ -70,9 +78,14 @@ fun HomeTab(
     onAddVehicle: () -> Unit = {},
     onUpdateOdometer: () -> Unit = {},
     onOpenTips: () -> Unit = {},
-    isEmpty: Boolean = false,
-    isLoading: Boolean = false,
+    vehicleVm: VehicleListViewModel = koinViewModel(),
+    reminderVm: ReminderListViewModel = koinViewModel(),
 ) {
+    val vehicleState by vehicleVm.state.collectAsStateWithLifecycle()
+    val reminderState by reminderVm.state.collectAsStateWithLifecycle()
+    val isLoading = vehicleState.isLoading || reminderState.isLoading
+    val isEmpty = vehicleState.isEmpty
+
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var notifGranted by remember {
@@ -140,8 +153,18 @@ fun HomeTab(
                 )
             }
         }
-        HeroStatusCard(onOpenVehicleDetail = onOpenVehicleDetail)
-        Spacer(Modifier.height(16.dp))
+        val vehicleById = vehicleState.vehicles.associateBy { it.id }
+        val heroVehicle = pickHeroVehicle(vehicleState.vehicles, reminderState.reminders, vehicleById)
+        if (heroVehicle != null) {
+            HeroStatusCard(
+                vehicle = heroVehicle,
+                overdueCount = reminderState.reminders.count {
+                    it.vehicleId == heroVehicle.id && it.urgency == DomainReminderUrgency.Overdue
+                },
+                onOpenVehicleDetail = onOpenVehicleDetail,
+            )
+            Spacer(Modifier.height(16.dp))
+        }
         AdBannerSlot()
         Spacer(Modifier.height(8.dp))
         QuickActionsRow(
@@ -156,27 +179,19 @@ fun HomeTab(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.padding(horizontal = 16.dp),
         ) {
-            ReminderRow(
-                icon = FaIcons.OIL_CAN,
-                title = "Ganti Oli Mesin",
-                subtitle = "Beat Hitam · Telat 16 hari",
-                urgency = ReminderUrgency.Overdue,
-                onClick = onOpenReminderDetail,
-            )
-            ReminderRow(
-                icon = FaIcons.CIRCLE_NOTCH,
-                title = "Kampas Rem",
-                subtitle = "Beat Hitam · 19 hari lagi",
-                urgency = ReminderUrgency.Soon,
-                onClick = onOpenReminderDetail,
-            )
-            ReminderRow(
-                icon = FaIcons.FILTER,
-                title = "Filter Oli & Udara",
-                subtitle = "Avanza Putih · 65 hari lagi",
-                urgency = ReminderUrgency.Ok,
-                onClick = onOpenReminderDetail,
-            )
+            val topReminders = reminderState.reminders.take(3)
+            if (topReminders.isEmpty()) {
+                ReminderEmptyHint()
+            } else {
+                topReminders.forEach { reminder ->
+                    ReminderRow(
+                        title = reminder.title,
+                        subtitle = reminderSubtitle(reminder, vehicleById[reminder.vehicleId]),
+                        urgency = reminder.urgency.toUi(),
+                        onClick = onOpenReminderDetail,
+                    )
+                }
+            }
         }
         Spacer(Modifier.height(12.dp))
         NativeAdCard()
@@ -186,34 +201,12 @@ fun HomeTab(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.padding(horizontal = 16.dp),
         ) {
-            VehicleSummaryRow(
-                icon = FaIcons.MOTORCYCLE,
-                accent = Color(0xFF2E8B57),
-                title = "Beat Hitam",
-                plateAndKm = "B 4521 KZA · 18.420 km",
-                onClick = onOpenVehicleDetail,
-            )
-            VehicleSummaryRow(
-                icon = FaIcons.MOTORCYCLE,
-                accent = Color(0xFFD6453A),
-                title = "Vario Merah",
-                plateAndKm = "B 6789 SKR · 8.100 km",
-                onClick = onOpenVehicleDetail,
-            )
-            VehicleSummaryRow(
-                icon = FaIcons.CAR,
-                accent = Color(0xFF3F4D5C),
-                title = "Avanza Putih",
-                plateAndKm = "B 1234 ABC · 62.300 km",
-                onClick = onOpenVehicleDetail,
-            )
-            VehicleSummaryRow(
-                icon = FaIcons.CAR,
-                accent = Color(0xFF3FB1D6),
-                title = "Brio Biru",
-                plateAndKm = "B 9876 XYZ · 24.500 km",
-                onClick = onOpenVehicleDetail,
-            )
+            vehicleState.vehicles.take(4).forEach { vehicle ->
+                VehicleSummaryRow(
+                    vehicle = vehicle,
+                    onClick = onOpenVehicleDetail,
+                )
+            }
         }
         Spacer(Modifier.height(20.dp))
     }
@@ -277,21 +270,32 @@ private fun HomeHeader(userName: String, onOpenReminders: () -> Unit) {
 }
 
 @Composable
-private fun HeroStatusCard(onOpenVehicleDetail: () -> Unit) {
+private fun HeroStatusCard(
+    vehicle: Vehicle,
+    overdueCount: Int,
+    onOpenVehicleDetail: () -> Unit,
+) {
     val font = plusJakartaSansFontFamily()
+    val tone = if (overdueCount > 0) AppColors.Danger else AppColors.Primary
+    val headline = when {
+        overdueCount == 1 -> "1 servis telat — segera bawa ke bengkel"
+        overdueCount > 1 -> "$overdueCount servis telat — segera bawa ke bengkel"
+        else -> "Servis terpantau — semua aman"
+    }
+    val icon = if (vehicle.type == VehicleType.Mobil) FaIcons.CAR else FaIcons.MOTORCYCLE
     Column(
         modifier = Modifier
             .padding(horizontal = 16.dp)
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
-            .background(AppColors.Danger)
+            .background(tone)
             .padding(20.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            FaIcon(icon = FaIcons.CAR, color = Color.White.copy(alpha = 0.95f), size = 14.sp)
+            FaIcon(icon = icon, color = Color.White.copy(alpha = 0.95f), size = 14.sp)
             Spacer(Modifier.size(8.dp))
             Text(
-                text = "Toyota Avanza Veloz",
+                text = vehicle.displayTitle,
                 color = Color.White.copy(alpha = 0.9f),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -300,7 +304,7 @@ private fun HeroStatusCard(onOpenVehicleDetail: () -> Unit) {
         }
         Spacer(Modifier.height(6.dp))
         Text(
-            text = "1 servis telat — segera bawa ke bengkel",
+            text = headline,
             color = Color.White,
             fontSize = 22.sp,
             fontWeight = FontWeight.ExtraBold,
@@ -320,8 +324,12 @@ private fun HeroStatusCard(onOpenVehicleDetail: () -> Unit) {
             verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            HeroStat(label = "KM saat ini", value = "62.300", monoSize = 18.sp)
-            HeroStat(label = "Plat", value = "B 1234 ABC", monoSize = 16.sp)
+            HeroStat(label = "KM saat ini", value = formatKm(vehicle.odometer.kilometers), monoSize = 18.sp)
+            HeroStat(
+                label = "Plat",
+                value = vehicle.plateNumber.ifBlank { "—" },
+                monoSize = 16.sp,
+            )
             Spacer(Modifier.weight(1f))
             Box(
                 modifier = Modifier
@@ -339,6 +347,65 @@ private fun HeroStatusCard(onOpenVehicleDetail: () -> Unit) {
                 )
             }
         }
+    }
+}
+
+private fun pickHeroVehicle(
+    vehicles: List<Vehicle>,
+    reminders: List<Reminder>,
+    vehicleById: Map<String, Vehicle>,
+): Vehicle? {
+    val overdueReminder = reminders.firstOrNull { it.urgency == DomainReminderUrgency.Overdue }
+    overdueReminder?.let { vehicleById[it.vehicleId] }?.also { return it }
+    return vehicles.firstOrNull()
+}
+
+private fun reminderSubtitle(reminder: Reminder, vehicle: Vehicle?): String {
+    val nick = vehicle?.displayTitle ?: "—"
+    val urgencyLabel = when (reminder.urgency) {
+        DomainReminderUrgency.Overdue -> "Telat"
+        DomainReminderUrgency.Soon -> "Segera"
+        DomainReminderUrgency.Ok -> "Aman"
+    }
+    return "$nick · $urgencyLabel"
+}
+
+private fun DomainReminderUrgency.toUi(): ReminderUrgency = when (this) {
+    DomainReminderUrgency.Overdue -> ReminderUrgency.Overdue
+    DomainReminderUrgency.Soon -> ReminderUrgency.Soon
+    DomainReminderUrgency.Ok -> ReminderUrgency.Ok
+}
+
+private fun formatKm(km: Long): String {
+    val parts = mutableListOf<String>()
+    var n = km
+    if (n == 0L) return "0"
+    while (n > 0) {
+        val chunk = n % 1000
+        n /= 1000
+        if (n > 0) parts.add(0, chunk.toString().padStart(3, '0'))
+        else parts.add(0, chunk.toString())
+    }
+    return parts.joinToString(".")
+}
+
+@Composable
+private fun ReminderEmptyHint() {
+    val font = plusJakartaSansFontFamily()
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(AppColors.Surface)
+            .border(BorderStroke(1.dp, AppColors.Border), RoundedCornerShape(18.dp))
+            .padding(14.dp),
+    ) {
+        Text(
+            text = "Belum ada pengingat aktif. Tambah dari halaman Pengingat.",
+            color = AppColors.TextMuted,
+            fontSize = 12.sp,
+            fontFamily = font,
+        )
     }
 }
 
@@ -476,7 +543,6 @@ private fun SectionHeading(title: String, actionLabel: String?, onAction: () -> 
 
 @Composable
 private fun ReminderRow(
-    icon: String,
     title: String,
     subtitle: String,
     urgency: ReminderUrgency,
@@ -495,7 +561,7 @@ private fun ReminderRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         IconBadge(
-            icon = icon,
+            icon = FaIcons.BELL,
             foreground = urgency.color(),
             background = urgency.softColor(),
         )
@@ -520,13 +586,13 @@ private fun ReminderRow(
 
 @Composable
 private fun VehicleSummaryRow(
-    icon: String,
-    accent: Color,
-    title: String,
-    plateAndKm: String,
+    vehicle: Vehicle,
     onClick: () -> Unit,
 ) {
     val font = plusJakartaSansFontFamily()
+    val accent = parseHexColor(vehicle.color.value) ?: AppColors.Primary
+    val icon = if (vehicle.type == VehicleType.Mobil) FaIcons.CAR else FaIcons.MOTORCYCLE
+    val plate = vehicle.plateNumber.ifBlank { "—" }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -547,14 +613,14 @@ private fun VehicleSummaryRow(
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = title,
+                text = vehicle.displayTitle,
                 color = AppColors.TextPrimary,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = font,
             )
             Text(
-                text = plateAndKm,
+                text = "$plate · ${formatKm(vehicle.odometer.kilometers)} km",
                 color = AppColors.TextMuted,
                 fontSize = 12.sp,
                 fontFamily = FontFamily.Monospace,
@@ -562,4 +628,10 @@ private fun VehicleSummaryRow(
         }
         FaIcon(icon = FaIcons.CHEVRON_RIGHT, color = AppColors.TextSubtle, size = 14.sp)
     }
+}
+
+internal fun parseHexColor(hex: String): Color? = try {
+    Color(android.graphics.Color.parseColor(hex))
+} catch (_: Throwable) {
+    null
 }

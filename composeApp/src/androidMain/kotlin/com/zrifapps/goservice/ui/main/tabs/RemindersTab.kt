@@ -33,6 +33,13 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zrifapps.goservice.feature.reminder.domain.model.Reminder
+import com.zrifapps.goservice.feature.reminder.domain.model.ReminderTrigger
+import com.zrifapps.goservice.feature.reminder.domain.model.ReminderUrgency as DomainReminderUrgency
+import com.zrifapps.goservice.feature.reminder.presentation.ReminderListViewModel
+import com.zrifapps.goservice.feature.vehicle.domain.model.Vehicle
+import com.zrifapps.goservice.feature.vehicle.presentation.VehicleListViewModel
 import com.zrifapps.goservice.ui.components.AdBannerSlot
 import com.zrifapps.goservice.ui.components.EmptyState
 import com.zrifapps.goservice.ui.components.IconBadge
@@ -47,6 +54,7 @@ import com.zrifapps.goservice.ui.components.softColor
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcons
 import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
+import org.koin.androidx.compose.koinViewModel
 
 enum class ReminderFilter(val label: String) {
     All("Semua"),
@@ -60,16 +68,22 @@ fun RemindersTab(
     modifier: Modifier = Modifier,
     onOpenReminderDetail: () -> Unit = {},
     onAddReminder: () -> Unit = {},
-    isEmpty: Boolean = false,
-    isLoading: Boolean = false,
     isRefreshing: Boolean = false,
+    reminderVm: ReminderListViewModel = koinViewModel(),
+    vehicleVm: VehicleListViewModel = koinViewModel(),
 ) {
-    var selected by remember { mutableStateOf(ReminderFilter.All) }
-    var searchQuery by remember { mutableStateOf("") }
+    val reminderState by reminderVm.state.collectAsStateWithLifecycle()
+    val vehicleState by vehicleVm.state.collectAsStateWithLifecycle()
+    val isLoading = reminderState.isLoading
+    val isEmpty = reminderState.isEmpty
+    val vehicleById = vehicleState.vehicles.associateBy { it.id }
+    val activeCount = reminderState.reminders.size
+    val selected = reminderState.urgencyFilter.toChipFilter()
+    val searchQuery = reminderState.query
 
     if (isLoading) {
         Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-            RemindersHeader(onAddReminder = onAddReminder)
+            RemindersHeader(activeCount = 0, onAddReminder = onAddReminder)
             Spacer(Modifier.height(12.dp))
             Skeleton.Row(leading = SkeletonLeading.Icon, lines = 2)
             Skeleton.Row(leading = SkeletonLeading.Icon, lines = 2)
@@ -80,7 +94,7 @@ fun RemindersTab(
 
     if (isEmpty) {
         Column(modifier = modifier.fillMaxSize()) {
-            RemindersHeader(onAddReminder = onAddReminder)
+            RemindersHeader(activeCount = 0, onAddReminder = onAddReminder)
             EmptyState(
                 modifier = Modifier.weight(1f),
                 icon = FaIcons.BELL,
@@ -93,16 +107,21 @@ fun RemindersTab(
         return
     }
 
+    val groupedByUrgency = reminderState.reminders.groupBy { it.urgency }
+    val overdue = groupedByUrgency[DomainReminderUrgency.Overdue].orEmpty()
+    val soon = groupedByUrgency[DomainReminderUrgency.Soon].orEmpty()
+    val ok = groupedByUrgency[DomainReminderUrgency.Ok].orEmpty()
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        RemindersHeader(onAddReminder = onAddReminder)
+        RemindersHeader(activeCount = activeCount, onAddReminder = onAddReminder)
 
         StickySearchHeader(
             value = searchQuery,
-            onValueChange = { searchQuery = it },
+            onValueChange = reminderVm::setQuery,
             placeholder = "Cari pengingat…",
         )
 
@@ -112,100 +131,64 @@ fun RemindersTab(
 
         FilterChips(
             selected = selected,
-            onSelect = { selected = it },
+            onSelect = { chip -> reminderVm.setUrgencyFilter(chip.toDomainSet()) },
         )
         Spacer(Modifier.height(14.dp))
         AdBannerSlot()
         Spacer(Modifier.height(14.dp))
 
-        ReminderGroupHeader(label = "Telat — segera servis", accent = AppColors.Danger, count = 1)
-        Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(horizontal = 16.dp),
-        ) {
-            ReminderListCard(
-                icon = FaIcons.OIL_CAN,
-                title = "Ganti Oli Mesin",
-                vehicle = "Beat Hitam",
-                dueDate = "20 Apr 2026",
-                daysLeftLabel = "+16h",
-                progress = 1.0f,
-                urgency = ReminderUrgency.Overdue,
-                onClick = onOpenReminderDetail,
-            )
-        }
-        Spacer(Modifier.height(18.dp))
-
-        ReminderGroupHeader(label = "Akan datang", accent = AppColors.Warning, count = 3)
-        Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(horizontal = 16.dp),
-        ) {
-            ReminderListCard(
-                icon = FaIcons.CIRCLE_NOTCH,
-                title = "Kampas Rem",
-                vehicle = "Beat Hitam",
-                dueDate = "25 Mei 2026",
-                daysLeftLabel = "19h",
-                progress = 0.97f,
-                urgency = ReminderUrgency.Soon,
-                onClick = onOpenReminderDetail,
-            )
-            ReminderListCard(
-                icon = FaIcons.OIL_CAN,
-                title = "Ganti Oli Mesin",
-                vehicle = "Vario Merah",
-                dueDate = "12 Mei 2026",
-                daysLeftLabel = "6h",
-                progress = 0.9f,
-                urgency = ReminderUrgency.Soon,
-                onClick = onOpenReminderDetail,
-            )
-            ReminderListCard(
-                icon = FaIcons.WRENCH,
-                title = "Servis Berkala",
-                vehicle = "Brio Biru",
-                dueDate = "9 Mei 2026",
-                daysLeftLabel = "3h",
-                progress = 0.98f,
-                urgency = ReminderUrgency.Soon,
-                onClick = onOpenReminderDetail,
-            )
-        }
-        Spacer(Modifier.height(18.dp))
-
-        ReminderGroupHeader(label = "Aman", accent = AppColors.Primary, count = 2)
-        Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(horizontal = 16.dp),
-        ) {
-            ReminderListCard(
-                icon = FaIcons.FILTER,
-                title = "Filter Oli & Udara",
-                vehicle = "Avanza Putih",
-                dueDate = "10 Jul 2026",
-                daysLeftLabel = "65h",
-                progress = 0.95f,
-                urgency = ReminderUrgency.Ok,
-                onClick = onOpenReminderDetail,
-            )
-            ReminderListCard(
-                icon = FaIcons.CAR_BATTERY,
-                title = "Aki",
-                vehicle = "Avanza Putih",
-                dueDate = "1 Sep 2026",
-                daysLeftLabel = "118h",
-                progress = 0.4f,
-                urgency = ReminderUrgency.Ok,
-                onClick = onOpenReminderDetail,
-            )
-        }
+        ReminderGroup(
+            label = "Telat — segera servis",
+            accent = AppColors.Danger,
+            reminders = overdue,
+            vehicleById = vehicleById,
+            onOpenDetail = onOpenReminderDetail,
+        )
+        ReminderGroup(
+            label = "Akan datang",
+            accent = AppColors.Warning,
+            reminders = soon,
+            vehicleById = vehicleById,
+            onOpenDetail = onOpenReminderDetail,
+        )
+        ReminderGroup(
+            label = "Aman",
+            accent = AppColors.Primary,
+            reminders = ok,
+            vehicleById = vehicleById,
+            onOpenDetail = onOpenReminderDetail,
+        )
         Spacer(Modifier.height(24.dp))
     }
 }
 
 @Composable
-private fun RemindersHeader(onAddReminder: () -> Unit) {
+private fun ReminderGroup(
+    label: String,
+    accent: Color,
+    reminders: List<Reminder>,
+    vehicleById: Map<String, Vehicle>,
+    onOpenDetail: () -> Unit,
+) {
+    if (reminders.isEmpty()) return
+    ReminderGroupHeader(label = label, accent = accent, count = reminders.size)
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(horizontal = 16.dp),
+    ) {
+        reminders.forEach { reminder ->
+            ReminderListCard(
+                reminder = reminder,
+                vehicle = vehicleById[reminder.vehicleId],
+                onClick = onOpenDetail,
+            )
+        }
+    }
+    Spacer(Modifier.height(18.dp))
+}
+
+@Composable
+private fun RemindersHeader(activeCount: Int, onAddReminder: () -> Unit) {
     val font = plusJakartaSansFontFamily()
     Row(
         modifier = Modifier
@@ -217,7 +200,7 @@ private fun RemindersHeader(onAddReminder: () -> Unit) {
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "6 pengingat aktif",
+                text = "$activeCount pengingat aktif",
                 color = AppColors.TextMuted,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
@@ -303,16 +286,25 @@ private fun ReminderGroupHeader(label: String, accent: Color, count: Int) {
 
 @Composable
 private fun ReminderListCard(
-    icon: String,
-    title: String,
-    vehicle: String,
-    dueDate: String,
-    daysLeftLabel: String,
-    progress: Float,
-    urgency: ReminderUrgency,
+    reminder: Reminder,
+    vehicle: Vehicle?,
     onClick: () -> Unit,
 ) {
     val font = plusJakartaSansFontFamily()
+    val urgency = reminder.urgency.toUiUrgency()
+    val icon = FaIcons.BELL
+    val vehicleLabel = vehicle?.displayTitle ?: "—"
+    val triggerLabel = reminderTriggerLabel(reminder)
+    val urgencyLabel = when (reminder.urgency) {
+        DomainReminderUrgency.Overdue -> "Telat"
+        DomainReminderUrgency.Soon -> "Segera"
+        DomainReminderUrgency.Ok -> "Aman"
+    }
+    val progress = when (reminder.urgency) {
+        DomainReminderUrgency.Overdue -> 1f
+        DomainReminderUrgency.Soon -> 0.9f
+        DomainReminderUrgency.Ok -> 0.4f
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -332,7 +324,7 @@ private fun ReminderListCard(
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = title,
+                    text = reminder.title,
                     color = AppColors.TextPrimary,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
@@ -340,7 +332,7 @@ private fun ReminderListCard(
                     modifier = Modifier.weight(1f),
                 )
                 Text(
-                    text = daysLeftLabel,
+                    text = urgencyLabel,
                     color = urgency.color(),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -348,7 +340,7 @@ private fun ReminderListCard(
                 )
             }
             Text(
-                text = "$vehicle · $dueDate",
+                text = "$vehicleLabel · $triggerLabel",
                 color = AppColors.TextMuted,
                 fontSize = 12.sp,
                 fontFamily = font,
@@ -370,4 +362,32 @@ private fun ReminderListCard(
             }
         }
     }
+}
+
+private fun DomainReminderUrgency.toUiUrgency(): ReminderUrgency = when (this) {
+    DomainReminderUrgency.Overdue -> ReminderUrgency.Overdue
+    DomainReminderUrgency.Soon -> ReminderUrgency.Soon
+    DomainReminderUrgency.Ok -> ReminderUrgency.Ok
+}
+
+private fun reminderTriggerLabel(reminder: Reminder): String = when (val t = reminder.trigger) {
+    is ReminderTrigger.ByKm -> "@ ${t.targetOdometer.kilometers} km"
+    is ReminderTrigger.ByDate -> "due date set"
+    is ReminderTrigger.ByBoth -> "@ ${t.targetOdometer.kilometers} km / date"
+}
+
+private fun Set<DomainReminderUrgency>.toChipFilter(): ReminderFilter = when {
+    isEmpty() -> ReminderFilter.All
+    size > 1 -> ReminderFilter.All
+    first() == DomainReminderUrgency.Overdue -> ReminderFilter.Overdue
+    first() == DomainReminderUrgency.Soon -> ReminderFilter.Soon
+    first() == DomainReminderUrgency.Ok -> ReminderFilter.Ok
+    else -> ReminderFilter.All
+}
+
+private fun ReminderFilter.toDomainSet(): Set<DomainReminderUrgency> = when (this) {
+    ReminderFilter.All -> emptySet()
+    ReminderFilter.Overdue -> setOf(DomainReminderUrgency.Overdue)
+    ReminderFilter.Soon -> setOf(DomainReminderUrgency.Soon)
+    ReminderFilter.Ok -> setOf(DomainReminderUrgency.Ok)
 }

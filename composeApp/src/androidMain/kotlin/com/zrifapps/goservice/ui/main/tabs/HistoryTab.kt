@@ -33,6 +33,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zrifapps.goservice.feature.service.domain.model.ServiceRecord
+import com.zrifapps.goservice.feature.service.domain.model.ServiceSort
+import com.zrifapps.goservice.feature.service.presentation.ServiceHistoryViewModel
+import com.zrifapps.goservice.feature.vehicle.domain.model.Vehicle
+import com.zrifapps.goservice.feature.vehicle.presentation.VehicleListViewModel
 import com.zrifapps.goservice.ui.components.EmptyState
 import com.zrifapps.goservice.ui.components.IconBadge
 import com.zrifapps.goservice.ui.components.NativeAdCard
@@ -47,6 +53,10 @@ import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
 import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import org.koin.androidx.compose.koinViewModel
 
 private val sortOptions = listOf(
     "date_desc" to "Terbaru dulu",
@@ -61,16 +71,28 @@ fun HistoryTab(
     modifier: Modifier = Modifier,
     onOpenServiceDetail: () -> Unit = {},
     onAddService: () -> Unit = {},
-    isEmpty: Boolean = false,
-    isLoading: Boolean = false,
     isRefreshing: Boolean = false,
+    serviceVm: ServiceHistoryViewModel = koinViewModel(),
+    vehicleVm: VehicleListViewModel = koinViewModel(),
 ) {
-    var selectedFilter by remember { mutableStateOf("Semua kendaraan") }
-    var searchQuery by remember { mutableStateOf("") }
-    var sortKey by remember { mutableStateOf("date_desc") }
+    val serviceState by serviceVm.state.collectAsStateWithLifecycle()
+    val vehicleState by vehicleVm.state.collectAsStateWithLifecycle()
+    val isLoading = serviceState.isLoading
+    val isEmpty = serviceState.isEmpty
+    val vehicleById = vehicleState.vehicles.associateBy { it.id }
+    val filterOptions = remember(vehicleState.vehicles) {
+        listOf("Semua kendaraan") + vehicleState.vehicles.map { it.displayTitle }
+    }
+    val selectedFilter = serviceState.vehicleIds
+        .firstOrNull()
+        ?.let { id -> vehicleById[id]?.displayTitle }
+        ?: "Semua kendaraan"
+    val searchQuery = serviceState.query
+    val sortKey = serviceState.sort.toKey()
+    val sortLabel = sortOptions.firstOrNull { it.first == sortKey }?.second ?: "Terbaru"
+
     var showSortSheet by remember { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
-    val sortLabel = sortOptions.firstOrNull { it.first == sortKey }?.second ?: "Terbaru"
 
     if (isLoading) {
         Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
@@ -99,19 +121,24 @@ fun HistoryTab(
         return
     }
 
+    val sortedRecords = serviceState.records
+    val grouped = sortedRecords.groupBy { yearMonthLabel(it.serviceDate) }
+    val visibleCount = serviceState.totalCount
+    val totalCost = serviceState.totalCostIdr
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
         TabHeader(
-            subtitle = "5 servis tercatat · Total Rp 3.310.000",
+            subtitle = "$visibleCount servis tercatat · Total ${formatRupiah(totalCost)}",
             title = "Riwayat Servis",
         )
 
         StickySearchHeader(
             value = searchQuery,
-            onValueChange = { searchQuery = it },
+            onValueChange = serviceVm::setQuery,
             placeholder = "Cari servis, bengkel, kendaraan…",
         )
         Row(
@@ -143,101 +170,42 @@ fun HistoryTab(
             }
         }
         VehicleFilterScroller(
+            options = filterOptions,
             selected = selectedFilter,
-            onSelect = { selectedFilter = it },
+            onSelect = { label ->
+                val ids = if (label == "Semua kendaraan") emptySet()
+                else vehicleState.vehicles.firstOrNull { it.displayTitle == label }
+                    ?.let { setOf(it.id) } ?: emptySet()
+                serviceVm.setVehicleIds(ids)
+            },
         )
         if (isRefreshing) {
             PullRefreshIndicator(state = PullRefreshState.Refreshing)
         }
         Spacer(Modifier.height(14.dp))
 
-        MonthSeparator("Mei 2026")
-        HistoryRowCard(
-            icon = FaIcons.WRENCH,
-            accent = Color(0xFF5C6357),
-            title = "Servis Berkala",
-            vehicle = "Vario Merah",
-            km = "6.000 km",
-            place = "AHASS Kalimalang",
-            note = "KPB ke-2",
-            cost = "Rp 320.000",
-            date = "1 Mei 2026",
-            onClick = onOpenServiceDetail,
-        )
-
-        MonthSeparator("Maret 2026")
-        HistoryRowCard(
-            icon = FaIcons.OIL_CAN,
-            accent = Color(0xFFE89C2E),
-            title = "Ganti Oli Mesin",
-            vehicle = "Beat Hitam",
-            km = "16.000 km",
-            place = "AHASS Kebon Jeruk",
-            note = "AHM MPX2 0.8L",
-            cost = "Rp 65.000",
-            date = "20 Feb 2026",
-            onClick = onOpenServiceDetail,
-        )
-
-        MonthSeparator("Februari 2026")
-        HistoryRowCard(
-            icon = FaIcons.OIL_CAN,
-            accent = Color(0xFFE89C2E),
-            title = "Ganti Oli Mesin",
-            vehicle = "Beat Hitam",
-            km = "16.000 km",
-            place = "AHASS Kebon Jeruk",
-            note = "AHM MPX2 0.8L",
-            cost = "Rp 65.000",
-            date = "20 Feb 2026",
-            onClick = onOpenServiceDetail,
-        )
-
-        Spacer(Modifier.height(4.dp))
-        NativeAdCard()
-        Spacer(Modifier.height(4.dp))
-
-        MonthSeparator("Januari 2026")
-        HistoryRowCard(
-            icon = FaIcons.OIL_CAN,
-            accent = Color(0xFFE89C2E),
-            title = "Ganti Oli Mesin",
-            vehicle = "Avanza Putih",
-            km = "57.500 km",
-            place = "Auto2000 Cikarang",
-            note = "Motul 5W-30 4L + filter",
-            cost = "Rp 480.000",
-            date = "5 Jan 2026",
-            onClick = onOpenServiceDetail,
-        )
-
-        MonthSeparator("Desember 2025")
-        HistoryRowCard(
-            icon = FaIcons.BOLT,
-            accent = Color(0xFFE8B62E),
-            title = "Busi & Tune Up",
-            vehicle = "Beat Hitam",
-            km = "13.800 km",
-            place = "Bengkel Pak Karto",
-            note = "NGK CPR8EA",
-            cost = "Rp 45.000",
-            date = "10 Des 2025",
-            onClick = onOpenServiceDetail,
-        )
-
-        MonthSeparator("September 2025")
-        HistoryRowCard(
-            icon = FaIcons.LIFE_RING,
-            accent = Color(0xFF3F4D5C),
-            title = "Rotasi/Ganti Ban",
-            vehicle = "Avanza Putih",
-            km = "50.000 km",
-            place = "Bridgestone Bekasi",
-            note = "Turanza 185/65 R15 4 pcs",
-            cost = "Rp 2.400.000",
-            date = "22 Sep 2025",
-            onClick = onOpenServiceDetail,
-        )
+        grouped.entries.forEachIndexed { idx, (label, records) ->
+            MonthSeparator(label)
+            records.forEach { record ->
+                HistoryRowCard(
+                    record = record,
+                    vehicle = vehicleById[record.vehicleId],
+                    onClick = onOpenServiceDetail,
+                )
+            }
+            if (idx == 2) {
+                Spacer(Modifier.height(4.dp))
+                NativeAdCard()
+                Spacer(Modifier.height(4.dp))
+            }
+        }
+        if (serviceState.canLoadMore) {
+            LoadMoreButton(
+                shownCount = sortedRecords.size,
+                totalCount = visibleCount,
+                onClick = serviceVm::loadMore,
+            )
+        }
         Spacer(Modifier.height(24.dp))
     }
 
@@ -245,7 +213,7 @@ fun HistoryTab(
         SortOptionsSheet(
             options = sortOptions,
             selectedKey = sortKey,
-            onSelect = { sortKey = it; showSortSheet = false },
+            onSelect = { key -> serviceVm.setSort(key.toServiceSort()); showSortSheet = false },
             onDismiss = { showSortSheet = false },
         )
     }
@@ -323,9 +291,12 @@ private fun SortOptionsSheet(
 }
 
 @Composable
-private fun VehicleFilterScroller(selected: String, onSelect: (String) -> Unit) {
+private fun VehicleFilterScroller(
+    options: List<String>,
+    selected: String,
+    onSelect: (String) -> Unit,
+) {
     val font = plusJakartaSansFontFamily()
-    val options = listOf("Semua kendaraan", "Beat Hitam", "Vario Merah", "Avanza Putih", "Brio Biru")
 
     Row(
         modifier = Modifier
@@ -377,18 +348,20 @@ private fun MonthSeparator(label: String) {
 
 @Composable
 private fun HistoryRowCard(
-    icon: String,
-    accent: Color,
-    title: String,
-    vehicle: String,
-    km: String,
-    place: String,
-    note: String,
-    cost: String,
-    date: String,
+    record: ServiceRecord,
+    vehicle: Vehicle?,
     onClick: () -> Unit = {},
 ) {
     val font = plusJakartaSansFontFamily()
+    val icon = serviceIcon(record)
+    val accent = AppColors.Primary
+    val title = record.serviceType.name
+    val vehicleLabel = vehicle?.displayTitle ?: "—"
+    val km = "${formatGroupedLong(record.odometer.kilometers)} km"
+    val place = record.workshop?.ifBlank { null } ?: "—"
+    val note = record.note.orEmpty()
+    val cost = formatRupiah(record.cost.amountIdr)
+    val date = formatShortDate(record.serviceDate)
     Row(
         modifier = Modifier
             .padding(horizontal = 16.dp)
@@ -465,4 +438,92 @@ private fun HistoryRowCard(
             )
         }
     }
+}
+
+private val monthNames = arrayOf(
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+)
+
+private fun yearMonthLabel(epochMillis: Long): String {
+    val dt = Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(TimeZone.currentSystemDefault())
+    return "${monthNames[dt.monthNumber - 1]} ${dt.year}"
+}
+
+private fun formatShortDate(epochMillis: Long): String {
+    val dt = Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(TimeZone.currentSystemDefault())
+    val month = monthNames[dt.monthNumber - 1].take(3)
+    return "${dt.dayOfMonth} $month ${dt.year}"
+}
+
+private fun formatGroupedLong(value: Long): String {
+    if (value == 0L) return "0"
+    val parts = mutableListOf<String>()
+    var n = value
+    while (n > 0) {
+        val chunk = n % 1000
+        n /= 1000
+        if (n > 0) parts.add(0, chunk.toString().padStart(3, '0'))
+        else parts.add(0, chunk.toString())
+    }
+    return parts.joinToString(".")
+}
+
+private fun formatRupiah(amountIdr: Long): String = "Rp ${formatGroupedLong(amountIdr)}"
+
+private fun String.toServiceSort(): ServiceSort = when (this) {
+    "date_asc" -> ServiceSort.DateAsc
+    "cost_desc" -> ServiceSort.CostDesc
+    "cost_asc" -> ServiceSort.CostAsc
+    "vehicle" -> ServiceSort.OdometerAsc
+    else -> ServiceSort.DateDesc
+}
+
+private fun ServiceSort.toKey(): String = when (this) {
+    ServiceSort.DateDesc -> "date_desc"
+    ServiceSort.DateAsc -> "date_asc"
+    ServiceSort.CostDesc -> "cost_desc"
+    ServiceSort.CostAsc -> "cost_asc"
+    ServiceSort.OdometerDesc, ServiceSort.OdometerAsc -> "vehicle"
+}
+
+@Composable
+private fun LoadMoreButton(shownCount: Int, totalCount: Int, onClick: () -> Unit) {
+    val font = plusJakartaSansFontFamily()
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(
+            modifier = Modifier
+                .clip(CircleShape)
+                .background(AppColors.Surface)
+                .border(BorderStroke(1.dp, AppColors.Border), CircleShape)
+                .clickable(onClick = onClick)
+                .padding(horizontal = 18.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = "Muat lebih banyak ($shownCount/$totalCount)",
+                color = AppColors.TextPrimary,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = font,
+            )
+            FaIcon(icon = FaIcons.CHEVRON_DOWN, color = AppColors.TextMuted, size = 12.sp)
+        }
+    }
+}
+
+private fun serviceIcon(record: ServiceRecord): String = when (record.serviceType.key) {
+    "oli" -> FaIcons.OIL_CAN
+    "filter" -> FaIcons.FILTER
+    "ban" -> FaIcons.LIFE_RING
+    "aki" -> FaIcons.CAR_BATTERY
+    "rem" -> FaIcons.CIRCLE_NOTCH
+    "tune_up" -> FaIcons.BOLT
+    else -> FaIcons.WRENCH
 }

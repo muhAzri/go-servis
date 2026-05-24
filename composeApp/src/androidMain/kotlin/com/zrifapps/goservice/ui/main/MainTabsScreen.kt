@@ -25,7 +25,6 @@ import com.zrifapps.goservice.ui.theme.AppColors
 @Composable
 fun MainTabsScreen(
     userName: String = "",
-    userColorArgb: Int = 0xFF2E8B57.toInt(),
     onAddService: () -> Unit = {},
     onAddVehicle: () -> Unit = {},
     onUpdateOdometer: () -> Unit = {},
@@ -73,10 +72,9 @@ fun MainTabsScreen(
                 )
                 BottomTab.History -> HistoryTab(
                     onOpenServiceDetail = onOpenServiceDetail,
+                    onAddService = onAddService,
                 )
                 BottomTab.Settings -> SettingsTab(
-                    userName = userName,
-                    userColorArgb = userColorArgb,
                     onOpenPrivacy = onOpenPrivacy,
                     onOpenTerms = onOpenTerms,
                     onOpenAbout = onOpenAbout,

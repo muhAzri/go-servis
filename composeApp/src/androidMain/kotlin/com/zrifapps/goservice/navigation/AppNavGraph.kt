@@ -159,7 +159,6 @@ fun AppNavGraph() {
         composable<Screen.Main> {
             MainTabsScreen(
                 userName = onboardingState.persistedName.orEmpty(),
-                userColorArgb = AppColors.Primary.toArgb(),
                 onAddService = { navController.navigate(Screen.AddService) },
                 onAddVehicle = { navController.navigate(Screen.AddVehicleForm) },
                 onUpdateOdometer = { navController.navigate(Screen.UpdateOdometer) },
