@@ -128,6 +128,9 @@ private fun List<Reminder>.applyFilter(filter: ReminderFilter): List<Reminder> {
     if (filter.statuses.isNotEmpty()) result = result.filter { it.status in filter.statuses }
     if (filter.urgencies.isNotEmpty()) result = result.filter { it.urgency in filter.urgencies }
     if (filter.serviceTypes.isNotEmpty()) result = result.filter { it.serviceType in filter.serviceTypes }
+    filter.query?.trim()?.takeIf { it.isNotEmpty() }?.let { q ->
+        result = result.filter { it.title.contains(q, ignoreCase = true) }
+    }
     return result
 }
 

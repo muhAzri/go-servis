@@ -9,6 +9,8 @@ import com.zrifapps.goservice.feature.profile.domain.usecase.EnsureProfileSeeded
 import com.zrifapps.goservice.feature.profile.domain.usecase.ObserveProfile
 import com.zrifapps.goservice.feature.profile.domain.usecase.ResetProfile
 import com.zrifapps.goservice.feature.profile.domain.usecase.UpdateProfile
+import com.zrifapps.goservice.feature.profile.presentation.ProfileViewModel
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val profileModule = module {
@@ -20,4 +22,6 @@ val profileModule = module {
     factory { EnsureProfileSeeded(get()) }
     factory { UpdateProfile(get()) }
     factory { ResetProfile(get()) }
+
+    viewModel { ProfileViewModel(get()) }
 }

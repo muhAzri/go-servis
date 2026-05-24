@@ -10,6 +10,8 @@ import com.zrifapps.goservice.feature.reminder.domain.usecase.DeleteReminder
 import com.zrifapps.goservice.feature.reminder.domain.usecase.DismissReminder
 import com.zrifapps.goservice.feature.reminder.domain.usecase.ObserveReminders
 import com.zrifapps.goservice.feature.reminder.domain.usecase.SnoozeReminder
+import com.zrifapps.goservice.feature.reminder.presentation.ReminderListViewModel
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val reminderModule = module {
@@ -22,4 +24,6 @@ val reminderModule = module {
     factory { CompleteReminder(get()) }
     factory { DismissReminder(get()) }
     factory { DeleteReminder(get()) }
+
+    viewModel { ReminderListViewModel(get()) }
 }

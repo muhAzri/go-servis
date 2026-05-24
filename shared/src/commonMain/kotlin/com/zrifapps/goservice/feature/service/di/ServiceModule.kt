@@ -8,6 +8,8 @@ import com.zrifapps.goservice.feature.service.domain.usecase.DeleteServiceRecord
 import com.zrifapps.goservice.feature.service.domain.usecase.ObserveServiceHistory
 import com.zrifapps.goservice.feature.service.domain.usecase.ObserveVehicleServiceHistory
 import com.zrifapps.goservice.feature.service.domain.usecase.RecordService
+import com.zrifapps.goservice.feature.service.presentation.ServiceHistoryViewModel
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val serviceModule = module {
@@ -18,4 +20,6 @@ val serviceModule = module {
     factory { ObserveVehicleServiceHistory(get()) }
     factory { RecordService(get(), get()) }
     factory { DeleteServiceRecord(get()) }
+
+    viewModel { ServiceHistoryViewModel(get()) }
 }

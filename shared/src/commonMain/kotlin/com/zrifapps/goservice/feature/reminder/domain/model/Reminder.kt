@@ -40,6 +40,7 @@ data class ReminderFilter(
     val statuses: Set<ReminderStatus> = setOf(ReminderStatus.Active, ReminderStatus.Snoozed),
     val urgencies: Set<ReminderUrgency> = emptySet(),
     val serviceTypes: Set<ServiceType> = emptySet(),
+    val query: String? = null,
 )
 
 enum class ReminderSort {

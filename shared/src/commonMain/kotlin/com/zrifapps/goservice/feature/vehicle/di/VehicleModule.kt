@@ -10,6 +10,8 @@ import com.zrifapps.goservice.feature.vehicle.domain.usecase.GetVehicle
 import com.zrifapps.goservice.feature.vehicle.domain.usecase.ObserveVehicles
 import com.zrifapps.goservice.feature.vehicle.domain.usecase.UpdateOdometer
 import com.zrifapps.goservice.feature.vehicle.domain.usecase.UpdateVehicle
+import com.zrifapps.goservice.feature.vehicle.presentation.VehicleListViewModel
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val vehicleModule = module {
@@ -22,4 +24,6 @@ val vehicleModule = module {
     factory { UpdateVehicle(get()) }
     factory { UpdateOdometer(get()) }
     factory { DeleteVehicle(get()) }
+
+    viewModel { VehicleListViewModel(get()) }
 }
