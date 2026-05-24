@@ -2,7 +2,6 @@ import SwiftUI
 
 struct MainTabsView: View {
     var userName: String = ""
-    var userColorId: String = "primary"
 
     @Environment(AppRouter.self) private var router
     @State private var selectedTab: BottomTab = .home
@@ -35,13 +34,12 @@ struct MainTabsView: View {
 
                 case .history:
                     HistoryView(
-                        onOpenServiceDetail: { router.navigate(to: .serviceDetail) }
+                        onOpenServiceDetail: { router.navigate(to: .serviceDetail) },
+                        onAddService: { router.navigate(to: .addService) }
                     )
 
                 case .settings:
                     SettingsView(
-                        userName: userName,
-                        userColorId: userColorId,
                         onOpenPrivacy: { router.navigate(to: .privacy) },
                         onOpenTerms: { router.navigate(to: .terms) },
                         onOpenAbout: { router.navigate(to: .about) },

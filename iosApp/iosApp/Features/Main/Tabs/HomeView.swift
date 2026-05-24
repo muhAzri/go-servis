@@ -1,4 +1,5 @@
 import SwiftUI
+import Shared
 import UserNotifications
 
 struct HomeView: View {
@@ -11,13 +12,17 @@ struct HomeView: View {
     var onAddVehicle: () -> Void = {}
     var onUpdateOdometer: () -> Void = {}
     var onOpenTips: () -> Void = {}
-    var isEmpty: Bool = false
-    var isLoading: Bool = false
+
+    @ObservedObject private var vehicles = VehicleListModel.shared
+    @ObservedObject private var reminders = ReminderListModel.shared
 
     @Environment(\.scenePhase) private var scenePhase
     @State private var notifAuthorized: Bool = true
     @State private var bannerDismissed: Bool = false
     @State private var showNotifSheet: Bool = false
+
+    private var isLoading: Bool { vehicles.state.isLoading || reminders.state.isLoading }
+    private var isEmpty: Bool { vehicles.state.isEmpty }
 
     private var showBanner: Bool {
         !notifAuthorized && !bannerDismissed && !isEmpty && !isLoading
@@ -87,9 +92,19 @@ struct HomeView: View {
                     .padding(.bottom, 8)
                 }
 
-                HeroStatusCard(onOpenVehicleDetail: onOpenVehicleDetail)
+                let vehicleById = Dictionary(uniqueKeysWithValues: vehicles.state.vehicles.map { ($0.id, $0) })
+                if let hero = pickHeroVehicle(vehicles.state.vehicles, reminders.state.reminders, vehicleById: vehicleById) {
+                    let overdueCount = reminders.state.reminders
+                        .filter { $0.vehicleId == hero.id && $0.urgency == .overdue }
+                        .count
+                    HeroStatusCard(
+                        vehicle: hero,
+                        overdueCount: Int(overdueCount),
+                        onOpenVehicleDetail: onOpenVehicleDetail
+                    )
                     .padding(.horizontal, 16)
                     .padding(.bottom, 16)
+                }
 
                 AdBannerSlot()
                     .padding(.bottom, 8)
@@ -106,27 +121,19 @@ struct HomeView: View {
                 SectionHeading(title: "Pengingat aktif", actionLabel: "Lihat semua", action: onOpenReminders)
 
                 VStack(spacing: 8) {
-                    ReminderRow(
-                        iconUnicode: "\u{f613}",
-                        title: "Ganti Oli Mesin",
-                        subtitle: "Beat Hitam · Telat 16 hari",
-                        urgency: .overdue,
-                        onTap: onOpenReminderDetail
-                    )
-                    ReminderRow(
-                        iconUnicode: "\u{f1ce}",
-                        title: "Kampas Rem",
-                        subtitle: "Beat Hitam · 19 hari lagi",
-                        urgency: .soon,
-                        onTap: onOpenReminderDetail
-                    )
-                    ReminderRow(
-                        iconUnicode: "\u{f0b0}",
-                        title: "Filter Oli & Udara",
-                        subtitle: "Avanza Putih · 65 hari lagi",
-                        urgency: .ok,
-                        onTap: onOpenReminderDetail
-                    )
+                    let topReminders = Array(reminders.state.reminders.prefix(3))
+                    if topReminders.isEmpty {
+                        ReminderEmptyHint()
+                    } else {
+                        ForEach(topReminders, id: \.id) { reminder in
+                            ReminderRow(
+                                title: reminder.title,
+                                subtitle: reminderSubtitle(reminder, vehicle: vehicleById[reminder.vehicleId]),
+                                urgency: toUiUrgency(reminder.urgency),
+                                onTap: onOpenReminderDetail
+                            )
+                        }
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 12)
@@ -137,34 +144,9 @@ struct HomeView: View {
                 SectionHeading(title: "Kendaraan saya", actionLabel: "Lihat semua", action: onOpenVehicleList)
 
                 VStack(spacing: 8) {
-                    VehicleSummaryRow(
-                        iconUnicode: "\u{f21c}",
-                        accent: Color(red: 0.18, green: 0.55, blue: 0.34),
-                        title: "Beat Hitam",
-                        plateAndKm: "B 4521 KZA · 18.420 km",
-                        onTap: onOpenVehicleDetail
-                    )
-                    VehicleSummaryRow(
-                        iconUnicode: "\u{f21c}",
-                        accent: Color(red: 0.84, green: 0.27, blue: 0.23),
-                        title: "Vario Merah",
-                        plateAndKm: "B 6789 SKR · 8.100 km",
-                        onTap: onOpenVehicleDetail
-                    )
-                    VehicleSummaryRow(
-                        iconUnicode: "\u{f1b9}",
-                        accent: Color(red: 0.25, green: 0.30, blue: 0.36),
-                        title: "Avanza Putih",
-                        plateAndKm: "B 1234 ABC · 62.300 km",
-                        onTap: onOpenVehicleDetail
-                    )
-                    VehicleSummaryRow(
-                        iconUnicode: "\u{f1b9}",
-                        accent: Color(red: 0.25, green: 0.69, blue: 0.84),
-                        title: "Brio Biru",
-                        plateAndKm: "B 9876 XYZ · 24.500 km",
-                        onTap: onOpenVehicleDetail
-                    )
+                    ForEach(Array(vehicles.state.vehicles.prefix(4)), id: \.id) { vehicle in
+                        VehicleSummaryRow(vehicle: vehicle, onTap: onOpenVehicleDetail)
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
@@ -226,21 +208,35 @@ private struct HomeHeader: View {
 }
 
 private struct HeroStatusCard: View {
+    let vehicle: Vehicle
+    let overdueCount: Int
     let onOpenVehicleDetail: () -> Void
+
+    private var icon: String {
+        vehicle.type == VehicleType.mobil ? "\u{f1b9}" : "\u{f21c}"
+    }
+    private var headline: String {
+        switch overdueCount {
+        case 0: return "Servis terpantau — semua aman"
+        case 1: return "1 servis telat — segera bawa ke bengkel"
+        default: return "\(overdueCount) servis telat — segera bawa ke bengkel"
+        }
+    }
+    private var tone: Color { overdueCount > 0 ? .sgDanger : .sgPrimary }
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 8) {
-                    Text("\u{f1b9}")
+                    Text(icon)
                         .font(.custom("FontAwesome6Free-Solid", size: 14))
                         .foregroundColor(.white.opacity(0.95))
-                    Text("Toyota Avanza Veloz")
+                    Text(vehicle.displayTitle)
                         .font(.custom("PlusJakartaSans-SemiBold", size: 12))
                         .foregroundColor(.white.opacity(0.9))
                 }
 
-                Text("1 servis telat — segera bawa ke bengkel")
+                Text(headline)
                     .font(.custom("PlusJakartaSans-ExtraBold", size: 22))
                     .foregroundColor(.white)
                     .kerning(-0.4)
@@ -254,7 +250,7 @@ private struct HeroStatusCard: View {
                         Text("KM saat ini")
                             .font(.custom("PlusJakartaSans-Regular", size: 11))
                             .foregroundColor(.white.opacity(0.85))
-                        Text("62.300")
+                        Text(formatKm(vehicle.odometer))
                             .font(.system(size: 18, weight: .bold, design: .monospaced))
                             .foregroundColor(.white)
                     }
@@ -262,7 +258,7 @@ private struct HeroStatusCard: View {
                         Text("Plat")
                             .font(.custom("PlusJakartaSans-Regular", size: 11))
                             .foregroundColor(.white.opacity(0.85))
-                        Text("B 1234 ABC")
+                        Text(vehicle.plateNumber.isEmpty ? "—" : vehicle.plateNumber)
                             .font(.system(size: 16, weight: .bold, design: .monospaced))
                             .foregroundColor(.white)
                     }
@@ -282,7 +278,7 @@ private struct HeroStatusCard: View {
             }
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.sgDanger)
+            .background(tone)
             .clipShape(RoundedRectangle(cornerRadius: 24))
         }
     }
@@ -386,7 +382,6 @@ private struct SectionHeading: View {
 }
 
 private struct ReminderRow: View {
-    let iconUnicode: String
     let title: String
     let subtitle: String
     let urgency: ReminderUrgency
@@ -396,7 +391,7 @@ private struct ReminderRow: View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 IconBadge(
-                    iconUnicode: iconUnicode,
+                    iconUnicode: "\u{f0f3}",
                     foreground: urgency.color,
                     background: urgency.softColor
                 )
@@ -424,24 +419,28 @@ private struct ReminderRow: View {
 }
 
 private struct VehicleSummaryRow: View {
-    let iconUnicode: String
-    let accent: Color
-    let title: String
-    let plateAndKm: String
+    let vehicle: Vehicle
     let onTap: () -> Void
+
+    private var icon: String { vehicle.type == VehicleType.mobil ? "\u{f1b9}" : "\u{f21c}" }
+    private var accent: Color {
+        hexColor(PresentationFactory.shared.vehicleColorHex(vehicle: vehicle)) ?? .sgPrimary
+    }
+    private var plate: String { vehicle.plateNumber.isEmpty ? "—" : vehicle.plateNumber }
+    private var plateAndKm: String { "\(plate) · \(formatKm(vehicle.odometer)) km" }
 
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 IconBadge(
-                    iconUnicode: iconUnicode,
+                    iconUnicode: icon,
                     foreground: accent,
                     background: accent.opacity(0.13),
                     size: 48,
                     iconSize: 24
                 )
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
+                    Text(vehicle.displayTitle)
                         .font(.custom("PlusJakartaSans-Bold", size: 14))
                         .foregroundColor(.sgTextPrimary)
                     Text(plateAndKm)
@@ -463,6 +462,93 @@ private struct VehicleSummaryRow: View {
         }
         .buttonStyle(.plain)
     }
+}
+
+private struct ReminderEmptyHint: View {
+    var body: some View {
+        Text("Belum ada pengingat aktif. Tambah dari halaman Pengingat.")
+            .font(.custom("PlusJakartaSans-Medium", size: 12))
+            .foregroundColor(.sgTextMuted)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14)
+            .background(Color.sgSurface)
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .strokeBorder(Color.sgBorder, lineWidth: 1)
+            )
+    }
+}
+
+func pickHeroVehicle(
+    _ vehicles: [Vehicle],
+    _ reminders: [Reminder],
+    vehicleById: [String: Vehicle]
+) -> Vehicle? {
+    if let overdue = reminders.first(where: { $0.urgency == .overdue }),
+       let vehicle = vehicleById[overdue.vehicleId] {
+        return vehicle
+    }
+    return vehicles.first
+}
+
+func reminderSubtitle(_ reminder: Reminder, vehicle: Vehicle?) -> String {
+    let nick = vehicle?.displayTitle ?? "—"
+    let urgency: String
+    switch reminder.urgency {
+    case .overdue: urgency = "Telat"
+    case .soon: urgency = "Segera"
+    case .ok: urgency = "Aman"
+    default: urgency = "Aman"
+    }
+    return "\(nick) · \(urgency)"
+}
+
+func toUiUrgency(_ domain: Shared.ReminderUrgency) -> ReminderUrgency {
+    switch domain {
+    case .overdue: return .overdue
+    case .soon: return .soon
+    case .ok: return .ok
+    default: return .ok
+    }
+}
+
+func formatKm(_ km: Int64) -> String {
+    formatGroupedLong(km)
+}
+
+func formatGroupedLong(_ value: Int64) -> String {
+    if value == 0 { return "0" }
+    var parts: [String] = []
+    var n = value
+    while n > 0 {
+        let chunk = n % 1000
+        n /= 1000
+        if n > 0 {
+            parts.insert(String(format: "%03d", chunk), at: 0)
+        } else {
+            parts.insert(String(chunk), at: 0)
+        }
+    }
+    return parts.joined(separator: ".")
+}
+
+func hexColor(_ hex: String) -> Color? {
+    let trimmed = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+    guard trimmed.count == 6 || trimmed.count == 8 else { return nil }
+    var int: UInt64 = 0
+    Scanner(string: trimmed).scanHexInt64(&int)
+    let r, g, b: Double
+    if trimmed.count == 6 {
+        r = Double((int >> 16) & 0xFF) / 255
+        g = Double((int >> 8) & 0xFF) / 255
+        b = Double(int & 0xFF) / 255
+    } else {
+        r = Double((int >> 24) & 0xFF) / 255
+        g = Double((int >> 16) & 0xFF) / 255
+        b = Double((int >> 8) & 0xFF) / 255
+    }
+    return Color(red: r, green: g, blue: b)
 }
 
 #Preview {

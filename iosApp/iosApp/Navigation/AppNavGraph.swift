@@ -29,8 +29,7 @@ struct AppNavGraph: View {
             } else {
                 NavigationStack(path: $router.path) {
                     MainTabsView(
-                        userName: onboardingModel.state.persistedName ?? "",
-                        userColorId: "primary"
+                        userName: onboardingModel.state.persistedName ?? ""
                     )
                     .navigationDestination(for: AppDestination.self) { destination in
                         destinationView(for: destination)
@@ -51,8 +50,7 @@ struct AppNavGraph: View {
         switch destination {
         case .main:
             MainTabsView(
-                userName: onboardingModel.state.persistedName ?? "",
-                userColorId: "primary"
+                userName: onboardingModel.state.persistedName ?? ""
             )
         case .addVehicle:
             AddVehicleView(

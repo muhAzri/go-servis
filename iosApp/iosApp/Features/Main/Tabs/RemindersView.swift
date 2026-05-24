@@ -1,19 +1,37 @@
 import SwiftUI
+import Shared
 
 struct RemindersView: View {
     var onOpenReminderDetail: () -> Void = {}
     var onAddReminder: () -> Void = {}
-    var isEmpty: Bool = false
-    var isLoading: Bool = false
     var isRefreshing: Bool = false
 
-    @State private var selectedFilter: ReminderFilter = .all
-    @State private var searchQuery: String = ""
+    @ObservedObject private var reminders = ReminderListModel.shared
+    @ObservedObject private var vehicles = VehicleListModel.shared
+
+    private var isLoading: Bool { reminders.state.isLoading }
+    private var isEmpty: Bool { reminders.state.isEmpty }
+    private var activeCount: Int { reminders.state.reminders.count }
+
+    private var vehicleById: [String: Vehicle] {
+        Dictionary(uniqueKeysWithValues: vehicles.state.vehicles.map { ($0.id, $0) })
+    }
+
+    private var selectedFilter: ReminderFilterChip {
+        let urgencies = reminders.state.urgencyFilter
+        if urgencies.count != 1 { return .all }
+        let only = urgencies.first
+        if only == Shared.ReminderUrgency.overdue { return .overdue }
+        if only == Shared.ReminderUrgency.soon { return .soon }
+        if only == Shared.ReminderUrgency.ok { return .ok }
+        return .all
+    }
+    private var searchQuery: String { reminders.state.query }
 
     var body: some View {
         if isLoading {
             VStack(alignment: .leading, spacing: 0) {
-                RemindersHeader(onAddReminder: onAddReminder)
+                RemindersHeader(activeCount: 0, onAddReminder: onAddReminder)
                 Skeleton.Row(leading: .icon)
                 Skeleton.Row(leading: .icon)
                 Skeleton.Row(leading: .icon)
@@ -21,7 +39,7 @@ struct RemindersView: View {
             }
         } else if isEmpty {
             VStack(alignment: .leading, spacing: 0) {
-                RemindersHeader(onAddReminder: onAddReminder)
+                RemindersHeader(activeCount: 0, onAddReminder: onAddReminder)
                 EmptyState(
                     iconUnicode: "\u{f0f3}",
                     title: "Belum ada pengingat aktif",
@@ -37,109 +55,74 @@ struct RemindersView: View {
     }
 
     private var scrollContent: some View {
-        ScrollView {
+        let grouped = Dictionary(grouping: reminders.state.reminders, by: { $0.urgency })
+        let overdue = grouped[Shared.ReminderUrgency.overdue] ?? []
+        let soon = grouped[Shared.ReminderUrgency.soon] ?? []
+        let ok = grouped[Shared.ReminderUrgency.ok] ?? []
+
+        return ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                RemindersHeader(onAddReminder: onAddReminder)
+                RemindersHeader(activeCount: activeCount, onAddReminder: onAddReminder)
 
                 StickySearchHeader(
                     placeholder: "Cari pengingat…",
-                    text: $searchQuery
+                    text: Binding(
+                        get: { searchQuery },
+                        set: { reminders.vm.setQuery(query: $0) }
+                    )
                 )
 
                 if isRefreshing {
                     PullRefreshIndicator(state: .refreshing)
                 }
 
-                FilterChips(selected: $selectedFilter)
+                FilterChips(
+                    selected: selectedFilter,
+                    onSelect: { chip in
+                        let domain: Set<Shared.ReminderUrgency>
+                        switch chip {
+                        case .all: domain = []
+                        case .overdue: domain = [Shared.ReminderUrgency.overdue]
+                        case .soon: domain = [Shared.ReminderUrgency.soon]
+                        case .ok: domain = [Shared.ReminderUrgency.ok]
+                        }
+                        reminders.vm.setUrgencyFilter(urgencies: domain)
+                    }
+                )
                     .padding(.horizontal, 20)
                     .padding(.bottom, 14)
 
                 AdBannerSlot()
                     .padding(.bottom, 14)
 
-                ReminderGroupHeader(label: "Telat — segera servis", accent: .sgDanger, count: 1)
-                VStack(spacing: 8) {
-                    ReminderListCard(
-                        iconUnicode: "\u{f613}",
-                        title: "Ganti Oli Mesin",
-                        vehicle: "Beat Hitam",
-                        dueDate: "20 Apr 2026",
-                        daysLeftLabel: "+16h",
-                        progress: 1.0,
-                        urgency: .overdue,
-                        onTap: onOpenReminderDetail
-                    )
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 18)
-
-                ReminderGroupHeader(label: "Akan datang", accent: .sgWarning, count: 3)
-                VStack(spacing: 8) {
-                    ReminderListCard(
-                        iconUnicode: "\u{f1ce}",
-                        title: "Kampas Rem",
-                        vehicle: "Beat Hitam",
-                        dueDate: "25 Mei 2026",
-                        daysLeftLabel: "19h",
-                        progress: 0.97,
-                        urgency: .soon,
-                        onTap: onOpenReminderDetail
-                    )
-                    ReminderListCard(
-                        iconUnicode: "\u{f613}",
-                        title: "Ganti Oli Mesin",
-                        vehicle: "Vario Merah",
-                        dueDate: "12 Mei 2026",
-                        daysLeftLabel: "6h",
-                        progress: 0.9,
-                        urgency: .soon,
-                        onTap: onOpenReminderDetail
-                    )
-                    ReminderListCard(
-                        iconUnicode: "\u{f0ad}",
-                        title: "Servis Berkala",
-                        vehicle: "Brio Biru",
-                        dueDate: "9 Mei 2026",
-                        daysLeftLabel: "3h",
-                        progress: 0.98,
-                        urgency: .soon,
-                        onTap: onOpenReminderDetail
-                    )
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 18)
-
-                ReminderGroupHeader(label: "Aman", accent: .sgPrimary, count: 2)
-                VStack(spacing: 8) {
-                    ReminderListCard(
-                        iconUnicode: "\u{f0b0}",
-                        title: "Filter Oli & Udara",
-                        vehicle: "Avanza Putih",
-                        dueDate: "10 Jul 2026",
-                        daysLeftLabel: "65h",
-                        progress: 0.95,
-                        urgency: .ok,
-                        onTap: onOpenReminderDetail
-                    )
-                    ReminderListCard(
-                        iconUnicode: "\u{f5df}",
-                        title: "Aki",
-                        vehicle: "Avanza Putih",
-                        dueDate: "1 Sep 2026",
-                        daysLeftLabel: "118h",
-                        progress: 0.4,
-                        urgency: .ok,
-                        onTap: onOpenReminderDetail
-                    )
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 24)
+                ReminderGroup(
+                    label: "Telat — segera servis",
+                    accent: .sgDanger,
+                    reminders: overdue,
+                    vehicleById: vehicleById,
+                    onOpenDetail: onOpenReminderDetail
+                )
+                ReminderGroup(
+                    label: "Akan datang",
+                    accent: .sgWarning,
+                    reminders: soon,
+                    vehicleById: vehicleById,
+                    onOpenDetail: onOpenReminderDetail
+                )
+                ReminderGroup(
+                    label: "Aman",
+                    accent: .sgPrimary,
+                    reminders: ok,
+                    vehicleById: vehicleById,
+                    onOpenDetail: onOpenReminderDetail
+                )
+                Spacer().frame(height: 24)
             }
         }
     }
 }
 
-enum ReminderFilter: String, CaseIterable {
+enum ReminderFilterChip: String, CaseIterable {
     case all = "Semua"
     case overdue = "Telat"
     case soon = "Soon"
@@ -147,12 +130,13 @@ enum ReminderFilter: String, CaseIterable {
 }
 
 private struct RemindersHeader: View {
+    let activeCount: Int
     let onAddReminder: () -> Void
 
     var body: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("6 pengingat aktif")
+                Text("\(activeCount) pengingat aktif")
                     .font(.custom("PlusJakartaSans-Medium", size: 13))
                     .foregroundColor(.sgTextMuted)
                 Text("Pengingat Servis")
@@ -180,12 +164,13 @@ private struct RemindersHeader: View {
 }
 
 private struct FilterChips: View {
-    @Binding var selected: ReminderFilter
+    let selected: ReminderFilterChip
+    let onSelect: (ReminderFilterChip) -> Void
 
     var body: some View {
         HStack(spacing: 8) {
-            ForEach(ReminderFilter.allCases, id: \.self) { f in
-                Button { selected = f } label: {
+            ForEach(ReminderFilterChip.allCases, id: \.self) { f in
+                Button { onSelect(f) } label: {
                     Text(f.rawValue)
                         .font(.custom("PlusJakartaSans-Bold", size: 12))
                         .foregroundColor(selected == f ? .white : .sgTextMuted)
@@ -203,6 +188,35 @@ private struct FilterChips: View {
                 .buttonStyle(.plain)
             }
             Spacer()
+        }
+    }
+}
+
+private struct ReminderGroup: View {
+    let label: String
+    let accent: Color
+    let reminders: [Reminder]
+    let vehicleById: [String: Vehicle]
+    let onOpenDetail: () -> Void
+
+    var body: some View {
+        if reminders.isEmpty {
+            EmptyView()
+        } else {
+            VStack(alignment: .leading, spacing: 0) {
+                ReminderGroupHeader(label: label, accent: accent, count: reminders.count)
+                VStack(spacing: 8) {
+                    ForEach(reminders, id: \.id) { reminder in
+                        ReminderListCard(
+                            reminder: reminder,
+                            vehicle: vehicleById[reminder.vehicleId],
+                            onTap: onOpenDetail
+                        )
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 18)
+            }
         }
     }
 }
@@ -227,35 +241,58 @@ private struct ReminderGroupHeader: View {
 }
 
 private struct ReminderListCard: View {
-    let iconUnicode: String
-    let title: String
-    let vehicle: String
-    let dueDate: String
-    let daysLeftLabel: String
-    let progress: Double
-    let urgency: ReminderUrgency
+    let reminder: Reminder
+    let vehicle: Vehicle?
     let onTap: () -> Void
+
+    private var urgency: ReminderUrgency { toUiUrgency(reminder.urgency) }
+    private var urgencyLabel: String {
+        switch reminder.urgency {
+        case Shared.ReminderUrgency.overdue: return "Telat"
+        case Shared.ReminderUrgency.soon: return "Segera"
+        case Shared.ReminderUrgency.ok: return "Aman"
+        default: return "Aman"
+        }
+    }
+    private var progress: Double {
+        switch reminder.urgency {
+        case Shared.ReminderUrgency.overdue: return 1.0
+        case Shared.ReminderUrgency.soon: return 0.9
+        case Shared.ReminderUrgency.ok: return 0.4
+        default: return 0.4
+        }
+    }
+    private var vehicleLabel: String { vehicle?.displayTitle ?? "—" }
+    private var triggerLabel: String {
+        if let byKm = reminder.trigger as? ReminderTrigger.ByKm {
+            return "@ \(byKm.targetOdometer) km"
+        } else if let byBoth = reminder.trigger as? ReminderTrigger.ByBoth {
+            return "@ \(byBoth.targetOdometer) km / date"
+        } else {
+            return "due date set"
+        }
+    }
 
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 IconBadge(
-                    iconUnicode: iconUnicode,
+                    iconUnicode: "\u{f0f3}",
                     foreground: urgency.color,
                     background: urgency.softColor
                 )
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .firstTextBaseline) {
-                        Text(title)
+                        Text(reminder.title)
                             .font(.custom("PlusJakartaSans-Bold", size: 14))
                             .foregroundColor(.sgTextPrimary)
                         Spacer()
-                        Text(daysLeftLabel)
+                        Text(urgencyLabel)
                             .font(.system(size: 11, weight: .bold, design: .monospaced))
                             .foregroundColor(urgency.color)
                     }
-                    Text("\(vehicle) · \(dueDate)")
+                    Text("\(vehicleLabel) · \(triggerLabel)")
                         .font(.custom("PlusJakartaSans-Medium", size: 12))
                         .foregroundColor(.sgTextMuted)
                     GeometryReader { geo in

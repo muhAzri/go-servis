@@ -1,8 +1,7 @@
 import SwiftUI
+import Shared
 
 struct SettingsView: View {
-    var userName: String = ""
-    var userColorId: String = "primary"
     var onOpenPrivacy: () -> Void = {}
     var onOpenTerms: () -> Void = {}
     var onOpenAbout: () -> Void = {}
@@ -10,9 +9,21 @@ struct SettingsView: View {
     var onOpenTestScreen: () -> Void = {}
     var onOpenEditProfile: () -> Void = {}
 
+    @ObservedObject private var profile = ProfileModel.shared
+    @ObservedObject private var vehicles = VehicleListModel.shared
+    @ObservedObject private var services = ServiceHistoryModel.shared
+
     @State private var notifPengingatOn = true
     @State private var showExportSheet = false
     @State private var showWipeFlow = false
+
+    private var displayName: String { profile.state.displayName }
+    private var avatarHex: String? {
+        guard let p = profile.state.profile else { return nil }
+        return PresentationFactory.shared.profileAvatarHex(profile: p)
+    }
+    private var vehicleCount: Int { vehicles.state.vehicles.count }
+    private var serviceCount: Int { services.state.records.count }
 
     var body: some View {
         ScrollView {
@@ -20,8 +31,10 @@ struct SettingsView: View {
                 TabHeader(subtitle: nil, title: "Pengaturan")
 
                 ProfileHeaderCard(
-                    userName: userName,
-                    colorId: userColorId,
+                    userName: displayName,
+                    avatarHex: avatarHex,
+                    vehicleCount: vehicleCount,
+                    serviceCount: serviceCount,
                     onTap: onOpenEditProfile
                 )
                 .padding(.horizontal, 16)
@@ -85,7 +98,9 @@ struct SettingsView: View {
 
 private struct ProfileHeaderCard: View {
     let userName: String
-    let colorId: String
+    let avatarHex: String?
+    let vehicleCount: Int
+    let serviceCount: Int
     let onTap: () -> Void
 
     private var displayName: String { userName.isEmpty ? "Kamu" : userName }
@@ -94,14 +109,8 @@ private struct ProfileHeaderCard: View {
         return String(trimmed.first ?? "K").uppercased()
     }
     private var avatarColor: Color {
-        switch colorId {
-        case "danger": return Color(red: 0.84, green: 0.27, blue: 0.23)
-        case "cyan":   return Color(red: 0.25, green: 0.69, blue: 0.84)
-        case "amber":  return Color(red: 0.91, green: 0.61, blue: 0.18)
-        case "violet": return Color(red: 0.48, green: 0.44, blue: 0.91)
-        case "ink":    return Color(red: 0.10, green: 0.14, blue: 0.09)
-        default:       return .sgPrimary
-        }
+        if let hex = avatarHex, let color = hexColor(hex) { return color }
+        return .sgPrimary
     }
 
     var body: some View {
@@ -120,7 +129,7 @@ private struct ProfileHeaderCard: View {
                     Text(displayName)
                         .font(.custom("PlusJakartaSans-Bold", size: 15))
                         .foregroundColor(.sgTextPrimary)
-                    Text("Profil lokal · 4 kendaraan · 12 servis tercatat")
+                    Text("Profil lokal · \(vehicleCount) kendaraan · \(serviceCount) servis tercatat")
                         .font(.custom("PlusJakartaSans-Medium", size: 12))
                         .foregroundColor(.sgTextMuted)
                 }
