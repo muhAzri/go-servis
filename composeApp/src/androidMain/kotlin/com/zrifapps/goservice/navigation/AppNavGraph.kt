@@ -3,7 +3,6 @@ package com.zrifapps.goservice.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -37,7 +36,6 @@ import com.zrifapps.goservice.ui.service.ServiceDetailScreen
 import com.zrifapps.goservice.ui.service.ServiceSavedScreen
 import com.zrifapps.goservice.ui.splash.SplashScreen
 import com.zrifapps.goservice.ui.test.TestScreen
-import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.tips.TipsDetailScreen
 import com.zrifapps.goservice.ui.tips.TipsScreen
 import com.zrifapps.goservice.ui.vehicle.AddCustomComponentScreen
@@ -179,12 +177,8 @@ fun AppNavGraph() {
 
         composable<Screen.EditProfile> {
             EditProfileScreen(
-                initialName = onboardingState.persistedName.orEmpty(),
-                initialColorArgb = AppColors.Primary.toArgb(),
                 onBack = { navController.popBackStack() },
-                onSave = { _, _ ->
-                    navController.popBackStack()
-                },
+                onSaved = { navController.popBackStack() },
             )
         }
 
