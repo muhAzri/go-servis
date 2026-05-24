@@ -126,10 +126,8 @@ struct AppNavGraph: View {
             )
         case .editProfile:
             EditProfileView(
-                initialName: onboardingModel.state.persistedName ?? "",
-                initialColorId: "primary",
-                onSave: { _, _ in router.navigateBack() },
-                onCancel: { router.navigateBack() }
+                onBack: { router.navigateBack() },
+                onSaved: { router.navigateBack() }
             )
 
         case .vehicleComponents:
