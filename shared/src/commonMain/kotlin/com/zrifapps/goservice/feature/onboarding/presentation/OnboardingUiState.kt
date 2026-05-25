@@ -27,6 +27,7 @@ data class OnboardingVehicleInput(
     val plateNumber: String,
     val odometerKm: Long,
     val colorHex: String,
+    val subtypeId: String? = null,
 )
 
 sealed interface OnboardingEvent {

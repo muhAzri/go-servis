@@ -58,7 +58,7 @@ class AddVehicleViewModel(
                 val draft = VehicleDraft(
                     nickname = input.nickname.trim(),
                     type = input.type,
-                    subtypeId = Component.UNIVERSAL_SUBTYPE,
+                    subtypeId = input.subtypeId?.takeIf(String::isNotBlank) ?: Component.UNIVERSAL_SUBTYPE,
                     brand = input.brand.trim(),
                     model = input.model.trim(),
                     year = input.year,

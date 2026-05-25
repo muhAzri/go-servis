@@ -84,6 +84,7 @@ class EditVehicleViewModel(
                 val updated = current.copy(
                     nickname = input.nickname.trim(),
                     type = input.type,
+                    subtypeId = input.subtypeId?.takeIf(String::isNotBlank) ?: current.subtypeId,
                     brand = input.brand.trim(),
                     model = input.model.trim(),
                     year = input.year,

@@ -41,6 +41,7 @@ object PresentationFactory {
         plateNumber: String,
         odometerKm: Long,
         colorHex: String,
+        subtypeId: String? = null,
     ): OnboardingVehicleInput = OnboardingVehicleInput(
         type = VehicleType.fromKey(typeKey),
         nickname = nickname,
@@ -50,5 +51,6 @@ object PresentationFactory {
         plateNumber = plateNumber,
         odometerKm = odometerKm,
         colorHex = colorHex,
+        subtypeId = subtypeId,
     )
 }
