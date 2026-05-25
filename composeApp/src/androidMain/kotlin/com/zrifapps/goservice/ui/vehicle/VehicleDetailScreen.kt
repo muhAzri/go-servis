@@ -114,10 +114,8 @@ fun VehicleDetailScreen(
 
     if (showShareSheet) {
         ShareVehicleSheet(
-            vehicleName = vehicle?.displayTitle ?: "",
+            vehicle = vehicle,
             onDismiss = { showShareSheet = false },
-            onCopy = { showShareSheet = false },
-            onSystemShare = { showShareSheet = false },
         )
     }
 }
