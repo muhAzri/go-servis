@@ -1,18 +1,36 @@
 import SwiftUI
+import Shared
+import UIKit
 
 struct ShareVehicleSheet: View {
-    let vehicleName: String
+    let vehicle: Vehicle?
     var onDismiss: () -> Void = {}
-    var onCopy: () -> Void = {}
-    var onSystemShare: () -> Void = {}
+    var onCopied: () -> Void = {}
+
+    private var displayName: String {
+        let name = vehicle?.displayTitle.trimmingCharacters(in: .whitespaces) ?? ""
+        return name.isEmpty ? "kendaraan" : name
+    }
+
+    private var summaryPreview: String {
+        guard let v = vehicle else { return "" }
+        let km: String = {
+            let n = Int(truncating: v.odometer as NSNumber)
+            let f = NumberFormatter()
+            f.numberStyle = .decimal
+            f.groupingSeparator = "."
+            return f.string(from: NSNumber(value: n)) ?? String(n)
+        }()
+        return "\"\(displayName) · \(km) km · …\""
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Bagikan \(vehicleName)")
+                Text("Bagikan \(displayName)")
                     .font(.custom("PlusJakartaSans-ExtraBold", size: 18))
                     .foregroundColor(.sgTextPrimary)
-                Text("Pilih cara berbagi data kendaraan ini.")
+                Text("Pilih cara berbagi ringkasan kendaraan ini.")
                     .font(.custom("PlusJakartaSans-Medium", size: 12))
                     .foregroundColor(.sgTextMuted)
             }
@@ -24,9 +42,9 @@ struct ShareVehicleSheet: View {
 
             ScrollView {
                 VStack(spacing: 0) {
-                    row(icon: "\u{f15c}", label: "Salin ringkasan teks", sub: "\"\(vehicleName) · 18.420 km · …\"", action: onCopy)
+                    row(icon: "\u{f15c}", label: "Salin ringkasan teks", sub: summaryPreview, action: copy)
                     Divider().background(Color.sgBorder).padding(.leading, 70)
-                    row(icon: "\u{f1e0}", label: "Bagikan via aplikasi lain", sub: "WhatsApp, email, dll.", action: onSystemShare)
+                    row(icon: "\u{f1e0}", label: "Bagikan via aplikasi lain", sub: "WhatsApp, email, dll.", action: systemShare)
                 }
             }
 
@@ -43,6 +61,24 @@ struct ShareVehicleSheet: View {
             .padding(.bottom, 24)
         }
         .background(Color.sgSurface)
+    }
+
+    private func copy() {
+        guard let v = vehicle else { onDismiss(); return }
+        let text = PresentationFactory.shared.vehicleShareText(vehicle: v)
+        UIPasteboard.general.string = text
+        onDismiss()
+        onCopied()
+    }
+
+    private func systemShare() {
+        guard let v = vehicle else { onDismiss(); return }
+        let text = PresentationFactory.shared.vehicleShareText(vehicle: v)
+        onDismiss()
+        // Defer presentation until our own sheet has dismissed.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            presentActivitySheet(items: [text])
+        }
     }
 
     private func row(icon: String, label: String, sub: String, action: @escaping () -> Void) -> some View {
@@ -77,4 +113,21 @@ struct ShareVehicleSheet: View {
         }
         .buttonStyle(.plain)
     }
+}
+
+private func presentActivitySheet(items: [Any]) {
+    let activityVC = UIActivityViewController(activityItems: items, applicationActivities: nil)
+    guard let scene = UIApplication.shared.connectedScenes
+            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
+          let root = scene.windows.first(where: \.isKeyWindow)?.rootViewController
+    else { return }
+    var presenter = root
+    while let presented = presenter.presentedViewController { presenter = presented }
+    // iPad needs a popover anchor; use the presenter's view center.
+    if let pop = activityVC.popoverPresentationController {
+        pop.sourceView = presenter.view
+        pop.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
+        pop.permittedArrowDirections = []
+    }
+    presenter.present(activityVC, animated: true)
 }

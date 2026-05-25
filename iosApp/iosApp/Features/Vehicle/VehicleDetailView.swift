@@ -8,6 +8,7 @@ struct VehicleDetailView: View {
     @StateObject private var model = VehicleDetailModel()
     @Environment(AppRouter.self) private var router
     @State private var showShareSheet: Bool = false
+    @State private var copyToast: ToastMessage? = nil
 
     init(vehicleId: String? = nil, onEdit: @escaping (String?) -> Void = { _ in }) {
         self.vehicleId = vehicleId
@@ -81,13 +82,13 @@ struct VehicleDetailView: View {
         }
         .sheet(isPresented: $showShareSheet) {
             ShareVehicleSheet(
-                vehicleName: vehicle?.displayTitle ?? "",
+                vehicle: vehicle,
                 onDismiss: { showShareSheet = false },
-                onCopy: { showShareSheet = false },
-                onSystemShare: { showShareSheet = false }
+                onCopied: { copyToast = .init(message: "Ringkasan disalin", tone: .success) }
             )
             .presentationDetents([.medium])
         }
+        .toast($copyToast)
         .onAppear { model.load(vehicleId: vehicleId) }
     }
 }
