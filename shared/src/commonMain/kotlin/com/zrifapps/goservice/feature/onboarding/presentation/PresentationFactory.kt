@@ -32,6 +32,37 @@ object PresentationFactory {
     fun formatSinceLabel(epochMillis: Long?): String =
         EditProfileViewModel.formatSinceLabel(epochMillis)
 
+    fun vehicleShareText(vehicle: Vehicle): String {
+        val title = vehicle.displayTitle
+        val brandModel = listOf(vehicle.brand, vehicle.model)
+            .map(String::trim)
+            .filter(String::isNotEmpty)
+            .joinToString(" ")
+        val brandLine = listOfNotNull(
+            brandModel.takeIf(String::isNotEmpty),
+            vehicle.year?.toString(),
+        ).joinToString(" · ")
+        val plate = vehicle.plateNumber.trim().takeIf(String::isNotEmpty)
+        val km = formatKmGrouped(vehicle.odometer.kilometers)
+        return buildString {
+            appendLine("🛵 $title")
+            if (brandLine.isNotEmpty()) appendLine(brandLine)
+            if (plate != null) appendLine("Plat: $plate")
+            appendLine("KM saat ini: $km km")
+            appendLine()
+            appendLine("—")
+            appendLine("Dicatat pakai GoService.")
+            append("Pengingat servis & catatan kendaraan, biar gak telat lagi.")
+        }
+    }
+
+    private fun formatKmGrouped(km: Long): String {
+        if (km == 0L) return "0"
+        val abs = kotlin.math.abs(km).toString()
+        val grouped = abs.reversed().chunked(3).joinToString(".").reversed()
+        return if (km < 0) "-$grouped" else grouped
+    }
+
     fun vehicleInput(
         typeKey: String,
         nickname: String,
