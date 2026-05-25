@@ -144,8 +144,16 @@ final class VehicleDetailModel: ObservableObject {
 
 extension VehicleFormState {
     init(vehicle: Vehicle) {
+        let resolvedSubtype: String = {
+            let raw = vehicle.subtypeId
+            if raw.isEmpty || raw == "*" {
+                return VehicleSubtypes.defaultFor(vehicleType: vehicle.type.key)
+            }
+            return raw
+        }()
         self.init(
             type: vehicle.type.key,
+            subtype: resolvedSubtype,
             nama: vehicle.nickname,
             merek: vehicle.brand,
             model: vehicle.model,

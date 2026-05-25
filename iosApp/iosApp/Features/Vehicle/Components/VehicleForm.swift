@@ -17,6 +17,7 @@ private extension Color {
 
 struct VehicleFormState {
     var type: String = "motor"
+    var subtype: String = VehicleSubtypes.defaultFor(vehicleType: "motor")
     var nama: String = ""
     var merek: String = ""
     var model: String = ""
@@ -42,14 +43,43 @@ extension VehicleFormState {
             year: parsedYear,
             plateNumber: platNomor,
             odometerKm: Int64(odometer) ?? 0,
-            colorHex: warna
+            colorHex: warna,
+            subtypeId: subtype.isEmpty ? nil : subtype
         )
+    }
+}
+
+extension VehicleSubtypes {
+    static func defaultFor(vehicleType: String) -> String {
+        vehicleType == "mobil" ? "mpv" : "matic"
     }
 }
 
 struct VehicleForm: View {
     @Binding var state: VehicleFormState
     var showTypeSelector: Bool = true
+
+    @State private var showSubtypePicker: Bool = false
+
+    private var subtypeIcon: String {
+        state.type == "mobil" ? "\u{f1b9}" : "\u{f21c}"
+    }
+
+    private var subtypeLabel: String {
+        VehicleSubtypes.label(for: state.type, id: state.subtype)
+    }
+
+    private var subtypeOptions: [ActionSheetOption] {
+        VehicleSubtypes.list(for: state.type).map { sub in
+            ActionSheetOption(
+                id: sub.id,
+                iconUnicode: subtypeIcon,
+                label: sub.label,
+                subtitle: sub.desc,
+                value: sub.id
+            )
+        }
+    }
 
     var body: some View {
         VStack(spacing: 16) {
@@ -58,7 +88,10 @@ struct VehicleForm: View {
                     ForEach([("motor", "\u{f21c}"), ("mobil", "\u{f1b9}")], id: \.0) { tp, icon in
                         let selected = state.type == tp
                         Button {
-                            state.type = tp
+                            if state.type != tp {
+                                state.type = tp
+                                state.subtype = VehicleSubtypes.defaultFor(vehicleType: tp)
+                            }
                         } label: {
                             VStack(spacing: 6) {
                                 Text(icon)
@@ -80,6 +113,37 @@ struct VehicleForm: View {
                         .buttonStyle(.plain)
                     }
                 }
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Sub-tipe")
+                    .font(.custom("PlusJakartaSans-SemiBold", size: 13))
+                    .foregroundColor(.sgTextMuted)
+                Button {
+                    showSubtypePicker = true
+                } label: {
+                    HStack(spacing: 10) {
+                        Text(subtypeIcon)
+                            .font(.custom("FontAwesome6Free-Solid", size: 16))
+                            .foregroundColor(.sgTextMuted)
+                        Text(subtypeLabel)
+                            .font(.custom("PlusJakartaSans-SemiBold", size: 15))
+                            .foregroundColor(.sgTextPrimary)
+                        Spacer()
+                        Text("\u{f078}")
+                            .font(.custom("FontAwesome6Free-Solid", size: 12))
+                            .foregroundColor(.sgTextSubtle)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .background(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .strokeBorder(Color.black.opacity(0.08), lineWidth: 1.5)
+                    )
+                }
+                .buttonStyle(.plain)
             }
 
             AppTextField(label: "Nama panggilan", placeholder: "cth. Beat Hitam", text: $state.nama)
@@ -115,6 +179,20 @@ struct VehicleForm: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .sheet(isPresented: $showSubtypePicker) {
+            ActionSheetView(
+                title: "Sub-tipe kendaraan",
+                subtitle: "Pilih yang paling mendekati — menentukan komponen yang relevan.",
+                options: subtypeOptions,
+                selectionMode: .radio,
+                selectedValue: state.subtype,
+                onSelect: { value in
+                    state.subtype = value
+                }
+            )
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
         }
     }
 }
