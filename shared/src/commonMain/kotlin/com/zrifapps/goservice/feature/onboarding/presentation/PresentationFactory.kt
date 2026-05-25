@@ -7,6 +7,10 @@ import com.zrifapps.goservice.feature.reminder.presentation.ReminderListViewMode
 import com.zrifapps.goservice.feature.service.presentation.ServiceHistoryViewModel
 import com.zrifapps.goservice.feature.vehicle.domain.model.Vehicle
 import com.zrifapps.goservice.feature.vehicle.domain.model.VehicleType
+import com.zrifapps.goservice.feature.vehicle.presentation.AddVehicleViewModel
+import com.zrifapps.goservice.feature.vehicle.presentation.EditVehicleViewModel
+import com.zrifapps.goservice.feature.vehicle.presentation.UpdateOdometerViewModel
+import com.zrifapps.goservice.feature.vehicle.presentation.VehicleDetailViewModel
 import com.zrifapps.goservice.feature.vehicle.presentation.VehicleListViewModel
 import org.koin.mp.KoinPlatform
 
@@ -14,6 +18,10 @@ object PresentationFactory {
     fun appGateViewModel(): AppGateViewModel = KoinPlatform.getKoin().get()
     fun onboardingFlowViewModel(): OnboardingFlowViewModel = KoinPlatform.getKoin().get()
     fun vehicleListViewModel(): VehicleListViewModel = KoinPlatform.getKoin().get()
+    fun addVehicleViewModel(): AddVehicleViewModel = KoinPlatform.getKoin().get()
+    fun editVehicleViewModel(): EditVehicleViewModel = KoinPlatform.getKoin().get()
+    fun updateOdometerViewModel(): UpdateOdometerViewModel = KoinPlatform.getKoin().get()
+    fun vehicleDetailViewModel(): VehicleDetailViewModel = KoinPlatform.getKoin().get()
     fun reminderListViewModel(): ReminderListViewModel = KoinPlatform.getKoin().get()
     fun serviceHistoryViewModel(): ServiceHistoryViewModel = KoinPlatform.getKoin().get()
     fun profileViewModel(): ProfileViewModel = KoinPlatform.getKoin().get()
