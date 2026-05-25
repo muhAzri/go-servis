@@ -55,7 +55,7 @@ struct AppNavGraph: View {
         case .addVehicle:
             AddVehicleView(
                 onBack: { router.navigateBack() },
-                onSaved: { _ in router.navigateBack() }
+                onSaved: { router.navigateBack() }
             )
         case .test:
             TestView()
@@ -110,11 +110,15 @@ struct AppNavGraph: View {
                 onDelete: { router.navigateBack() },
                 onOpenNextReminder: { router.navigate(to: .reminderDetail) }
             )
-        case .vehicleDetail:
-            VehicleDetailView()
-        case .updateOdometer:
+        case .vehicleDetail(let vehicleId):
+            VehicleDetailView(
+                vehicleId: vehicleId,
+                onEdit: { id in router.navigate(to: .editVehicle(vehicleId: id)) }
+            )
+        case .updateOdometer(let vehicleId):
             UpdateOdometerView(
-                onSave: { router.navigateBack() }
+                vehicleId: vehicleId,
+                onSaved: { router.navigateBack() }
             )
         case .tips:
             TipsView(
@@ -145,11 +149,12 @@ struct AppNavGraph: View {
                 onAdd: { _ in router.navigateBack() }
             )
 
-        case .editVehicle:
+        case .editVehicle(let vehicleId):
             EditVehicleView(
+                vehicleId: vehicleId,
                 onBack: { router.navigateBack() },
-                onSave: { _ in router.navigateBack() },
-                onDelete: { router.popToRoot() }
+                onSaved: { router.navigateBack() },
+                onDeleted: { router.popToRoot() }
             )
         case .editReminder:
             EditReminderView(
@@ -160,7 +165,7 @@ struct AppNavGraph: View {
         case .vehicleList:
             VehicleListView(
                 onBack: { router.navigateBack() },
-                onOpenVehicle: { _ in router.navigate(to: .vehicleDetail) },
+                onOpenVehicle: { id in router.navigate(to: .vehicleDetail(vehicleId: id)) },
                 onAddVehicle: { router.navigate(to: .addVehicle) }
             )
         }

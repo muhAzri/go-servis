@@ -1,9 +1,11 @@
 import SwiftUI
+import Shared
 
 struct AddVehicleView: View {
     let onBack: () -> Void
-    let onSaved: (VehicleFormState) -> Void
+    let onSaved: () -> Void
 
+    @StateObject private var model = AddVehicleModel()
     @State private var formState = VehicleFormState()
 
     var body: some View {
@@ -34,8 +36,8 @@ struct AddVehicleView: View {
                     Divider()
                     AppButton(
                         title: "Simpan Kendaraan",
-                        action: { onSaved(formState) },
-                        isEnabled: formState.isValid
+                        action: { model.submit(input: formState.toOnboardingInput()) },
+                        isEnabled: formState.isValid && !model.state.isSaving
                     )
                     .padding(.horizontal, 16)
                     .padding(.top, 10)
@@ -45,9 +47,11 @@ struct AddVehicleView: View {
             }
         }
         .navigationBarHidden(true)
+        .onAppear { model.onSaved = onSaved }
+        .onDisappear { model.onSaved = nil }
     }
 }
 
 #Preview {
-    AddVehicleView(onBack: {}, onSaved: { _ in })
+    AddVehicleView(onBack: {}, onSaved: {})
 }

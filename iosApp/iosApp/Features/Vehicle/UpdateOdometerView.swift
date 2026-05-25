@@ -1,52 +1,29 @@
 import SwiftUI
-
-struct UpdateOdometerVehicle: Identifiable, Equatable {
-    let id: String
-    let name: String
-    let plate: String
-    let iconUnicode: String
-    let lastKm: Int
-    let accent: Color
-}
-
-private let defaultVehicles: [UpdateOdometerVehicle] = [
-    UpdateOdometerVehicle(
-        id: "v1",
-        name: "Beat Hitam",
-        plate: "B 4521 KZA",
-        iconUnicode: "\u{f21c}",
-        lastKm: 17890,
-        accent: .sgPrimary
-    ),
-    UpdateOdometerVehicle(
-        id: "v2",
-        name: "Brio Biru",
-        plate: "B 1234 ABC",
-        iconUnicode: "\u{f1b9}",
-        lastKm: 42100,
-        accent: Color(red: 0.25, green: 0.69, blue: 0.84)
-    ),
-]
+import Shared
 
 struct UpdateOdometerView: View {
-    var onSave: () -> Void = {}
-    var vehicles: [UpdateOdometerVehicle] = defaultVehicles
+    let vehicleId: String?
+    var onSaved: () -> Void = {}
 
-    @State private var selectedId: String = defaultVehicles.first?.id ?? ""
-    @State private var odometer: String = ""
+    @StateObject private var model = UpdateOdometerModel()
 
-    private var list: [UpdateOdometerVehicle] {
-        vehicles.isEmpty ? defaultVehicles : vehicles
+    init(vehicleId: String? = nil, onSaved: @escaping () -> Void = {}) {
+        self.vehicleId = vehicleId
+        self.onSaved = onSaved
     }
 
-    private var selected: UpdateOdometerVehicle {
-        list.first(where: { $0.id == selectedId }) ?? list[0]
+    private var state: UpdateOdometerViewModel.UiState { model.state }
+    private var selected: Vehicle? { state.selected }
+    private var odometerText: String {
+        guard let km = state.odometerKm else { return "" }
+        return String(describing: km)
     }
+    private var lastKm: Int64 { selected?.odometer ?? 0 }
 
     var body: some View {
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 0) {
-                if list.count > 1 {
+                if state.vehicles.count > 1 {
                     Text("PILIH KENDARAAN")
                         .font(.custom("PlusJakartaSans-ExtraBold", size: 11))
                         .kerning(1)
@@ -56,35 +33,37 @@ struct UpdateOdometerView: View {
 
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
-                            ForEach(list) { v in
+                            ForEach(state.vehicles, id: \.id) { v in
                                 VehicleChip(
                                     vehicle: v,
-                                    active: v.id == selectedId,
-                                    onTap: { selectedId = v.id }
+                                    active: v.id == state.selectedId,
+                                    onTap: { model.select(vehicleId: v.id) }
                                 )
                             }
                         }
                         .padding(.bottom, 4)
                     }
                     Spacer().frame(height: 10)
-                } else {
-                    Text("\(selected.name) · \(selected.plate)")
+                } else if let v = selected {
+                    Text("\(v.displayTitle) · \(v.plateNumber)")
                         .font(.custom("PlusJakartaSans-Medium", size: 12))
                         .foregroundColor(.sgTextMuted)
                         .padding(.top, 12)
                         .padding(.bottom, 6)
                 }
 
-                Text("KM terakhir tercatat: \(formatted(selected.lastKm)) km (4 hari lalu)")
+                Text("KM terakhir tercatat: \(formatted(Int(lastKm))) km")
                     .font(.custom("PlusJakartaSans-Medium", size: 14))
                     .foregroundColor(.sgTextMuted)
                     .padding(.bottom, 20)
 
-                OdometerDisplay(value: odometer, lastKm: selected.lastKm)
+                OdometerDisplay(value: odometerText, lastKm: Int(lastKm))
 
                 Spacer().frame(height: 20)
 
-                NumericKeypad(value: $odometer)
+                NumericKeypad(value: odometerText, onChange: { next in
+                    model.setOdometer(km: Int64(next))
+                })
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 12)
@@ -92,7 +71,11 @@ struct UpdateOdometerView: View {
             Spacer()
 
             VStack {
-                AppButton(title: "Simpan KM", action: onSave)
+                AppButton(
+                    title: "Simpan KM",
+                    action: { model.save(allowRollback: false) },
+                    isEnabled: state.canSave
+                )
             }
             .padding(EdgeInsets(top: 10, leading: 16, bottom: 24, trailing: 16))
             .background(
@@ -106,13 +89,10 @@ struct UpdateOdometerView: View {
         .navigationTitle("Update KM")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            if odometer.isEmpty {
-                odometer = String(selected.lastKm + 530)
-            }
+            model.onSaved = onSaved
+            model.preselect(vehicleId: vehicleId)
         }
-        .onChange(of: selectedId) { _, _ in
-            odometer = String(selected.lastKm + 530)
-        }
+        .onDisappear { model.onSaved = nil }
     }
 
     private func formatted(_ n: Int) -> String {
@@ -124,26 +104,34 @@ struct UpdateOdometerView: View {
 }
 
 private struct VehicleChip: View {
-    let vehicle: UpdateOdometerVehicle
+    let vehicle: Vehicle
     let active: Bool
     let onTap: () -> Void
+
+    private var iconUnicode: String {
+        vehicle.type == .mobil ? "\u{f1b9}" : "\u{f21c}"
+    }
+
+    private var accent: Color {
+        Color(hex: PresentationFactory.shared.vehicleColorHex(vehicle: vehicle)) ?? .sgPrimary
+    }
 
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 10) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 9)
-                        .fill(active ? Color.white.opacity(0.22) : vehicle.accent.opacity(0.14))
+                        .fill(active ? Color.white.opacity(0.22) : accent.opacity(0.14))
                         .frame(width: 32, height: 32)
-                    Text(vehicle.iconUnicode)
+                    Text(iconUnicode)
                         .font(.custom("FontAwesome6Free-Solid", size: 14))
-                        .foregroundColor(active ? .white : vehicle.accent)
+                        .foregroundColor(active ? .white : accent)
                 }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(vehicle.name)
+                    Text(vehicle.displayTitle)
                         .font(.custom("PlusJakartaSans-Bold", size: 13))
                         .foregroundColor(active ? .white : .sgTextPrimary)
-                    Text(vehicle.plate)
+                    Text(vehicle.plateNumber)
                         .font(.system(size: 10, weight: .medium, design: .monospaced))
                         .foregroundColor(active ? .white.opacity(0.8) : .sgTextMuted)
                 }
@@ -167,7 +155,7 @@ private struct OdometerDisplay: View {
     let lastKm: Int
 
     private var formattedValue: String {
-        guard let n = Int(value) else { return value }
+        guard let n = Int(value) else { return value.isEmpty ? "0" : value }
         let f = NumberFormatter()
         f.numberStyle = .decimal
         f.groupingSeparator = "."
@@ -214,7 +202,8 @@ private struct OdometerDisplay: View {
 }
 
 private struct NumericKeypad: View {
-    @Binding var value: String
+    let value: String
+    let onChange: (String) -> Void
 
     private let keys: [String] = ["1","2","3","4","5","6","7","8","9",".","0","⌫"]
 
@@ -240,14 +229,28 @@ private struct NumericKeypad: View {
     }
 
     private func tap(_ k: String) {
+        var next = value
         switch k {
         case "⌫":
-            if !value.isEmpty { value.removeLast() }
+            if !next.isEmpty { next.removeLast() }
         case ".":
-            if !value.contains(".") { value.append(".") }
+            if !next.contains(".") { next.append(".") }
         default:
-            value.append(k)
+            next.append(k)
         }
+        onChange(next)
+    }
+}
+
+private extension Color {
+    init?(hex: String) {
+        let trimmed = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        guard Scanner(string: trimmed).scanHexInt64(&int) else { return nil }
+        let r = Double((int >> 16) & 0xFF) / 255
+        let g = Double((int >> 8) & 0xFF) / 255
+        let b = Double(int & 0xFF) / 255
+        self.init(red: r, green: g, blue: b)
     }
 }
 

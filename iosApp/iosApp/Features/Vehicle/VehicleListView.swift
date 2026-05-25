@@ -1,10 +1,12 @@
 import SwiftUI
+import Shared
 
 struct VehicleListView: View {
     var onBack: () -> Void = {}
     var onOpenVehicle: (String) -> Void = { _ in }
     var onAddVehicle: () -> Void = {}
 
+    @ObservedObject private var listModel = VehicleListModel.shared
     @State private var sortKey: String = "input"
     @State private var showSortSheet: Bool = false
 
@@ -16,11 +18,17 @@ struct VehicleListView: View {
         ("status", "Status (telat dulu)"),
     ]
 
-    private var sortedVehicles: [VehicleOption] {
-        let base = VehicleOptions.defaults
+    private var sortedVehicles: [Vehicle] {
+        let base = listModel.state.vehicles
         switch sortKey {
-        case "az": return base.sorted { $0.name < $1.name }
-        default:    return base
+        case "az":
+            return base.sorted { $0.displayTitle.lowercased() < $1.displayTitle.lowercased() }
+        case "km_asc":
+            return base.sorted { $0.odometer < $1.odometer }
+        case "km_desc":
+            return base.sorted { $0.odometer > $1.odometer }
+        default:
+            return base
         }
     }
 
@@ -47,7 +55,7 @@ struct VehicleListView: View {
 
             ScrollView {
                 LazyVStack(spacing: 10) {
-                    ForEach(sortedVehicles) { v in
+                    ForEach(sortedVehicles, id: \.id) { v in
                         VehicleListRow(vehicle: v) { onOpenVehicle(v.id) }
                     }
                 }
@@ -108,35 +116,43 @@ struct VehicleListView: View {
     }
 
     private func totalKm() -> String {
-        let n = sortedVehicles.count * 18000
-        return n.formatted(.number.locale(Locale(identifier: "id_ID")))
+        let total: Int64 = sortedVehicles.reduce(0) { acc, v in acc + v.odometer }
+        return formatKm(total)
     }
 }
 
 private struct VehicleListRow: View {
-    let vehicle: VehicleOption
+    let vehicle: Vehicle
     let onTap: () -> Void
+
+    private var accent: Color {
+        Color(hex: PresentationFactory.shared.vehicleColorHex(vehicle: vehicle)) ?? .sgPrimary
+    }
+
+    private var iconUnicode: String {
+        vehicle.type == .mobil ? "\u{f1b9}" : "\u{f21c}"
+    }
 
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 14)
-                        .fill(vehicle.accent.opacity(0.14))
+                        .fill(accent.opacity(0.14))
                         .frame(width: 56, height: 56)
-                    Text(vehicle.iconUnicode)
+                    Text(iconUnicode)
                         .font(.custom("FontAwesome6Free-Solid", size: 28))
-                        .foregroundColor(vehicle.accent)
+                        .foregroundColor(accent)
                 }
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text(vehicle.name)
+                        Text(vehicle.displayTitle)
                             .font(.custom("PlusJakartaSans-ExtraBold", size: 15))
                             .foregroundColor(.sgTextPrimary)
                         Spacer()
                         StatusPill(urgency: .ok)
                     }
-                    Text(vehicle.plate)
+                    Text(vehicle.plateNumber)
                         .font(.system(size: 12, weight: .medium, design: .monospaced))
                         .foregroundColor(.sgTextMuted)
                 }
@@ -239,5 +255,17 @@ struct SortPickerSheet: View {
         }
         .background(Color.sgSurface)
         .onAppear { draft = selectedId }
+    }
+}
+
+private extension Color {
+    init?(hex: String) {
+        let trimmed = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        guard Scanner(string: trimmed).scanHexInt64(&int) else { return nil }
+        let r = Double((int >> 16) & 0xFF) / 255
+        let g = Double((int >> 8) & 0xFF) / 255
+        let b = Double(int & 0xFF) / 255
+        self.init(red: r, green: g, blue: b)
     }
 }

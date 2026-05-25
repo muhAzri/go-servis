@@ -1,39 +1,31 @@
 import SwiftUI
+import Shared
 
 // A1 — Edit Kendaraan
 // Pre-filled VehicleForm + sub-type picker (ActionSheetView in `.sheet`) + DangerZoneCard.
 struct EditVehicleView: View {
+    let vehicleId: String?
     var onBack: () -> Void = {}
-    var onSave: (VehicleFormState) -> Void = { _ in }
-    var onDelete: () -> Void = {}
+    var onSaved: () -> Void = {}
+    var onDeleted: () -> Void = {}
 
-    @State private var formState: VehicleFormState
-    @State private var subtype: String
+    @StateObject private var model = EditVehicleModel()
+    @State private var formState: VehicleFormState = VehicleFormState()
+    @State private var subtype: String = "matic"
+    @State private var hydratedVehicleId: String? = nil
     @State private var showSubtypePicker: Bool = false
     @State private var showDeleteConfirm: Bool = false
 
     init(
-        initialState: VehicleFormState? = nil,
-        initialSubtype: String = "matic",
+        vehicleId: String? = nil,
         onBack: @escaping () -> Void = {},
-        onSave: @escaping (VehicleFormState) -> Void = { _ in },
-        onDelete: @escaping () -> Void = {}
+        onSaved: @escaping () -> Void = {},
+        onDeleted: @escaping () -> Void = {}
     ) {
-        let seed = initialState ?? VehicleFormState(
-            type: "motor",
-            nama: "Beat Hitam",
-            merek: "Honda",
-            model: "BeAT 110",
-            tahun: "2022",
-            platNomor: "B 4521 KZA",
-            odometer: "18420",
-            warna: "#1A2418"
-        )
-        _formState = State(initialValue: seed)
-        _subtype = State(initialValue: initialSubtype)
+        self.vehicleId = vehicleId
         self.onBack = onBack
-        self.onSave = onSave
-        self.onDelete = onDelete
+        self.onSaved = onSaved
+        self.onDeleted = onDeleted
     }
 
     private var subtypeLabel: String {
@@ -117,8 +109,8 @@ struct EditVehicleView: View {
                     Divider()
                     AppButton(
                         title: "Simpan Perubahan",
-                        action: { onSave(formState) },
-                        isEnabled: formState.isValid
+                        action: { model.save(input: formState.toOnboardingInput()) },
+                        isEnabled: formState.isValid && !model.state.isLoading && !model.state.isSaving && model.state.vehicle != nil
                     )
                     .padding(.horizontal, 16)
                     .padding(.top, 10)
@@ -150,8 +142,23 @@ struct EditVehicleView: View {
                 confirmLabel: "Hapus kendaraan",
                 isDanger: true
             ),
-            onConfirm: onDelete
+            onConfirm: { model.delete() }
         )
+        .onAppear {
+            model.onSaved = onSaved
+            model.onDeleted = onDeleted
+            model.load(vehicleId: vehicleId)
+        }
+        .onDisappear {
+            model.onSaved = nil
+            model.onDeleted = nil
+        }
+        .onReceive(model.$state) { newState in
+            if let vehicle = newState.vehicle, vehicle.id != hydratedVehicleId {
+                hydratedVehicleId = vehicle.id
+                formState = VehicleFormState(vehicle: vehicle)
+            }
+        }
     }
 }
 

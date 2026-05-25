@@ -17,8 +17,8 @@ enum AppDestination: Hashable {
     case interstitialAd
     case serviceSaved
     case serviceDetail
-    case vehicleDetail
-    case updateOdometer
+    case vehicleDetail(vehicleId: String? = nil)
+    case updateOdometer(vehicleId: String? = nil)
     case tips
     case tipsDetail
     case editProfile
@@ -29,7 +29,7 @@ enum AppDestination: Hashable {
     case addCustomComponent
 
     // New plot-hole screens
-    case editVehicle
+    case editVehicle(vehicleId: String? = nil)
     case editReminder
     case vehicleList
 }

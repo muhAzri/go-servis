@@ -1,11 +1,25 @@
 import SwiftUI
+import Shared
 
 struct VehicleDetailView: View {
-    var vehicleType: String = "motor"
-    var subtype: String = "matic"
+    let vehicleId: String?
+    var onEdit: (String?) -> Void = { _ in }
 
+    @StateObject private var model = VehicleDetailModel()
     @Environment(AppRouter.self) private var router
     @State private var showShareSheet: Bool = false
+
+    init(vehicleId: String? = nil, onEdit: @escaping (String?) -> Void = { _ in }) {
+        self.vehicleId = vehicleId
+        self.onEdit = onEdit
+    }
+
+    private var vehicle: Vehicle? { model.state.vehicle }
+    private var vehicleType: String { vehicle?.type.key ?? "motor" }
+    private var subtype: String {
+        let raw = vehicle?.subtypeId ?? "matic"
+        return raw == "*" ? "matic" : raw
+    }
 
     private var components: [ComponentInfo] {
         ComponentsCatalog.forSubtype(subtype)
@@ -23,7 +37,7 @@ struct VehicleDetailView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    VehicleHeroCard()
+                    VehicleHeroCard(vehicle: vehicle)
                         .padding(.horizontal, 16)
                         .padding(.top, 8)
                         .padding(.bottom, 16)
@@ -60,39 +74,71 @@ struct VehicleDetailView: View {
                 Button(action: { showShareSheet = true }) {
                     Image(systemName: "square.and.arrow.up")
                 }
-                Button(action: { router.navigate(to: .editVehicle) }) {
+                Button(action: { onEdit(vehicle?.id) }) {
                     Image(systemName: "square.and.pencil")
                 }
             }
         }
         .sheet(isPresented: $showShareSheet) {
             ShareVehicleSheet(
-                vehicleName: "Beat Hitam",
+                vehicleName: vehicle?.displayTitle ?? "",
                 onDismiss: { showShareSheet = false },
                 onCopy: { showShareSheet = false },
                 onSystemShare: { showShareSheet = false }
             )
             .presentationDetents([.medium])
         }
+        .onAppear { model.load(vehicleId: vehicleId) }
     }
 }
 
 private struct VehicleHeroCard: View {
-    private let accent = Color(red: 0.18, green: 0.55, blue: 0.34)
+    let vehicle: Vehicle?
+
+    private var accent: Color {
+        guard let v = vehicle else { return .sgPrimary }
+        return Color(hexString: PresentationFactory.shared.vehicleColorHex(vehicle: v)) ?? .sgPrimary
+    }
+
+    private var iconUnicode: String {
+        vehicle?.type == .mobil ? "\u{f1b9}" : "\u{f21c}"
+    }
+
+    private var brandLine: String {
+        let brand = vehicle?.brand.uppercased().trimmingCharacters(in: .whitespaces) ?? ""
+        let yearStr = vehicle?.year.map { String(describing: $0) } ?? ""
+        return [brand, yearStr].filter { !$0.isEmpty }.joined(separator: " · ").isEmpty ? "—" :
+            [brand, yearStr].filter { !$0.isEmpty }.joined(separator: " · ")
+    }
+
+    private var title: String {
+        let t = vehicle?.displayTitle.trimmingCharacters(in: .whitespaces) ?? ""
+        return t.isEmpty ? "—" : t
+    }
+
+    private var plate: String {
+        let p = vehicle?.plateNumber.trimmingCharacters(in: .whitespaces) ?? ""
+        return p.isEmpty ? "—" : p
+    }
+
+    private var kmText: String {
+        guard let km = vehicle?.odometer else { return "—" }
+        return formatKm(km)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("HONDA · 2022")
+                    Text(brandLine)
                         .font(.custom("PlusJakartaSans-Bold", size: 11))
                         .kerning(0.5)
                         .foregroundColor(.sgTextMuted)
-                    Text("Beat Hitam")
+                    Text(title)
                         .font(.custom("PlusJakartaSans-ExtraBold", size: 26))
                         .foregroundColor(.sgTextPrimary)
                         .kerning(-0.4)
-                    Text("B 4521 KZA")
+                    Text(plate)
                         .font(.system(size: 13, weight: .semibold, design: .monospaced))
                         .foregroundColor(.sgTextMuted)
                 }
@@ -101,7 +147,7 @@ private struct VehicleHeroCard: View {
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
                         .fill(accent.opacity(0.13))
                         .frame(width: 80, height: 80)
-                    Text("\u{f21c}")
+                    Text(iconUnicode)
                         .font(.custom("FontAwesome6Free-Solid", size: 50))
                         .foregroundColor(accent)
                 }
@@ -112,9 +158,9 @@ private struct VehicleHeroCard: View {
                 .padding(.bottom, 14)
 
             HStack(spacing: 8) {
-                StatTile(label: "KM", value: "18.420")
-                StatTile(label: "Servis", value: "5x")
-                StatTile(label: "Total", value: "Rp 3.310k")
+                StatTile(label: "KM", value: kmText)
+                StatTile(label: "Servis", value: "—")
+                StatTile(label: "Total", value: "—")
             }
         }
         .padding(20)
@@ -130,6 +176,19 @@ private struct VehicleHeroCard: View {
             RoundedRectangle(cornerRadius: 24)
                 .strokeBorder(accent.opacity(0.2), lineWidth: 1)
         )
+    }
+}
+
+private extension Color {
+    init?(hexString: String?) {
+        guard let hex = hexString else { return nil }
+        let trimmed = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        guard Scanner(string: trimmed).scanHexInt64(&int) else { return nil }
+        let r = Double((int >> 16) & 0xFF) / 255
+        let g = Double((int >> 8) & 0xFF) / 255
+        let b = Double(int & 0xFF) / 255
+        self.init(red: r, green: g, blue: b)
     }
 }
 

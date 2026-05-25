@@ -15,11 +15,11 @@ struct MainTabsView: View {
                         userName: userName,
                         onOpenReminders: { selectedTab = .reminders },
                         onOpenReminderDetail: { router.navigate(to: .reminderDetail) },
-                        onOpenVehicleDetail: { router.navigate(to: .vehicleDetail) },
+                        onOpenVehicleDetail: { router.navigate(to: .vehicleDetail()) },
                         onOpenVehicleList: { router.navigate(to: .vehicleList) },
                         onAddService: { router.navigate(to: .addService) },
                         onAddVehicle: { router.navigate(to: .addVehicle) },
-                        onUpdateOdometer: { router.navigate(to: .updateOdometer) },
+                        onUpdateOdometer: { router.navigate(to: .updateOdometer()) },
                         onOpenTips: { router.navigate(to: .tips) }
                     )
 
