@@ -74,11 +74,8 @@ struct ShareVehicleSheet: View {
     private func systemShare() {
         guard let v = vehicle else { onDismiss(); return }
         let text = PresentationFactory.shared.vehicleShareText(vehicle: v)
-        onDismiss()
-        // Defer presentation until our own sheet has dismissed.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-            presentActivitySheet(items: [text])
-        }
+        // Present the activity sheet on top of our sheet, then dismiss ours when it's done.
+        presentActivitySheet(items: [text]) { onDismiss() }
     }
 
     private func row(icon: String, label: String, sub: String, action: @escaping () -> Void) -> some View {
@@ -115,14 +112,17 @@ struct ShareVehicleSheet: View {
     }
 }
 
-private func presentActivitySheet(items: [Any]) {
+private func presentActivitySheet(items: [Any], onComplete: @escaping () -> Void = {}) {
     let activityVC = UIActivityViewController(activityItems: items, applicationActivities: nil)
+    activityVC.completionWithItemsHandler = { _, _, _, _ in onComplete() }
     guard let scene = UIApplication.shared.connectedScenes
             .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
           let root = scene.windows.first(where: \.isKeyWindow)?.rootViewController
     else { return }
     var presenter = root
-    while let presented = presenter.presentedViewController { presenter = presented }
+    while let presented = presenter.presentedViewController, !presented.isBeingDismissed {
+        presenter = presented
+    }
     // iPad needs a popover anchor; use the presenter's view center.
     if let pop = activityVC.popoverPresentationController {
         pop.sourceView = presenter.view
