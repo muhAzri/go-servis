@@ -104,13 +104,18 @@ fun EditVehicleScreen(
     }
 }
 
-private fun Vehicle.toFormState(): VehicleFormState = VehicleFormState(
-    type = type.key,
-    nama = nickname,
-    merek = brand,
-    model = model,
-    tahun = year?.toString().orEmpty(),
-    platNomor = plateNumber,
-    odometer = odometer.kilometers.toString(),
-    warna = color.value,
-)
+private fun Vehicle.toFormState(): VehicleFormState {
+    val resolvedSubtype = subtypeId.takeIf { it.isNotBlank() && it != "*" }
+        ?: com.zrifapps.goservice.ui.vehicle.components.VehicleSubtypes.defaultFor(type.key)
+    return VehicleFormState(
+        type = type.key,
+        subtype = resolvedSubtype,
+        nama = nickname,
+        merek = brand,
+        model = model,
+        tahun = year?.toString().orEmpty(),
+        platNomor = plateNumber,
+        odometer = odometer.kilometers.toString(),
+        warna = color.value,
+    )
+}

@@ -7,12 +7,18 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,6 +30,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zrifapps.goservice.feature.onboarding.presentation.OnboardingVehicleInput
 import com.zrifapps.goservice.feature.vehicle.domain.model.VehicleType
+import com.zrifapps.goservice.ui.components.ActionSheet
+import com.zrifapps.goservice.ui.components.ActionSheetOption
+import com.zrifapps.goservice.ui.components.ActionSheetSelectionMode
 import com.zrifapps.goservice.ui.components.AppTextField
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
@@ -41,6 +50,7 @@ private fun hexToColor(hex: String): Color = try {
 
 data class VehicleFormState(
     val type: String = "motor",
+    val subtype: String = VehicleSubtypes.defaultFor("motor"),
     val nama: String = "",
     val merek: String = "",
     val model: String = "",
@@ -62,6 +72,7 @@ fun VehicleFormState.toOnboardingInput(): OnboardingVehicleInput =
         plateNumber = platNomor,
         odometerKm = odometer.toLongOrNull() ?: 0L,
         colorHex = warna,
+        subtypeId = subtype.ifBlank { null },
     )
 
 @Composable
@@ -72,6 +83,7 @@ fun VehicleForm(
     showTypeSelector: Boolean = true,
 ) {
     val font = plusJakartaSansFontFamily()
+    var showSubtypePicker by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -93,7 +105,11 @@ fun VehicleForm(
                                 if (!selected) Modifier.border(1.5.dp, AppColors.Border, RoundedCornerShape(18.dp))
                                 else Modifier
                             )
-                            .clickable { onStateChange(state.copy(type = tp)) }
+                            .clickable {
+                                if (state.type != tp) {
+                                    onStateChange(state.copy(type = tp, subtype = VehicleSubtypes.defaultFor(tp)))
+                                }
+                            }
                             .padding(16.dp),
                         contentAlignment = Alignment.Center,
                     ) {
@@ -119,6 +135,13 @@ fun VehicleForm(
                 }
             }
         }
+
+        SubtypePickerRow(
+            vehicleType = state.type,
+            subtypeId = state.subtype,
+            font = font,
+            onClick = { showSubtypePicker = true },
+        )
 
         AppTextField(
             label = "Nama panggilan",
@@ -197,5 +220,74 @@ fun VehicleForm(
                 }
             }
         }
+    }
+
+    if (showSubtypePicker) {
+        val icon = if (state.type == "mobil") FaIcons.CAR else FaIcons.MOTORCYCLE
+        val options = VehicleSubtypes.forType(state.type).map { sub ->
+            ActionSheetOption(
+                value = sub.id,
+                label = sub.label,
+                subtitle = sub.desc,
+                icon = icon,
+            )
+        }
+        ActionSheet(
+            title = "Sub-tipe kendaraan",
+            subtitle = "Pilih yang paling mendekati — menentukan komponen yang relevan.",
+            options = options,
+            selectionMode = ActionSheetSelectionMode.Radio,
+            initiallySelected = state.subtype,
+            primaryLabel = "Terapkan",
+            onPrimary = { picked ->
+                onStateChange(state.copy(subtype = picked))
+            },
+            onDismiss = { showSubtypePicker = false },
+            onSelect = {},
+        )
+    }
+}
+
+@Composable
+private fun SubtypePickerRow(
+    vehicleType: String,
+    subtypeId: String,
+    font: androidx.compose.ui.text.font.FontFamily,
+    onClick: () -> Unit,
+) {
+    val icon = if (vehicleType == "mobil") FaIcons.CAR else FaIcons.MOTORCYCLE
+    val label = VehicleSubtypes.labelOf(vehicleType, subtypeId)
+    Column {
+        Text(
+            text = "Sub-tipe",
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = font,
+            color = AppColors.TextMuted,
+            modifier = Modifier.padding(bottom = 6.dp),
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(AppColors.Surface)
+                .border(1.5.dp, AppColors.Border, RoundedCornerShape(14.dp))
+                .clickable(onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            FaIcon(icon = icon, color = AppColors.TextMuted, size = 16.sp)
+            Text(
+                text = label,
+                color = AppColors.TextPrimary,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = font,
+                modifier = Modifier.weight(1f),
+            )
+            FaIcon(icon = FaIcons.CHEVRON_DOWN, color = AppColors.TextSubtle, size = 12.sp)
+        }
+        Spacer(Modifier.height(0.dp))
     }
 }
