@@ -2,7 +2,6 @@ import SwiftUI
 import Shared
 
 struct AddVehicleView: View {
-    let onBack: () -> Void
     let onSaved: () -> Void
 
     @StateObject private var model = AddVehicleModel()
@@ -13,18 +12,6 @@ struct AddVehicleView: View {
             Color.sgBgWarm.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                HStack(spacing: 12) {
-                    AppBackButton(action: onBack)
-
-                    Text("Tambah Kendaraan")
-                        .font(.custom("PlusJakartaSans-Bold", size: 18))
-                        .foregroundColor(.sgTextPrimary)
-
-                    Spacer()
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-
                 ScrollView {
                     VehicleForm(state: $formState, showTypeSelector: true)
                         .padding(.horizontal, 20)
@@ -46,12 +33,15 @@ struct AddVehicleView: View {
                 .background(Color.white)
             }
         }
-        .navigationBarHidden(true)
+        .navigationTitle("Tambah Kendaraan")
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear { model.onSaved = onSaved }
         .onDisappear { model.onSaved = nil }
     }
 }
 
 #Preview {
-    AddVehicleView(onBack: {}, onSaved: {})
+    NavigationStack {
+        AddVehicleView(onSaved: {})
+    }
 }

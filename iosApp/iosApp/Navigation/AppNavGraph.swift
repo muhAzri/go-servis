@@ -54,7 +54,6 @@ struct AppNavGraph: View {
             )
         case .addVehicle:
             AddVehicleView(
-                onBack: { router.navigateBack() },
                 onSaved: { router.navigateBack() }
             )
         case .test:
@@ -152,13 +151,11 @@ struct AppNavGraph: View {
         case .editVehicle(let vehicleId):
             EditVehicleView(
                 vehicleId: vehicleId,
-                onBack: { router.navigateBack() },
                 onSaved: { router.navigateBack() },
                 onDeleted: { router.popToRoot() }
             )
         case .editReminder:
             EditReminderView(
-                onBack: { router.navigateBack() },
                 onSave: { router.navigateBack() },
                 onDelete: { router.popToRoot() }
             )

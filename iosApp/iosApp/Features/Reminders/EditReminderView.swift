@@ -3,7 +3,6 @@ import SwiftUI
 // A2 — Edit Pengingat
 // Mirrors AddReminderView; adds Status segmented (Aktif/Nonaktif) and DangerZoneCard.
 struct EditReminderView: View {
-    var onBack: () -> Void = {}
     var onSave: () -> Void = {}
     var onDelete: () -> Void = {}
 
@@ -31,21 +30,6 @@ struct EditReminderView: View {
             Color.sgBgWarm.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                HStack(spacing: 12) {
-                    AppBackButton(action: onBack)
-                    Text("Edit Pengingat")
-                        .font(.custom("PlusJakartaSans-Bold", size: 18))
-                        .foregroundColor(.sgTextPrimary)
-                    Spacer()
-                    Button(action: onSave) {
-                        Text("Simpan")
-                            .font(.custom("PlusJakartaSans-Bold", size: 15))
-                            .foregroundColor(.sgPrimary)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
                         ERFieldLabel(text: "Kendaraan")
@@ -100,7 +84,17 @@ struct EditReminderView: View {
                 }
             }
         }
-        .navigationBarHidden(true)
+        .navigationTitle("Edit Pengingat")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(action: onSave) {
+                    Text("Simpan")
+                        .font(.custom("PlusJakartaSans-Bold", size: 15))
+                        .foregroundColor(.sgPrimary)
+                }
+            }
+        }
         .sheet(isPresented: $showVehiclePicker) {
             VehiclePickerSheet(
                 options: VehicleOptions.defaults,

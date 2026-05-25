@@ -5,7 +5,6 @@ import Shared
 // Pre-filled VehicleForm + sub-type picker (ActionSheetView in `.sheet`) + DangerZoneCard.
 struct EditVehicleView: View {
     let vehicleId: String?
-    var onBack: () -> Void = {}
     var onSaved: () -> Void = {}
     var onDeleted: () -> Void = {}
 
@@ -18,12 +17,10 @@ struct EditVehicleView: View {
 
     init(
         vehicleId: String? = nil,
-        onBack: @escaping () -> Void = {},
         onSaved: @escaping () -> Void = {},
         onDeleted: @escaping () -> Void = {}
     ) {
         self.vehicleId = vehicleId
-        self.onBack = onBack
         self.onSaved = onSaved
         self.onDeleted = onDeleted
     }
@@ -49,16 +46,6 @@ struct EditVehicleView: View {
             Color.sgBgWarm.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                HStack(spacing: 12) {
-                    AppBackButton(action: onBack)
-                    Text("Edit Kendaraan")
-                        .font(.custom("PlusJakartaSans-Bold", size: 18))
-                        .foregroundColor(.sgTextPrimary)
-                    Spacer()
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
                         VehicleForm(state: $formState, showTypeSelector: true)
@@ -119,7 +106,8 @@ struct EditVehicleView: View {
                 .background(Color.white)
             }
         }
-        .navigationBarHidden(true)
+        .navigationTitle("Edit Kendaraan")
+        .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showSubtypePicker) {
             ActionSheetView(
                 title: "Sub-tipe kendaraan",
