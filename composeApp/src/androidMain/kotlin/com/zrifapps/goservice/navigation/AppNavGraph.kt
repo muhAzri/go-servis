@@ -159,10 +159,10 @@ fun AppNavGraph() {
                 userName = onboardingState.persistedName.orEmpty(),
                 onAddService = { navController.navigate(Screen.AddService) },
                 onAddVehicle = { navController.navigate(Screen.AddVehicleForm) },
-                onUpdateOdometer = { navController.navigate(Screen.UpdateOdometer) },
+                onUpdateOdometer = { navController.navigate(Screen.UpdateOdometer()) },
                 onOpenTips = { navController.navigate(Screen.Tips) },
                 onOpenReminderDetail = { navController.navigate(Screen.ReminderDetail) },
-                onOpenVehicleDetail = { navController.navigate(Screen.VehicleDetail) },
+                onOpenVehicleDetail = { navController.navigate(Screen.VehicleDetail()) },
                 onOpenServiceDetail = { navController.navigate(Screen.ServiceDetail) },
                 onOpenAddReminder = { navController.navigate(Screen.AddReminder) },
                 onOpenTestScreen = { navController.navigate(Screen.Test) },
@@ -195,6 +195,7 @@ fun AppNavGraph() {
                 onSaved = { navController.popBackStack() },
             )
         }
+
 
         composable<Screen.Privacy> {
             PrivacyScreen(onBack = { navController.popBackStack() })
@@ -255,13 +256,15 @@ fun AppNavGraph() {
             )
         }
 
-        composable<Screen.VehicleDetail> {
+        composable<Screen.VehicleDetail> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.VehicleDetail>()
             VehicleDetailScreen(
+                vehicleId = args.vehicleId,
                 onBack = { navController.popBackStack() },
                 onManageComponents = { navController.navigate(Screen.VehicleComponents) },
                 onOpenComponent = { id -> navController.navigate(Screen.ComponentDetail(id)) },
                 onAddComponent = { navController.navigate(Screen.AddCustomComponent) },
-                onEdit = { navController.navigate(Screen.EditVehicle) },
+                onEdit = { id -> navController.navigate(Screen.EditVehicle(id)) },
             )
         }
 
@@ -292,11 +295,13 @@ fun AppNavGraph() {
             )
         }
 
-        composable<Screen.EditVehicle> {
+        composable<Screen.EditVehicle> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.EditVehicle>()
             EditVehicleScreen(
+                vehicleId = args.vehicleId,
                 onBack = { navController.popBackStack() },
-                onSave = { navController.popBackStack() },
-                onDelete = {
+                onSaved = { navController.popBackStack() },
+                onDeleted = {
                     navController.popBackStack(Screen.Main, inclusive = false)
                 },
             )
@@ -315,15 +320,17 @@ fun AppNavGraph() {
         composable<Screen.VehicleList> {
             VehicleListScreen(
                 onBack = { navController.popBackStack() },
-                onOpenVehicle = { navController.navigate(Screen.VehicleDetail) },
+                onOpenVehicle = { id -> navController.navigate(Screen.VehicleDetail(id)) },
                 onAddVehicle = { navController.navigate(Screen.AddVehicleForm) },
             )
         }
 
-        composable<Screen.UpdateOdometer> {
+        composable<Screen.UpdateOdometer> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.UpdateOdometer>()
             UpdateOdometerScreen(
+                vehicleId = args.vehicleId,
                 onClose = { navController.popBackStack() },
-                onSave = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
             )
         }
 

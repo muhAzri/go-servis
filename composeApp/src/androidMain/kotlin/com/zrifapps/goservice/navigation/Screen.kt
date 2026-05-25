@@ -25,8 +25,8 @@ sealed interface Screen {
     @Serializable data object InterstitialAd : Screen
     @Serializable data object ServiceSaved : Screen
     @Serializable data object ServiceDetail : Screen
-    @Serializable data object VehicleDetail : Screen
-    @Serializable data object UpdateOdometer : Screen
+    @Serializable data class VehicleDetail(val vehicleId: String? = null) : Screen
+    @Serializable data class UpdateOdometer(val vehicleId: String? = null) : Screen
     @Serializable data object Tips : Screen
     @Serializable data object TipsDetail : Screen
     @Serializable data object EditProfile : Screen
@@ -37,7 +37,7 @@ sealed interface Screen {
     @Serializable data object AddCustomComponent : Screen
 
     // New screens from plot-hole design
-    @Serializable data object EditVehicle : Screen
+    @Serializable data class EditVehicle(val vehicleId: String? = null) : Screen
     @Serializable data object EditReminder : Screen
     @Serializable data object VehicleList : Screen
 }

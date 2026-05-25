@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,23 +22,34 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zrifapps.goservice.feature.vehicle.presentation.AddVehicleViewModel
 import com.zrifapps.goservice.ui.components.AppBackButton
 import com.zrifapps.goservice.ui.components.AppButton
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
 import com.zrifapps.goservice.ui.vehicle.components.VehicleForm
 import com.zrifapps.goservice.ui.vehicle.components.VehicleFormState
+import com.zrifapps.goservice.ui.vehicle.components.toOnboardingInput
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun AddVehicleScreen(
     onBack: () -> Unit,
-    onSaved: (VehicleFormState) -> Unit,
+    onSaved: () -> Unit,
+    vm: AddVehicleViewModel = koinViewModel(),
 ) {
     val font = plusJakartaSansFontFamily()
     var formState by remember { mutableStateOf(VehicleFormState()) }
+    val state by vm.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(vm) {
+        vm.events.collect { event ->
+            if (event is AddVehicleViewModel.Event.Saved) onSaved()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -91,16 +103,10 @@ fun AddVehicleScreen(
             ) {
                 AppButton(
                     text = "Simpan Kendaraan",
-                    onClick = { onSaved(formState) },
-                    enabled = formState.isValid,
+                    onClick = { vm.submit(formState.toOnboardingInput()) },
+                    enabled = formState.isValid && !state.isSaving,
                 )
             }
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun AddVehicleScreenPreview() {
-    AddVehicleScreen(onBack = {}, onSaved = {})
 }

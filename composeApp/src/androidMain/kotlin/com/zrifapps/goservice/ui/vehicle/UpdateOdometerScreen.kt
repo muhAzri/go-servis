@@ -11,19 +11,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,51 +38,40 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zrifapps.goservice.feature.vehicle.domain.model.Vehicle
+import com.zrifapps.goservice.feature.vehicle.domain.model.VehicleType
+import com.zrifapps.goservice.feature.vehicle.presentation.UpdateOdometerViewModel
 import com.zrifapps.goservice.ui.components.AppButton
 import com.zrifapps.goservice.ui.components.CircleIconButton
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
 import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
-
-data class OdometerVehicle(
-    val id: String,
-    val name: String,
-    val plate: String,
-    val iconUnicode: String,
-    val lastKm: Int,
-    val accent: Color,
-)
-
-private val DEFAULT_VEHICLES = listOf(
-    OdometerVehicle(
-        id = "v1",
-        name = "Beat Hitam",
-        plate = "B 4521 KZA",
-        iconUnicode = FaIcons.MOTORCYCLE,
-        lastKm = 17890,
-        accent = AppColors.Primary,
-    ),
-    OdometerVehicle(
-        id = "v2",
-        name = "Brio Biru",
-        plate = "B 1234 ABC",
-        iconUnicode = FaIcons.CAR,
-        lastKm = 42100,
-        accent = Color(0xFF3FB1D6),
-    ),
-)
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun UpdateOdometerScreen(
+    vehicleId: String? = null,
     onClose: () -> Unit,
-    onSave: () -> Unit = {},
-    vehicles: List<OdometerVehicle> = DEFAULT_VEHICLES,
+    onSaved: () -> Unit = {},
+    vm: UpdateOdometerViewModel = koinViewModel(),
 ) {
-    val list = vehicles.ifEmpty { DEFAULT_VEHICLES }
-    var selectedId by remember { mutableStateOf(list.first().id) }
-    val selected = list.firstOrNull { it.id == selectedId } ?: list.first()
-    var odometer by remember(selectedId) { mutableStateOf((selected.lastKm + 530).toString()) }
+    val state by vm.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(vehicleId) { vm.preselect(vehicleId) }
+    LaunchedEffect(vm) {
+        vm.events.collect { event ->
+            if (event is UpdateOdometerViewModel.Event.Saved) onSaved()
+        }
+    }
+
+    val selected = state.selected
+    val font = plusJakartaSansFontFamily()
+    val odometerText = state.odometerKm?.toString().orEmpty()
+    val lastKm = selected?.odometer?.kilometers ?: 0L
+    val displayName = selected?.displayTitle ?: ""
+    val displayPlate = selected?.plateNumber ?: ""
 
     Column(
         modifier = Modifier
@@ -97,9 +87,7 @@ fun UpdateOdometerScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp),
         ) {
-            val font = plusJakartaSansFontFamily()
-
-            if (list.size > 1) {
+            if (state.vehicles.size > 1) {
                 Text(
                     text = "PILIH KENDARAAN",
                     color = AppColors.TextMuted,
@@ -116,19 +104,19 @@ fun UpdateOdometerScreen(
                         .padding(bottom = 6.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    list.forEach { v ->
+                    state.vehicles.forEach { v ->
                         VehicleChip(
                             vehicle = v,
-                            active = v.id == selectedId,
-                            onClick = { selectedId = v.id },
+                            active = v.id == state.selectedId,
+                            onClick = { vm.select(v.id) },
                             font = font,
                         )
                     }
                 }
                 Spacer(Modifier.height(12.dp))
-            } else {
+            } else if (selected != null) {
                 Text(
-                    text = "${selected.name} · ${selected.plate}",
+                    text = "$displayName · $displayPlate",
                     color = AppColors.TextMuted,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
@@ -137,9 +125,8 @@ fun UpdateOdometerScreen(
                 )
             }
 
-            val formattedLastKm = remember(selected.lastKm) { formatOdometerInt(selected.lastKm) }
             Text(
-                text = "KM terakhir tercatat: $formattedLastKm km (4 hari lalu)",
+                text = "KM terakhir tercatat: ${formatOdometerLong(lastKm)} km",
                 color = AppColors.TextMuted,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
@@ -147,9 +134,14 @@ fun UpdateOdometerScreen(
                 modifier = Modifier.padding(bottom = 20.dp),
             )
 
-            OdometerDisplay(value = odometer, lastKm = selected.lastKm)
+            OdometerDisplay(value = odometerText, lastKm = lastKm)
             Spacer(Modifier.height(20.dp))
-            NumericKeypad(onKey = { odometer = applyKey(odometer, it) })
+            NumericKeypad(
+                onKey = { key ->
+                    val next = applyKey(odometerText, key)
+                    vm.setOdometer(next.toLongOrNull())
+                },
+            )
         }
 
         Box(
@@ -159,14 +151,18 @@ fun UpdateOdometerScreen(
                 .windowInsetsPadding(WindowInsets.navigationBars)
                 .padding(PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 16.dp)),
         ) {
-            AppButton(text = "Simpan KM", onClick = onSave)
+            AppButton(
+                text = "Simpan KM",
+                onClick = { vm.save() },
+                enabled = state.canSave,
+            )
         }
     }
 }
 
 @Composable
 private fun VehicleChip(
-    vehicle: OdometerVehicle,
+    vehicle: Vehicle,
     active: Boolean,
     onClick: () -> Unit,
     font: FontFamily,
@@ -175,6 +171,8 @@ private fun VehicleChip(
     val borderColor = if (active) AppColors.Primary else AppColors.Border
     val textColor = if (active) Color.White else AppColors.TextPrimary
     val plateColor = if (active) Color.White.copy(alpha = 0.8f) else AppColors.TextMuted
+    val accent = parseHexColorOrDefault(vehicle.color.value)
+    val icon = if (vehicle.type == VehicleType.Mobil) FaIcons.CAR else FaIcons.MOTORCYCLE
 
     Row(
         modifier = Modifier
@@ -192,26 +190,26 @@ private fun VehicleChip(
                 .clip(RoundedCornerShape(9.dp))
                 .background(
                     if (active) Color.White.copy(alpha = 0.22f)
-                    else vehicle.accent.copy(alpha = 0.14f)
+                    else accent.copy(alpha = 0.14f),
                 ),
             contentAlignment = Alignment.Center,
         ) {
             FaIcon(
-                icon = vehicle.iconUnicode,
-                color = if (active) Color.White else vehicle.accent,
+                icon = icon,
+                color = if (active) Color.White else accent,
                 size = 14.sp,
             )
         }
         Column {
             Text(
-                text = vehicle.name,
+                text = vehicle.displayTitle,
                 color = textColor,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = font,
             )
             Text(
-                text = vehicle.plate,
+                text = vehicle.plateNumber,
                 color = plateColor,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Medium,
@@ -243,10 +241,10 @@ private fun TopBar(onClose: () -> Unit) {
 }
 
 @Composable
-private fun OdometerDisplay(value: String, lastKm: Int) {
+private fun OdometerDisplay(value: String, lastKm: Long) {
     val font = plusJakartaSansFontFamily()
-    val formatted = remember(value) { formatOdometer(value) }
-    val delta = remember(value, lastKm) { (value.toIntOrNull() ?: 0) - lastKm }
+    val formatted = remember(value) { if (value.isEmpty()) "0" else formatOdometer(value) }
+    val delta = remember(value, lastKm) { (value.toLongOrNull() ?: 0L) - lastKm }
 
     Column(
         modifier = Modifier
@@ -276,8 +274,8 @@ private fun OdometerDisplay(value: String, lastKm: Int) {
             textAlign = TextAlign.Center,
         )
         Text(
-            text = if (delta >= 0) "+${formatOdometerInt(delta)} km dari terakhir"
-            else "${formatOdometerInt(delta)} km dari terakhir",
+            text = if (delta >= 0) "+${formatOdometerLong(delta)} km dari terakhir"
+            else "${formatOdometerLong(delta)} km dari terakhir",
             color = AppColors.Primary,
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
@@ -325,11 +323,11 @@ private fun KeyTile(label: String, onClick: () -> Unit, modifier: Modifier = Mod
 }
 
 private fun formatOdometer(raw: String): String {
-    val n = raw.toIntOrNull() ?: return raw
-    return formatOdometerInt(n)
+    val n = raw.toLongOrNull() ?: return raw
+    return formatOdometerLong(n)
 }
 
-private fun formatOdometerInt(n: Int): String {
+private fun formatOdometerLong(n: Long): String {
     val sign = if (n < 0) "-" else ""
     val abs = kotlin.math.abs(n).toString()
     return sign + abs.reversed().chunked(3).joinToString(".").reversed()
@@ -339,4 +337,10 @@ private fun applyKey(current: String, key: String): String = when (key) {
     "⌫" -> if (current.isEmpty()) current else current.dropLast(1)
     "." -> if (current.contains(".")) current else "$current."
     else -> current + key
+}
+
+private fun parseHexColorOrDefault(hex: String): Color = try {
+    Color(android.graphics.Color.parseColor(hex))
+} catch (_: IllegalArgumentException) {
+    AppColors.Primary
 }

@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -34,9 +33,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zrifapps.goservice.feature.vehicle.domain.model.Vehicle
+import com.zrifapps.goservice.feature.vehicle.domain.model.VehicleType
+import com.zrifapps.goservice.feature.vehicle.presentation.VehicleListViewModel
 import com.zrifapps.goservice.ui.components.ActionSheet
 import com.zrifapps.goservice.ui.components.ActionSheetOption
 import com.zrifapps.goservice.ui.components.ActionSheetSelectionMode
@@ -48,21 +50,7 @@ import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
 import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
-
-private data class VehicleListItem(
-    val id: String,
-    val icon: String,
-    val accent: Color,
-    val name: String,
-    val plateAndKm: String,
-)
-
-private val sampleVehicles = listOf(
-    VehicleListItem("v1", FaIcons.MOTORCYCLE, Color(0xFF2E8B57), "Beat Hitam", "B 4521 KZA · 18.420 km"),
-    VehicleListItem("v2", FaIcons.MOTORCYCLE, Color(0xFFD6453A), "Vario Merah", "B 6789 SKR · 8.100 km"),
-    VehicleListItem("v3", FaIcons.CAR, Color(0xFF3F4D5C), "Avanza Putih", "B 1234 ABC · 62.300 km"),
-    VehicleListItem("v4", FaIcons.CAR, Color(0xFF3FB1D6), "Brio Biru", "B 9876 XYZ · 24.500 km"),
-)
+import org.koin.androidx.compose.koinViewModel
 
 private val sortOptions = listOf(
     "input" to "Urutan input",
@@ -78,11 +66,14 @@ fun VehicleListScreen(
     onBack: () -> Unit = {},
     onOpenVehicle: (String) -> Unit = {},
     onAddVehicle: () -> Unit = {},
+    vm: VehicleListViewModel = koinViewModel(),
 ) {
     val font = plusJakartaSansFontFamily()
     var sortValue by remember { mutableStateOf("input") }
     var showSortSheet by remember { mutableStateOf(false) }
     val sortLabel = sortOptions.firstOrNull { it.first == sortValue }?.second ?: "Urutan input"
+    val state by vm.state.collectAsStateWithLifecycle()
+    val vehicles = remember(state.vehicles, sortValue) { sortVehicles(state.vehicles, sortValue) }
 
     Box(
         modifier = modifier
@@ -106,7 +97,7 @@ fun VehicleListScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "${sampleVehicles.size} kendaraan",
+                    text = "${vehicles.size} kendaraan",
                     color = AppColors.TextMuted,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -129,7 +120,7 @@ fun VehicleListScreen(
                     bottom = 96.dp,
                 ),
             ) {
-                items(sampleVehicles) { item ->
+                items(vehicles) { item ->
                     VehicleListRow(item = item, onClick = { onOpenVehicle(item.id) })
                 }
             }
@@ -175,8 +166,21 @@ fun VehicleListScreen(
 }
 
 @Composable
-private fun VehicleListRow(item: VehicleListItem, onClick: () -> Unit) {
+private fun VehicleListRow(item: Vehicle, onClick: () -> Unit) {
     val font = plusJakartaSansFontFamily()
+    val accent = remember(item.color.value) {
+        runCatching { Color(android.graphics.Color.parseColor(item.color.value)) }
+            .getOrDefault(AppColors.Primary)
+    }
+    val icon = if (item.type == VehicleType.Mobil) FaIcons.CAR else FaIcons.MOTORCYCLE
+    val plateAndKm = buildString {
+        if (item.plateNumber.isNotBlank()) {
+            append(item.plateNumber)
+            append(" · ")
+        }
+        append(formatOdometerKm(item.odometer.kilometers))
+        append(" km")
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -189,15 +193,15 @@ private fun VehicleListRow(item: VehicleListItem, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         IconBadge(
-            icon = item.icon,
-            foreground = item.accent,
-            background = item.accent.copy(alpha = 0.13f),
+            icon = icon,
+            foreground = accent,
+            background = accent.copy(alpha = 0.13f),
             size = 48.dp,
             iconSize = 24.sp,
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = item.name,
+                text = item.displayTitle,
                 color = AppColors.TextPrimary,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
@@ -205,7 +209,7 @@ private fun VehicleListRow(item: VehicleListItem, onClick: () -> Unit) {
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                text = item.plateAndKm,
+                text = plateAndKm,
                 color = AppColors.TextMuted,
                 fontSize = 12.sp,
                 fontFamily = FontFamily.Monospace,
@@ -215,8 +219,15 @@ private fun VehicleListRow(item: VehicleListItem, onClick: () -> Unit) {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-private fun VehicleListScreenPreview() {
-    VehicleListScreen()
+private fun sortVehicles(list: List<Vehicle>, sortKey: String): List<Vehicle> = when (sortKey) {
+    "az" -> list.sortedBy { it.displayTitle.lowercase() }
+    "km_asc" -> list.sortedBy { it.odometer.kilometers }
+    "km_desc" -> list.sortedByDescending { it.odometer.kilometers }
+    else -> list
+}
+
+private fun formatOdometerKm(km: Long): String {
+    val abs = kotlin.math.abs(km).toString()
+    val grouped = abs.reversed().chunked(3).joinToString(".").reversed()
+    return if (km < 0) "-$grouped" else grouped
 }

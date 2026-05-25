@@ -18,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.zrifapps.goservice.feature.onboarding.presentation.OnboardingVehicleInput
-import com.zrifapps.goservice.feature.vehicle.domain.model.VehicleType
 import com.zrifapps.goservice.ui.components.AppButton
 import com.zrifapps.goservice.ui.components.AppInfoBanner
 import com.zrifapps.goservice.ui.components.AppTextButton
@@ -26,6 +25,7 @@ import com.zrifapps.goservice.ui.onboarding.components.OnboardingStepHeader
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.vehicle.components.VehicleForm
 import com.zrifapps.goservice.ui.vehicle.components.VehicleFormState
+import com.zrifapps.goservice.ui.vehicle.components.toOnboardingInput
 
 @Composable
 fun OnboardingAddVehicleScreen(
@@ -81,18 +81,6 @@ fun OnboardingAddVehicleScreen(
         Spacer(Modifier.height(32.dp))
     }
 }
-
-private fun VehicleFormState.toOnboardingInput(): OnboardingVehicleInput =
-    OnboardingVehicleInput(
-        type = VehicleType.fromKey(type),
-        nickname = nama,
-        brand = merek,
-        model = model,
-        year = tahun.toIntOrNull(),
-        plateNumber = platNomor,
-        odometerKm = odometer.toLongOrNull() ?: 0L,
-        colorHex = warna,
-    )
 
 @Preview(showBackground = true)
 @Composable

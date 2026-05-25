@@ -35,6 +35,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zrifapps.goservice.feature.vehicle.domain.model.Vehicle
+import com.zrifapps.goservice.feature.vehicle.domain.model.VehicleType
+import com.zrifapps.goservice.feature.vehicle.presentation.VehicleDetailViewModel
 import com.zrifapps.goservice.ui.components.AdBannerSlot
 import com.zrifapps.goservice.ui.components.CircleIconButton
 import com.zrifapps.goservice.ui.components.IconBadge
@@ -49,20 +53,27 @@ import com.zrifapps.goservice.ui.vehicle.components.ComponentsCatalog
 import com.zrifapps.goservice.ui.vehicle.components.SubtypeBadge
 import com.zrifapps.goservice.ui.vehicle.components.VehicleSubtypes
 import com.zrifapps.goservice.ui.vehicle.components.dashedBorder
+import androidx.compose.runtime.LaunchedEffect
+import org.koin.androidx.compose.koinViewModel
 
-private const val DEFAULT_VEHICLE_TYPE = "motor"
 private const val DEFAULT_SUBTYPE = "matic"
 
 @Composable
 fun VehicleDetailScreen(
+    vehicleId: String? = null,
     onBack: () -> Unit,
     onManageComponents: () -> Unit = {},
     onOpenComponent: (String) -> Unit = {},
     onAddComponent: () -> Unit = {},
-    onEdit: () -> Unit = {},
-    vehicleType: String = DEFAULT_VEHICLE_TYPE,
-    subtype: String = DEFAULT_SUBTYPE,
+    onEdit: (String?) -> Unit = {},
+    vm: VehicleDetailViewModel = koinViewModel(),
 ) {
+    val state by vm.state.collectAsStateWithLifecycle()
+    LaunchedEffect(vehicleId) { vm.load(vehicleId) }
+
+    val vehicle = state.vehicle
+    val vehicleType = vehicle?.type?.key ?: "motor"
+    val subtype = vehicle?.subtypeId?.takeIf { it != "*" } ?: DEFAULT_SUBTYPE
     val components = ComponentsCatalog.forSubtype(subtype)
     val tilePreview = components.take(6)
     val subLabel = VehicleSubtypes.labelOf(vehicleType, subtype)
@@ -78,9 +89,9 @@ fun VehicleDetailScreen(
         VehicleDetailTopBar(
             onBack = onBack,
             onShare = { showShareSheet = true },
-            onEdit = onEdit,
+            onEdit = { onEdit(vehicle?.id) },
         )
-        VehicleHeroCard()
+        VehicleHeroCard(vehicle = vehicle)
         Spacer(Modifier.height(16.dp))
         ComponentsSectionHeader(
             total = components.size,
@@ -103,7 +114,7 @@ fun VehicleDetailScreen(
 
     if (showShareSheet) {
         ShareVehicleSheet(
-            vehicleName = "Beat Hitam",
+            vehicleName = vehicle?.displayTitle ?: "",
             onDismiss = { showShareSheet = false },
             onCopy = { showShareSheet = false },
             onSystemShare = { showShareSheet = false },
@@ -133,9 +144,20 @@ private fun VehicleDetailTopBar(
 }
 
 @Composable
-private fun VehicleHeroCard() {
+private fun VehicleHeroCard(vehicle: Vehicle?) {
     val font = plusJakartaSansFontFamily()
-    val accent = Color(0xFF2E8B57)
+    val accent = remember(vehicle?.color?.value) {
+        runCatching { Color(android.graphics.Color.parseColor(vehicle?.color?.value)) }
+            .getOrDefault(AppColors.Primary)
+    }
+    val icon = if (vehicle?.type == VehicleType.Mobil) FaIcons.CAR else FaIcons.MOTORCYCLE
+    val brandLine = listOfNotNull(
+        vehicle?.brand?.takeIf(String::isNotBlank)?.uppercase(),
+        vehicle?.year?.toString(),
+    ).joinToString(" · ").ifBlank { "—" }
+    val title = vehicle?.displayTitle?.takeIf(String::isNotBlank) ?: "—"
+    val plate = vehicle?.plateNumber?.takeIf(String::isNotBlank) ?: "—"
+    val kmValue = vehicle?.odometer?.kilometers?.let { formatOdometerKm(it) } ?: "—"
 
     Column(
         modifier = Modifier
@@ -153,7 +175,7 @@ private fun VehicleHeroCard() {
         Row(verticalAlignment = Alignment.Top) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "HONDA · 2022",
+                    text = brandLine,
                     color = AppColors.TextMuted,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -161,7 +183,7 @@ private fun VehicleHeroCard() {
                     fontFamily = font,
                 )
                 Text(
-                    text = "Beat Hitam",
+                    text = title,
                     color = AppColors.TextPrimary,
                     fontSize = 26.sp,
                     fontWeight = FontWeight.ExtraBold,
@@ -169,7 +191,7 @@ private fun VehicleHeroCard() {
                     fontFamily = font,
                 )
                 Text(
-                    text = "B 4521 KZA",
+                    text = plate,
                     color = AppColors.TextMuted,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -183,7 +205,7 @@ private fun VehicleHeroCard() {
                     .background(accent.copy(alpha = 0.13f)),
                 contentAlignment = Alignment.Center,
             ) {
-                FaIcon(icon = FaIcons.MOTORCYCLE, color = accent, size = 40.sp)
+                FaIcon(icon = icon, color = accent, size = 40.sp)
             }
         }
         Spacer(Modifier.height(14.dp))
@@ -195,11 +217,17 @@ private fun VehicleHeroCard() {
         )
         Spacer(Modifier.height(14.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            StatTile(label = "KM", value = "18.420", modifier = Modifier.weight(1f))
-            StatTile(label = "Servis", value = "5x", modifier = Modifier.weight(1f))
-            StatTile(label = "Total", value = "Rp 3.310k", modifier = Modifier.weight(1f))
+            StatTile(label = "KM", value = kmValue, modifier = Modifier.weight(1f))
+            StatTile(label = "Servis", value = "—", modifier = Modifier.weight(1f))
+            StatTile(label = "Total", value = "—", modifier = Modifier.weight(1f))
         }
     }
+}
+
+private fun formatOdometerKm(km: Long): String {
+    val abs = kotlin.math.abs(km).toString()
+    val grouped = abs.reversed().chunked(3).joinToString(".").reversed()
+    return if (km < 0) "-$grouped" else grouped
 }
 
 @Composable

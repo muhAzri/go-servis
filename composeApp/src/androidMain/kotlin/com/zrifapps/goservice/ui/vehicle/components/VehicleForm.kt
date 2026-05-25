@@ -22,6 +22,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.zrifapps.goservice.feature.onboarding.presentation.OnboardingVehicleInput
+import com.zrifapps.goservice.feature.vehicle.domain.model.VehicleType
 import com.zrifapps.goservice.ui.components.AppTextField
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
@@ -49,6 +51,18 @@ data class VehicleFormState(
 ) {
     val isValid: Boolean get() = nama.isNotBlank() && merek.isNotBlank()
 }
+
+fun VehicleFormState.toOnboardingInput(): OnboardingVehicleInput =
+    OnboardingVehicleInput(
+        type = VehicleType.fromKey(type),
+        nickname = nama,
+        brand = merek,
+        model = model,
+        year = tahun.toIntOrNull(),
+        plateNumber = platNomor,
+        odometerKm = odometer.toLongOrNull() ?: 0L,
+        colorHex = warna,
+    )
 
 @Composable
 fun VehicleForm(
