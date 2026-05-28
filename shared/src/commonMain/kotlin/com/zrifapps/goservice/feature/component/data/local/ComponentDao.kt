@@ -22,4 +22,7 @@ interface ComponentDao {
 
     @Query("DELETE FROM components WHERE id = :id AND is_custom = 1")
     suspend fun deleteCustom(id: String): Int
+
+    @Query("DELETE FROM components WHERE is_custom = 0 AND id NOT IN (:keepIds)")
+    suspend fun deleteStaleDefaults(keepIds: List<String>): Int
 }
