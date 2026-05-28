@@ -133,19 +133,43 @@ struct AppNavGraph: View {
                 onSaved: { router.navigateBack() }
             )
 
-        case .vehicleComponents:
-            VehicleComponentsView()
-        case .componentDetail(let componentId):
-            ComponentDetailView(
-                componentId: componentId,
-                onSave: { router.navigateBack() },
-                onStopMonitoring: { router.navigateBack() },
+        case .vehicleComponents(let vehicleId):
+            VehicleComponentsView(
+                vehicleId: vehicleId,
+                onOpenTracked: { trackedId in
+                    router.navigate(to: .trackedComponentDetail(trackedId: trackedId))
+                },
+                onOpenCatalog: { catalogId in
+                    router.navigate(to: .componentInfo(vehicleId: vehicleId, catalogId: catalogId))
+                },
+                onAdd: { router.navigate(to: .addCustomComponent(vehicleId: vehicleId)) }
+            )
+        case .componentInfo(let vehicleId, let catalogId, let customName):
+            ComponentInfoView(
+                vehicleId: vehicleId,
+                catalogId: catalogId,
+                customName: customName,
+                onTracked: { _ in
+                    // Setelah dipantau, kembali ke daftar tambah komponen.
+                    router.navigateBack()
+                }
+            )
+        case .trackedComponentDetail(let trackedId):
+            TrackedComponentDetailView(
+                trackedId: trackedId,
+                onStopped: { router.navigateBack() },
                 onLogServiceForComponent: { router.navigate(to: .addService) },
                 onCreateReminderForComponent: { router.navigate(to: .addReminder) }
             )
-        case .addCustomComponent:
+        case .addCustomComponent(let vehicleId):
             AddCustomComponentView(
-                onAdd: { _ in router.navigateBack() }
+                vehicleId: vehicleId,
+                onOpenComponent: { catalogId in
+                    router.navigate(to: .componentInfo(vehicleId: vehicleId, catalogId: catalogId))
+                },
+                onCreateCustom: { name in
+                    router.navigate(to: .componentInfo(vehicleId: vehicleId, customName: name))
+                }
             )
 
         case .editVehicle(let vehicleId):

@@ -24,9 +24,10 @@ enum AppDestination: Hashable {
     case editProfile
 
     // Component management
-    case vehicleComponents
-    case componentDetail(componentId: String)
-    case addCustomComponent
+    case vehicleComponents(vehicleId: String)
+    case componentInfo(vehicleId: String, catalogId: String? = nil, customName: String? = nil)
+    case trackedComponentDetail(trackedId: String)
+    case addCustomComponent(vehicleId: String)
 
     // New plot-hole screens
     case editVehicle(vehicleId: String? = nil)

@@ -1,28 +1,38 @@
 import SwiftUI
+import Shared
 
 struct VehicleComponentsView: View {
-    var vehicleType: String = "motor"
-    var subtype: String = "matic"
-    var vehicleName: String = "Beat Hitam"
-    var isEmpty: Bool = false
-    var isLoading: Bool = false
+    let vehicleId: String
+    var onOpenTracked: (String) -> Void = { _ in }
+    var onOpenCatalog: (String) -> Void = { _ in }
+    var onAdd: () -> Void = {}
 
-    @Environment(AppRouter.self) private var router
-
-    @State private var currentSubtype: String = "matic"
-    @State private var showSubtypeSheet: Bool = false
+    @StateObject private var model = VehicleComponentsModel()
     @State private var activeCategory: String = "all"
 
-    private var allComponents: [ComponentInfo] {
-        ComponentsCatalog.forSubtype(currentSubtype)
+    private var state: VehicleComponentsViewModel.UiState { model.state }
+    private var vehicle: Shared.Vehicle? { state.vehicle }
+    private var vehicleType: VehicleType { vehicle?.type ?? VehicleType.motor }
+    private var vehicleTypeKey: String { vehicleType == .mobil ? "mobil" : "motor" }
+    private var subtypeId: String {
+        let raw = vehicle?.subtypeId ?? ""
+        if raw.isEmpty || raw == "*" {
+            return VehicleSubtypes.defaultId(for: vehicleTypeKey)
+        }
+        return raw
+    }
+    private var subLabel: String { VehicleSubtypes.label(for: vehicleTypeKey, id: subtypeId) }
+    private var typeLabel: String { vehicleType == .mobil ? "Mobil" : "Motor" }
+    private var vehicleName: String { vehicle?.displayTitle ?? "—" }
+
+    private var items: [VehicleComponentsViewModel.TrackedItem] { state.items }
+    private var filteredItems: [VehicleComponentsViewModel.TrackedItem] {
+        if activeCategory == "all" { return items }
+        return items.filter { categoryOf($0.tracked.catalogComponentId) == activeCategory }
     }
 
-    private var components: [ComponentInfo] {
-        activeCategory == "all" ? allComponents : allComponents.filter { categoryOf($0.id) == activeCategory }
-    }
-
-    private func categoryOf(_ id: String) -> String {
-        switch id {
+    private func categoryOf(_ catalogId: String) -> String {
+        switch catalogId {
         case "oli_mesin", "busi", "filter_udara", "filter_oli", "tune_up", "timing_belt", "vbelt", "roller": return "mesin"
         case "aki": return "kelistrikan"
         case "ban", "kampas_rem", "shock", "rantai", "kampas_kopling", "oli_kopling": return "kaki"
@@ -32,12 +42,12 @@ struct VehicleComponentsView: View {
     }
 
     private var categoryChips: [FilterChipItem] {
-        let mesinCount = allComponents.filter { categoryOf($0.id) == "mesin" }.count
-        let listrikCount = allComponents.filter { categoryOf($0.id) == "kelistrikan" }.count
-        let kakiCount = allComponents.filter { categoryOf($0.id) == "kaki" }.count
-        let pendinginCount = allComponents.filter { categoryOf($0.id) == "pendingin" }.count
+        let mesinCount = items.filter { categoryOf($0.tracked.catalogComponentId) == "mesin" }.count
+        let listrikCount = items.filter { categoryOf($0.tracked.catalogComponentId) == "kelistrikan" }.count
+        let kakiCount = items.filter { categoryOf($0.tracked.catalogComponentId) == "kaki" }.count
+        let pendinginCount = items.filter { categoryOf($0.tracked.catalogComponentId) == "pendingin" }.count
         var result: [FilterChipItem] = [
-            FilterChipItem(id: "all", label: "Semua", count: allComponents.count),
+            FilterChipItem(id: "all", label: "Semua", count: items.count),
         ]
         if mesinCount > 0 { result.append(FilterChipItem(id: "mesin", label: "Mesin", count: mesinCount)) }
         if listrikCount > 0 { result.append(FilterChipItem(id: "kelistrikan", label: "Kelistrikan", count: listrikCount)) }
@@ -46,17 +56,9 @@ struct VehicleComponentsView: View {
         return result
     }
 
-    private var subLabel: String {
-        VehicleSubtypes.label(for: vehicleType, id: currentSubtype)
-    }
-
-    private var typeLabel: String {
-        vehicleType == "mobil" ? "Mobil" : "Motor"
-    }
-
     var body: some View {
         Group {
-            if isLoading {
+            if state.isLoading {
                 VStack(spacing: 12) {
                     Skeleton.Tile(count: 6)
                     Skeleton.Row(leading: .icon)
@@ -64,18 +66,18 @@ struct VehicleComponentsView: View {
                     Spacer()
                 }
                 .padding(.top, 12)
-            } else if isEmpty {
+            } else if state.isEmpty {
                 VStack(spacing: 0) {
-                    SubtypeBanner(subLabel: subLabel, typeLabel: typeLabel, onChange: { showSubtypeSheet = true })
+                    SubtypeBanner(subLabel: subLabel, typeLabel: typeLabel, vehicleType: vehicleType)
                         .padding(.horizontal, 16)
                         .padding(.top, 8)
                         .padding(.bottom, 12)
                     EmptyState(
                         iconUnicode: "\u{f0ad}",
                         title: "Belum ada komponen dipantau",
-                        body: "Pilih komponen yang ingin kamu pantau usianya — kami pakai interval pabrikan.",
+                        body: "Pilih dari rekomendasi sesuai \(subLabel) — atur intervalnya, lalu pantau.",
                         ctaLabel: "Pilih Komponen",
-                        onCta: { router.navigate(to: .addCustomComponent) }
+                        onCta: onAdd
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
@@ -86,42 +88,23 @@ struct VehicleComponentsView: View {
         .background(Color.sgBgWarm)
         .navigationTitle("Komponen")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { currentSubtype = subtype }
-        .sheet(isPresented: $showSubtypeSheet) {
-            SubtypePickerSheet(
-                vehicleType: vehicleType,
-                vehicleName: vehicleName,
-                selectedId: currentSubtype,
-                onPick: { newId in
-                    currentSubtype = newId
-                    showSubtypeSheet = false
-                },
-                onDismiss: { showSubtypeSheet = false }
-            )
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
-        }
+        .onAppear { model.load(vehicleId: vehicleId) }
         .toolbar {
             ToolbarItem(placement: .principal) {
                 VStack(spacing: 1) {
                     Text("Komponen")
                         .font(.custom("PlusJakartaSans-ExtraBold", size: 16))
                         .foregroundColor(.sgTextPrimary)
-                    Text("\(vehicleName) · \(allComponents.count) dipantau")
+                    Text("\(vehicleName) · \(items.count) dipantau")
                         .font(.custom("PlusJakartaSans-Medium", size: 11))
                         .foregroundColor(.sgTextMuted)
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Button(action: { router.navigate(to: .addCustomComponent) }) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(Color.sgPrimary)
-                            .frame(width: 32, height: 32)
-                        Text("\u{2b}")
-                            .font(.custom("FontAwesome6Free-Solid", size: 14))
-                            .foregroundColor(.white)
-                    }
+                Button(action: onAdd) {
+                    Text("\u{2b}")
+                        .font(.custom("FontAwesome6Free-Solid", size: 18))
+                        .foregroundColor(.sgPrimary)
                 }
             }
         }
@@ -130,7 +113,7 @@ struct VehicleComponentsView: View {
     private var scrollContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                SubtypeBanner(subLabel: subLabel, typeLabel: typeLabel, onChange: { showSubtypeSheet = true })
+                SubtypeBanner(subLabel: subLabel, typeLabel: typeLabel, vehicleType: vehicleType)
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
                     .padding(.bottom, 12)
@@ -138,17 +121,16 @@ struct VehicleComponentsView: View {
                 FilterChipBar(items: categoryChips, activeId: $activeCategory)
                     .padding(.bottom, 12)
 
-                ComponentsList(
-                    components: components,
+                TrackedComponentsList(
+                    items: filteredItems,
                     vehicleType: vehicleType,
-                    onOpenComponent: { id in
-                        router.navigate(to: .componentDetail(componentId: id))
-                    }
+                    onOpenTracked: onOpenTracked,
+                    onOpenCatalog: onOpenCatalog
                 )
                 .padding(.horizontal, 16)
                 .padding(.bottom, 12)
 
-                AddComponentRow(onAdd: { router.navigate(to: .addCustomComponent) })
+                AddComponentRow(onAdd: onAdd)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 24)
             }
@@ -159,9 +141,10 @@ struct VehicleComponentsView: View {
 private struct SubtypeBanner: View {
     let subLabel: String
     let typeLabel: String
-    let onChange: () -> Void
+    let vehicleType: VehicleType
 
     private let accent = Color(red: 0.18, green: 0.55, blue: 0.34)
+    private var icon: String { vehicleType == .mobil ? "\u{f1b9}" : "\u{f21c}" }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -169,7 +152,7 @@ private struct SubtypeBanner: View {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(accent.opacity(0.13))
                     .frame(width: 44, height: 44)
-                Text("\u{f21c}")
+                Text(icon)
                     .font(.custom("FontAwesome6Free-Solid", size: 22))
                     .foregroundColor(accent)
             }
@@ -183,17 +166,6 @@ private struct SubtypeBanner: View {
                     .foregroundColor(.sgTextPrimary)
             }
             Spacer()
-            Button(action: onChange) {
-                Text("Ubah")
-                    .font(.custom("PlusJakartaSans-Bold", size: 12))
-                    .foregroundColor(.sgTextPrimary)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(Color.sgSurface)
-                    .clipShape(Capsule())
-                    .overlay(Capsule().strokeBorder(Color.sgBorder, lineWidth: 1))
-            }
-            .buttonStyle(.plain)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
@@ -212,24 +184,27 @@ private struct SubtypeBanner: View {
     }
 }
 
-private struct ComponentsList: View {
-    let components: [ComponentInfo]
-    let vehicleType: String
-    let onOpenComponent: (String) -> Void
+private struct TrackedComponentsList: View {
+    let items: [VehicleComponentsViewModel.TrackedItem]
+    let vehicleType: VehicleType
+    let onOpenTracked: (String) -> Void
+    let onOpenCatalog: (String) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(Array(components.enumerated()), id: \.element.id) { index, c in
+            ForEach(Array(items.enumerated()), id: \.element.tracked.id) { index, item in
                 if index > 0 {
                     Rectangle().fill(Color.sgBorder).frame(height: 1)
                 }
-                Button(action: { onOpenComponent(c.id) }) {
-                    ComponentRow(
-                        component: c,
-                        interval: c.interval(for: vehicleType),
-                        last: Self.lastService(for: c.id),
-                        urgency: c.id == "oli_mesin" ? .overdue : .ok
-                    )
+                Button(action: {
+                    let trackedId = item.tracked.id
+                    if !trackedId.isEmpty {
+                        onOpenTracked(trackedId)
+                    } else {
+                        onOpenCatalog(item.tracked.catalogComponentId)
+                    }
+                }) {
+                    TrackedComponentRow(item: item, vehicleType: vehicleType)
                 }
                 .buttonStyle(.plain)
             }
@@ -241,46 +216,57 @@ private struct ComponentsList: View {
                 .strokeBorder(Color.sgBorder, lineWidth: 1)
         )
     }
-
-    private static func lastService(for id: String) -> String {
-        switch id {
-        case "oli_mesin":    return "2.420 km lalu · 20 Feb 2026"
-        case "kampas_rem":   return "belum tercatat"
-        case "ban":          return "4.200 km lalu"
-        case "busi":         return "4.600 km lalu"
-        case "aki":          return "8 bulan lalu"
-        case "vbelt":        return "belum tercatat"
-        case "rantai":       return "1.200 km lalu"
-        case "filter_udara": return "4.500 km lalu"
-        default:             return "belum tercatat"
-        }
-    }
 }
 
-private struct ComponentRow: View {
-    let component: ComponentInfo
-    let interval: String
-    let last: String
-    let urgency: ReminderUrgency
+private struct TrackedComponentRow: View {
+    let item: VehicleComponentsViewModel.TrackedItem
+    let vehicleType: VehicleType
+
+    private static let dateFormatter: DateFormatter = {
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "id_ID")
+        df.dateFormat = "d MMM yyyy"
+        return df
+    }()
+
+    private var icon: String { item.catalog?.iconUnicode ?? "\u{f0ad}" }
+    private var color: Color { item.catalog?.uiColor ?? .sgTextMuted }
+    private var intervalText: String {
+        if let kmOverride = item.tracked.intervalKmOverride {
+            return "\(formatThousands(Int(truncating: kmOverride))) km"
+        }
+        return item.catalog?.intervalLabel(for: vehicleType) ?? "—"
+    }
+    private var lastText: String {
+        var parts: [String] = []
+        if let dist = item.tracked.lastServiceOdometer as? KotlinLong {
+            parts.append("\(formatThousands(Int(truncating: dist))) km")
+        }
+        if let raw = item.tracked.lastServiceDate {
+            let date = Date(timeIntervalSince1970: TimeInterval(truncating: raw) / 1000.0)
+            parts.append(Self.dateFormatter.string(from: date))
+        }
+        return parts.isEmpty ? "belum tercatat" : parts.joined(separator: " · ")
+    }
 
     var body: some View {
         HStack(spacing: 12) {
             IconBadge(
-                iconUnicode: component.iconUnicode,
-                foreground: component.color,
-                background: component.color.opacity(0.13),
+                iconUnicode: icon,
+                foreground: color,
+                background: color.opacity(0.13),
                 size: 38, iconSize: 20, corner: 10
             )
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
-                    Text(component.label)
+                    Text(item.displayName)
                         .font(.custom("PlusJakartaSans-Bold", size: 14))
                         .foregroundColor(.sgTextPrimary)
-                    if urgency == .overdue {
-                        StatusDot(urgency: urgency)
+                    if item.urgency == .overdue {
+                        StatusDot(urgency: .overdue)
                     }
                 }
-                Text("Terakhir: \(last)")
+                Text("Terakhir: \(lastText)")
                     .font(.custom("PlusJakartaSans-Medium", size: 11))
                     .foregroundColor(.sgTextMuted)
             }
@@ -290,7 +276,7 @@ private struct ComponentRow: View {
                     .font(.custom("PlusJakartaSans-Bold", size: 10))
                     .kerning(0.5)
                     .foregroundColor(.sgTextSubtle)
-                Text(interval)
+                Text(intervalText)
                     .font(.system(size: 11, weight: .semibold, design: .monospaced))
                     .foregroundColor(.sgTextPrimary)
             }
@@ -341,131 +327,11 @@ private struct AddComponentRow: View {
     }
 }
 
-private struct SubtypePickerSheet: View {
-    let vehicleType: String
-    let vehicleName: String
-    let selectedId: String
-    let onPick: (String) -> Void
-    let onDismiss: () -> Void
-
-    @State private var draft: String = ""
-
-    private var options: [VehicleSubtype] {
-        VehicleSubtypes.list(for: vehicleType)
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Pilih sub-tipe")
-                        .font(.custom("PlusJakartaSans-ExtraBold", size: 20))
-                        .foregroundColor(.sgTextPrimary)
-                        .kerning(-0.3)
-                    Text("Untuk \(vehicleName)")
-                        .font(.custom("PlusJakartaSans-Medium", size: 13))
-                        .foregroundColor(.sgTextMuted)
-                }
-                Spacer()
-                Button(action: onDismiss) {
-                    Text("\u{f00d}")
-                        .font(.custom("FontAwesome6Free-Solid", size: 16))
-                        .foregroundColor(.sgTextMuted)
-                        .frame(width: 32, height: 32)
-                        .background(Color.sgSurfaceAlt)
-                        .clipShape(Circle())
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-            .padding(.bottom, 14)
-
-            ScrollView {
-                VStack(spacing: 8) {
-                    ForEach(options) { opt in
-                        SubtypeRow(
-                            option: opt,
-                            active: draft == opt.id,
-                            onTap: { draft = opt.id }
-                        )
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 12)
-            }
-
-            VStack(spacing: 8) {
-                Button(action: { onPick(draft) }) {
-                    Text("Pilih")
-                        .font(.custom("PlusJakartaSans-Bold", size: 15))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(Color.sgPrimary)
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                }
-                .buttonStyle(.plain)
-                Button(action: onDismiss) {
-                    Text("Batal")
-                        .font(.custom("PlusJakartaSans-SemiBold", size: 14))
-                        .foregroundColor(.sgTextMuted)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
-            .padding(.bottom, 24)
-            .background(Color.sgSurface)
-        }
-        .background(Color.sgSurface)
-        .onAppear { draft = selectedId }
-    }
-}
-
-private struct SubtypeRow: View {
-    let option: VehicleSubtype
-    let active: Bool
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 14) {
-                ZStack {
-                    Circle()
-                        .strokeBorder(active ? Color.sgPrimary : Color.sgBorder, lineWidth: 2)
-                        .frame(width: 22, height: 22)
-                    if active {
-                        Circle()
-                            .fill(Color.sgPrimary)
-                            .frame(width: 12, height: 12)
-                    }
-                }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(option.label)
-                        .font(.custom("PlusJakartaSans-Bold", size: 14))
-                        .foregroundColor(.sgTextPrimary)
-                    Text(option.sample)
-                        .font(.custom("PlusJakartaSans-Medium", size: 12))
-                        .foregroundColor(.sgTextMuted)
-                }
-                Spacer()
-            }
-            .padding(14)
-            .background(active ? Color.sgPrimarySoft : Color.sgSurfaceAlt)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(active ? Color.sgPrimary : Color.clear, lineWidth: 1.5)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-#Preview {
-    NavigationStack { VehicleComponentsView() }
-        .environment(AppRouter())
+private func formatThousands(_ value: Int) -> String {
+    if value == 0 { return "0" }
+    let formatter = NumberFormatter()
+    formatter.numberStyle = .decimal
+    formatter.groupingSeparator = "."
+    formatter.locale = Locale(identifier: "id_ID")
+    return formatter.string(from: NSNumber(value: value)) ?? "\(value)"
 }

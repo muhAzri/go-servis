@@ -6,6 +6,7 @@ struct VehicleDetailView: View {
     var onEdit: (String?) -> Void = { _ in }
 
     @StateObject private var model = VehicleDetailModel()
+    @StateObject private var componentsModel = VehicleComponentsModel()
     @Environment(AppRouter.self) private var router
     @State private var showShareSheet: Bool = false
     @State private var copyToast: ToastMessage? = nil
@@ -16,22 +17,23 @@ struct VehicleDetailView: View {
     }
 
     private var vehicle: Vehicle? { model.state.vehicle }
-    private var vehicleType: String { vehicle?.type.key ?? "motor" }
+    private var vehicleType: VehicleType { vehicle?.type ?? VehicleType.motor }
+    private var vehicleTypeKey: String { vehicleType == .mobil ? "mobil" : "motor" }
     private var subtype: String {
         let raw = vehicle?.subtypeId ?? "matic"
-        return raw == "*" ? "matic" : raw
+        return raw == "*" || raw.isEmpty ? VehicleSubtypes.defaultId(for: vehicleTypeKey) : raw
     }
 
-    private var components: [ComponentInfo] {
-        ComponentsCatalog.forSubtype(subtype)
+    private var trackedItems: [VehicleComponentsViewModel.TrackedItem] {
+        componentsModel.state.items
     }
 
-    private var tilePreview: [ComponentInfo] {
-        Array(components.prefix(6))
+    private var tilePreview: [VehicleComponentsViewModel.TrackedItem] {
+        Array(trackedItems.prefix(6))
     }
 
     private var subLabel: String {
-        VehicleSubtypes.label(for: vehicleType, id: subtype)
+        VehicleSubtypes.label(for: vehicleTypeKey, id: subtype)
     }
 
     var body: some View {
@@ -44,18 +46,26 @@ struct VehicleDetailView: View {
                         .padding(.bottom, 16)
 
                     ComponentsSectionHeader(
-                        total: components.count,
+                        total: trackedItems.count,
                         subLabel: subLabel,
-                        onManage: { router.navigate(to: .vehicleComponents) }
+                        onManage: {
+                            if let id = vehicle?.id {
+                                router.navigate(to: .vehicleComponents(vehicleId: id))
+                            }
+                        }
                     )
 
                     ComponentsGrid(
-                        components: tilePreview,
+                        items: tilePreview,
                         vehicleType: vehicleType,
-                        onOpenComponent: { id in
-                            router.navigate(to: .componentDetail(componentId: id))
+                        onOpenTracked: { trackedId in
+                            router.navigate(to: .trackedComponentDetail(trackedId: trackedId))
                         },
-                        onAddComponent: { router.navigate(to: .addCustomComponent) }
+                        onAddComponent: {
+                            if let id = vehicle?.id {
+                                router.navigate(to: .addCustomComponent(vehicleId: id))
+                            }
+                        }
                     )
                     .padding(.bottom, 16)
 
@@ -89,7 +99,15 @@ struct VehicleDetailView: View {
             .presentationDetents([.medium])
         }
         .toast($copyToast)
-        .onAppear { model.load(vehicleId: vehicleId) }
+        .onAppear {
+            model.load(vehicleId: vehicleId)
+            if let id = vehicleId ?? model.state.vehicle?.id {
+                componentsModel.load(vehicleId: id)
+            }
+        }
+        .onChange(of: model.state.vehicle?.id) { _, newId in
+            if let id = newId { componentsModel.load(vehicleId: id) }
+        }
     }
 }
 
@@ -257,17 +275,16 @@ private struct ComponentsSectionHeader: View {
 }
 
 private struct ComponentsGrid: View {
-    let components: [ComponentInfo]
-    let vehicleType: String
-    let onOpenComponent: (String) -> Void
+    let items: [VehicleComponentsViewModel.TrackedItem]
+    let vehicleType: VehicleType
+    let onOpenTracked: (String) -> Void
     let onAddComponent: () -> Void
 
     var body: some View {
         LazyVGrid(columns: [.init(.flexible(), spacing: 8), .init(.flexible(), spacing: 8)], spacing: 8) {
-            ForEach(components) { c in
-                let urgency: ReminderUrgency = (c.id == "oli_mesin") ? .overdue : .ok
-                Button(action: { onOpenComponent(c.id) }) {
-                    ComponentCard(component: c, interval: c.interval(for: vehicleType), urgency: urgency)
+            ForEach(items, id: \.tracked.id) { item in
+                Button(action: { onOpenTracked(item.tracked.id) }) {
+                    ComponentCard(item: item, vehicleType: vehicleType)
                 }
                 .buttonStyle(.plain)
             }
@@ -281,23 +298,38 @@ private struct ComponentsGrid: View {
 }
 
 private struct ComponentCard: View {
-    let component: ComponentInfo
-    let interval: String
-    let urgency: ReminderUrgency
+    let item: VehicleComponentsViewModel.TrackedItem
+    let vehicleType: VehicleType
+
+    private var icon: String { item.catalog?.iconUnicode ?? "\u{f0ad}" }
+    private var color: Color { item.catalog?.uiColor ?? .sgTextMuted }
+    private var interval: String {
+        if let kmOverride = item.tracked.intervalKmOverride {
+            return "\(Int(truncating: kmOverride)) km"
+        }
+        return item.catalog?.intervalLabel(for: vehicleType) ?? "—"
+    }
+    private var urgency: ReminderUrgency {
+        switch item.urgency {
+        case .overdue: return .overdue
+        case .soon: return .soon
+        default: return .ok
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 IconBadge(
-                    iconUnicode: component.iconUnicode,
-                    foreground: component.color,
-                    background: component.color.opacity(0.13),
+                    iconUnicode: icon,
+                    foreground: color,
+                    background: color.opacity(0.13),
                     size: 32, iconSize: 18, corner: 8
                 )
                 Spacer()
                 StatusDot(urgency: urgency)
             }
-            Text(component.label)
+            Text(item.displayName)
                 .font(.custom("PlusJakartaSans-Bold", size: 12))
                 .foregroundColor(.sgTextPrimary)
             Text(interval)
