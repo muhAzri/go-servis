@@ -6,6 +6,7 @@ import com.zrifapps.goservice.core.usecase.UseCase
 import com.zrifapps.goservice.feature.component.domain.model.TrackedComponent
 import com.zrifapps.goservice.feature.component.domain.model.TrackedComponentDraft
 import com.zrifapps.goservice.feature.component.domain.repository.TrackedComponentRepository
+import kotlinx.coroutines.flow.Flow
 
 class TrackComponent(
     private val repository: TrackedComponentRepository,
@@ -25,4 +26,24 @@ class UntrackComponent(
     private val repository: TrackedComponentRepository,
 ) : UseCase<String, Unit> {
     override suspend fun invoke(params: String): DomainResult<Unit> = repository.untrack(params)
+}
+
+class ObserveTrackedComponents(
+    private val repository: TrackedComponentRepository,
+) {
+    operator fun invoke(vehicleId: String): Flow<List<TrackedComponent>> =
+        repository.observeForVehicle(vehicleId)
+}
+
+class ObserveTrackedComponent(
+    private val repository: TrackedComponentRepository,
+) {
+    operator fun invoke(id: String): Flow<TrackedComponent?> = repository.observeOne(id)
+}
+
+class UpdateTrackedComponent(
+    private val repository: TrackedComponentRepository,
+) : UseCase<TrackedComponent, TrackedComponent> {
+    override suspend fun invoke(params: TrackedComponent): DomainResult<TrackedComponent> =
+        repository.update(params)
 }
