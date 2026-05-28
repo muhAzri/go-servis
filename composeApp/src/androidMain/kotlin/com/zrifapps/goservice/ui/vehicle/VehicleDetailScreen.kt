@@ -36,9 +36,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zrifapps.goservice.feature.component.domain.model.ComponentUrgency
+import com.zrifapps.goservice.feature.component.presentation.VehicleComponentsViewModel
 import com.zrifapps.goservice.feature.vehicle.domain.model.Vehicle
 import com.zrifapps.goservice.feature.vehicle.domain.model.VehicleType
 import com.zrifapps.goservice.feature.vehicle.presentation.VehicleDetailViewModel
+import com.zrifapps.goservice.ui.vehicle.components.faIcon
+import com.zrifapps.goservice.ui.vehicle.components.intervalLabelFor
+import com.zrifapps.goservice.ui.vehicle.components.uiColor
 import com.zrifapps.goservice.ui.components.AdBannerSlot
 import com.zrifapps.goservice.ui.components.CircleIconButton
 import com.zrifapps.goservice.ui.components.IconBadge
@@ -48,8 +53,6 @@ import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
 import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
-import com.zrifapps.goservice.ui.vehicle.components.ComponentInfo
-import com.zrifapps.goservice.ui.vehicle.components.ComponentsCatalog
 import com.zrifapps.goservice.ui.vehicle.components.SubtypeBadge
 import com.zrifapps.goservice.ui.vehicle.components.VehicleSubtypes
 import com.zrifapps.goservice.ui.vehicle.components.dashedBorder
@@ -63,20 +66,26 @@ fun VehicleDetailScreen(
     vehicleId: String? = null,
     onBack: () -> Unit,
     onManageComponents: () -> Unit = {},
-    onOpenComponent: (String) -> Unit = {},
+    onOpenTracked: (String) -> Unit = {},
     onAddComponent: () -> Unit = {},
     onEdit: (String?) -> Unit = {},
     vm: VehicleDetailViewModel = koinViewModel(),
+    componentsVm: VehicleComponentsViewModel = koinViewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val componentsState by componentsVm.state.collectAsStateWithLifecycle()
     LaunchedEffect(vehicleId) { vm.load(vehicleId) }
 
     val vehicle = state.vehicle
+    val resolvedVehicleId = vehicle?.id
+    LaunchedEffect(resolvedVehicleId) {
+        resolvedVehicleId?.let { componentsVm.load(it) }
+    }
     val vehicleType = vehicle?.type?.key ?: "motor"
     val subtype = vehicle?.subtypeId?.takeIf { it != "*" } ?: DEFAULT_SUBTYPE
-    val components = ComponentsCatalog.forSubtype(subtype)
-    val tilePreview = components.take(6)
     val subLabel = VehicleSubtypes.labelOf(vehicleType, subtype)
+    val trackedItems = componentsState.items
+    val tilePreview = trackedItems.take(6)
     var showShareSheet by remember { androidx.compose.runtime.mutableStateOf(false) }
 
     Column(
@@ -94,14 +103,14 @@ fun VehicleDetailScreen(
         VehicleHeroCard(vehicle = vehicle)
         Spacer(Modifier.height(16.dp))
         ComponentsSectionHeader(
-            total = components.size,
+            total = trackedItems.size,
             subLabel = subLabel,
             onManage = onManageComponents,
         )
         ComponentsGrid(
-            components = tilePreview,
-            vehicleType = vehicleType,
-            onOpenComponent = onOpenComponent,
+            items = tilePreview,
+            vehicleType = vehicle?.type ?: VehicleType.Motor,
+            onOpenTracked = onOpenTracked,
             onAddComponent = onAddComponent,
         )
         Spacer(Modifier.height(16.dp))
@@ -315,26 +324,25 @@ private fun ComponentsSectionHeader(
 
 @Composable
 private fun ComponentsGrid(
-    components: List<ComponentInfo>,
-    vehicleType: String,
-    onOpenComponent: (String) -> Unit,
+    items: List<VehicleComponentsViewModel.TrackedItem>,
+    vehicleType: VehicleType,
+    onOpenTracked: (String) -> Unit,
     onAddComponent: () -> Unit,
 ) {
     Column(
         modifier = Modifier.padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        val rows = (components.map { it as Any? } + listOf<Any?>(null)).chunked(2)
+        val rows = (items.map { it as Any? } + listOf<Any?>(null)).chunked(2)
         rows.forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { item ->
-                    if (item is ComponentInfo) {
+                    if (item is VehicleComponentsViewModel.TrackedItem) {
                         ComponentCard(
-                            component = item,
-                            interval = item.intervalFor(vehicleType),
-                            urgency = if (item.id == "oli_mesin") ReminderUrgency.Overdue else ReminderUrgency.Ok,
+                            item = item,
+                            vehicleType = vehicleType,
                             modifier = Modifier.weight(1f),
-                            onClick = { onOpenComponent(item.id) },
+                            onClick = { onOpenTracked(item.tracked.id) },
                         )
                     } else {
                         AddComponentCard(
@@ -353,13 +361,18 @@ private fun ComponentsGrid(
 
 @Composable
 private fun ComponentCard(
-    component: ComponentInfo,
-    interval: String,
-    urgency: ReminderUrgency,
+    item: VehicleComponentsViewModel.TrackedItem,
+    vehicleType: VehicleType,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     val font = plusJakartaSansFontFamily()
+    val catalog = item.catalog
+    val icon = catalog?.faIcon() ?: FaIcons.WRENCH
+    val color = catalog?.uiColor() ?: AppColors.TextMuted
+    val interval = item.tracked.intervalKmOverride?.let { "${it} km" }
+        ?: catalog?.intervalLabelFor(vehicleType)
+        ?: "—"
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
@@ -371,18 +384,18 @@ private fun ComponentCard(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconBadge(
-                icon = component.icon,
-                foreground = component.color,
-                background = component.color.copy(alpha = 0.13f),
+                icon = icon,
+                foreground = color,
+                background = color.copy(alpha = 0.13f),
                 size = 32.dp,
                 iconSize = 18.sp,
                 corner = 8.dp,
             )
             Spacer(Modifier.weight(1f))
-            StatusDot(urgency = urgency)
+            StatusDot(urgency = item.urgency.toUiUrgency())
         }
         Text(
-            text = component.label,
+            text = item.displayName,
             color = AppColors.TextPrimary,
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
@@ -396,6 +409,12 @@ private fun ComponentCard(
             fontFamily = font,
         )
     }
+}
+
+private fun ComponentUrgency.toUiUrgency(): ReminderUrgency = when (this) {
+    ComponentUrgency.Overdue -> ReminderUrgency.Overdue
+    ComponentUrgency.Soon -> ReminderUrgency.Soon
+    ComponentUrgency.Ok -> ReminderUrgency.Ok
 }
 
 @Composable

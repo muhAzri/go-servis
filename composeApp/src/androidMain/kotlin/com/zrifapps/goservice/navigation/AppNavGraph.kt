@@ -40,8 +40,9 @@ import com.zrifapps.goservice.ui.tips.TipsDetailScreen
 import com.zrifapps.goservice.ui.tips.TipsScreen
 import com.zrifapps.goservice.ui.vehicle.AddCustomComponentScreen
 import com.zrifapps.goservice.ui.vehicle.AddVehicleScreen
-import com.zrifapps.goservice.ui.vehicle.ComponentDetailScreen
+import com.zrifapps.goservice.ui.vehicle.ComponentInfoScreen
 import com.zrifapps.goservice.ui.vehicle.EditVehicleScreen
+import com.zrifapps.goservice.ui.vehicle.TrackedComponentDetailScreen
 import com.zrifapps.goservice.ui.vehicle.UpdateOdometerScreen
 import com.zrifapps.goservice.ui.vehicle.VehicleComponentsScreen
 import com.zrifapps.goservice.ui.vehicle.VehicleDetailScreen
@@ -258,40 +259,78 @@ fun AppNavGraph() {
 
         composable<Screen.VehicleDetail> { backStackEntry ->
             val args = backStackEntry.toRoute<Screen.VehicleDetail>()
+            val vehicleId = args.vehicleId.orEmpty()
             VehicleDetailScreen(
                 vehicleId = args.vehicleId,
                 onBack = { navController.popBackStack() },
-                onManageComponents = { navController.navigate(Screen.VehicleComponents) },
-                onOpenComponent = { id -> navController.navigate(Screen.ComponentDetail(id)) },
-                onAddComponent = { navController.navigate(Screen.AddCustomComponent) },
+                onManageComponents = {
+                    if (vehicleId.isNotBlank()) {
+                        navController.navigate(Screen.VehicleComponents(vehicleId))
+                    }
+                },
+                onOpenTracked = { trackedId ->
+                    navController.navigate(Screen.TrackedComponentDetail(trackedId))
+                },
+                onAddComponent = {
+                    if (vehicleId.isNotBlank()) {
+                        navController.navigate(Screen.AddCustomComponent(vehicleId))
+                    }
+                },
                 onEdit = { id -> navController.navigate(Screen.EditVehicle(id)) },
             )
         }
 
-        composable<Screen.VehicleComponents> {
+        composable<Screen.VehicleComponents> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.VehicleComponents>()
             VehicleComponentsScreen(
+                vehicleId = args.vehicleId,
                 onBack = { navController.popBackStack() },
-                onOpenComponent = { id -> navController.navigate(Screen.ComponentDetail(id)) },
-                onAdd = { navController.navigate(Screen.AddCustomComponent) },
+                onOpenTracked = { trackedId ->
+                    navController.navigate(Screen.TrackedComponentDetail(trackedId))
+                },
+                onOpenCatalog = { catalogId ->
+                    navController.navigate(Screen.ComponentInfo(vehicleId = args.vehicleId, catalogId = catalogId))
+                },
+                onAdd = { navController.navigate(Screen.AddCustomComponent(args.vehicleId)) },
             )
         }
 
-        composable<Screen.ComponentDetail> { backStackEntry ->
-            val args = backStackEntry.toRoute<Screen.ComponentDetail>()
-            ComponentDetailScreen(
-                componentId = args.componentId,
+        composable<Screen.ComponentInfo> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.ComponentInfo>()
+            ComponentInfoScreen(
+                catalogId = args.catalogId,
+                customName = args.customName,
+                vehicleId = args.vehicleId,
                 onBack = { navController.popBackStack() },
-                onSave = { navController.popBackStack() },
-                onStopMonitoring = { navController.popBackStack() },
+                onTracked = {
+                    // Setelah dipantau, kembali ke daftar tambah komponen.
+                    navController.popBackStack(Screen.AddCustomComponent(args.vehicleId), inclusive = false)
+                },
+            )
+        }
+
+        composable<Screen.TrackedComponentDetail> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.TrackedComponentDetail>()
+            TrackedComponentDetailScreen(
+                trackedId = args.trackedId,
+                onBack = { navController.popBackStack() },
+                onStopped = { navController.popBackStack() },
                 onLogServiceForComponent = { navController.navigate(Screen.AddService) },
                 onCreateReminderForComponent = { navController.navigate(Screen.AddReminder) },
             )
         }
 
-        composable<Screen.AddCustomComponent> {
+        composable<Screen.AddCustomComponent> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.AddCustomComponent>()
             AddCustomComponentScreen(
+                vehicleId = args.vehicleId,
                 onBack = { navController.popBackStack() },
-                onAdd = { _ -> navController.popBackStack() },
+                onOpenComponent = { catalogId ->
+                    navController.navigate(Screen.ComponentInfo(vehicleId = args.vehicleId, catalogId = catalogId))
+                },
+                onCreateCustom = { name ->
+                    navController.navigate(Screen.ComponentInfo(vehicleId = args.vehicleId, customName = name))
+                },
             )
         }
 

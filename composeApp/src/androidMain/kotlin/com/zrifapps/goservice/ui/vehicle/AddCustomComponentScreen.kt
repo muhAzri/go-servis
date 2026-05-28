@@ -9,12 +9,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -24,47 +24,52 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zrifapps.goservice.feature.component.domain.model.ComponentTag
+import com.zrifapps.goservice.feature.component.presentation.AddTrackedComponentViewModel
+import com.zrifapps.goservice.feature.vehicle.domain.model.VehicleType
 import com.zrifapps.goservice.ui.components.CircleIconButton
 import com.zrifapps.goservice.ui.components.IconBadge
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
 import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
-import com.zrifapps.goservice.ui.vehicle.components.ComponentInfo
-import com.zrifapps.goservice.ui.vehicle.components.ComponentTag
-import com.zrifapps.goservice.ui.vehicle.components.ComponentsCatalog
 import com.zrifapps.goservice.ui.vehicle.components.VehicleSubtypes
+import com.zrifapps.goservice.ui.vehicle.components.faIcon
+import com.zrifapps.goservice.ui.vehicle.components.intervalLabelFor
+import com.zrifapps.goservice.ui.vehicle.components.label
+import com.zrifapps.goservice.ui.vehicle.components.uiColor
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun AddCustomComponentScreen(
+    vehicleId: String,
     onBack: () -> Unit,
-    onAdd: (String) -> Unit,
-    vehicleType: String = "motor",
-    subtype: String = "matic",
+    onOpenComponent: (String) -> Unit,
+    onCreateCustom: (String) -> Unit,
+    vm: AddTrackedComponentViewModel = koinViewModel(),
 ) {
-    var query by remember { mutableStateOf("") }
-    val subtypeList = remember(subtype) { ComponentsCatalog.forSubtype(subtype) }
-    val results: List<ComponentInfo> = remember(query, subtype) {
-        val q = query.trim().lowercase()
-        if (q.isEmpty()) subtypeList.filter { it.tag != ComponentTag.Core }
-        else ComponentsCatalog.all.filter { it.label.lowercase().contains(q) }
-    }
-    val suggestions = remember(subtype) {
-        subtypeList.filter { it.tag == ComponentTag.Plus || it.tag == ComponentTag.Pro }.take(4)
-    }
+    val state by vm.state.collectAsStateWithLifecycle()
+    LaunchedEffect(vehicleId) { vm.load(vehicleId) }
+
+    val vehicle = state.vehicle
+    val vehicleType = vehicle?.type ?: VehicleType.Motor
+    val subtypeId = vehicle?.subtypeId?.takeIf { it.isNotBlank() && it != "*" }
+        ?: VehicleSubtypes.defaultFor(vehicleType.key)
+    val subLabel = VehicleSubtypes.labelOf(vehicleType.key, subtypeId)
 
     Column(
         modifier = Modifier
@@ -74,25 +79,41 @@ fun AddCustomComponentScreen(
             .verticalScroll(rememberScrollState()),
     ) {
         TopBar(onBack = onBack)
-        SearchField(query = query, onChange = { query = it })
+        SearchField(query = state.query, onChange = vm::setQuery)
         Spacer(Modifier.height(4.dp))
 
-        if (query.isEmpty() && suggestions.isNotEmpty()) {
-            SectionLabel("Saran untuk kamu")
-            SuggestionChips(suggestions = suggestions, onPick = { onAdd(it.id) })
-            Spacer(Modifier.height(14.dp))
+        if (state.query.isBlank()) {
+            SectionLabel("Rekomendasi untuk $subLabel")
+        } else {
+            SectionLabel("${state.items.size} hasil")
         }
 
-        SectionLabel(if (query.isEmpty()) "Dari katalog" else "${results.size} hasil")
-        if (results.isNotEmpty()) {
-            ResultsList(
-                results = results.take(7),
-                vehicleType = vehicleType,
-                subtype = subtype,
-                onPick = { onAdd(it.id) },
-            )
+        if (state.items.isEmpty() && !state.showCustomPrompt) {
+            Box(modifier = Modifier.padding(20.dp)) {
+                Text(
+                    text = if (state.isLoading) "Memuat…" else "Tidak ada komponen.",
+                    color = AppColors.TextMuted,
+                    fontSize = 13.sp,
+                )
+            }
         } else {
-            EmptyResults(query = query, onAddNew = { onAdd("custom:$query") })
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                state.items.forEach { item ->
+                    ComponentPickRow(
+                        item = item,
+                        vehicleType = vehicleType,
+                        onClick = { if (!item.alreadyTracked) onOpenComponent(item.component.id) },
+                    )
+                }
+            }
+        }
+
+        if (state.showCustomPrompt) {
+            Spacer(Modifier.height(8.dp))
+            CustomPromptRow(query = state.query, onAdd = { onCreateCustom(state.query) })
         }
 
         Spacer(Modifier.height(16.dp))
@@ -152,7 +173,7 @@ private fun SearchField(query: String, onChange: (String) -> Unit) {
             )
             if (query.isEmpty()) {
                 Text(
-                    text = "Ketik nama komponen…",
+                    text = "Cari komponen lain…",
                     color = AppColors.TextSubtle,
                     fontSize = 15.sp,
                     fontFamily = font,
@@ -161,9 +182,7 @@ private fun SearchField(query: String, onChange: (String) -> Unit) {
         }
         if (query.isNotEmpty()) {
             Box(
-                modifier = Modifier
-                    .size(20.dp)
-                    .clickable { onChange("") },
+                modifier = Modifier.size(20.dp).clickable { onChange("") },
                 contentAlignment = Alignment.Center,
             ) {
                 FaIcon(icon = FaIcons.XMARK, color = AppColors.TextMuted, size = 14.sp)
@@ -182,186 +201,121 @@ private fun SectionLabel(text: String) {
         fontWeight = FontWeight.ExtraBold,
         letterSpacing = 0.8.sp,
         fontFamily = font,
-        modifier = Modifier
-            .padding(start = 20.dp, top = 14.dp, bottom = 8.dp),
+        modifier = Modifier.padding(start = 20.dp, top = 14.dp, bottom = 8.dp),
     )
 }
 
 @Composable
-private fun SuggestionChips(suggestions: List<ComponentInfo>, onPick: (ComponentInfo) -> Unit) {
-    val font = plusJakartaSansFontFamily()
-    androidx.compose.foundation.layout.FlowRow(
-        modifier = Modifier
-            .padding(horizontal = 16.dp)
-            .fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        suggestions.forEach { s ->
-            Row(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(AppColors.Surface)
-                    .border(BorderStroke(1.dp, AppColors.Border), CircleShape)
-                    .clickable { onPick(s) }
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                FaIcon(icon = s.icon, color = s.color, size = 12.sp)
-                Text(
-                    text = s.label,
-                    color = AppColors.TextPrimary,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = font,
-                )
-                FaIcon(icon = FaIcons.PLUS, color = AppColors.TextMuted, size = 10.sp)
-            }
-        }
-    }
-}
-
-@Composable
-private fun ResultsList(
-    results: List<ComponentInfo>,
-    vehicleType: String,
-    subtype: String,
-    onPick: (ComponentInfo) -> Unit,
-) {
-    val subLabel = VehicleSubtypes.labelOf(vehicleType, subtype)
-    Column(
-        modifier = Modifier
-            .padding(horizontal = 16.dp)
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(AppColors.Surface)
-            .border(BorderStroke(1.dp, AppColors.Border), RoundedCornerShape(16.dp)),
-    ) {
-        results.forEachIndexed { index, c ->
-            if (index > 0) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(AppColors.Border),
-                )
-            }
-            val inSubtype = c.subtypes.contains("*") || c.subtypes.contains(subtype)
-            ResultRow(
-                component = c,
-                interval = c.intervalFor(vehicleType),
-                outOfSubtype = !inSubtype,
-                subLabel = subLabel,
-                onClick = { onPick(c) },
-            )
-        }
-    }
-}
-
-@Composable
-private fun ResultRow(
-    component: ComponentInfo,
-    interval: String,
-    outOfSubtype: Boolean,
-    subLabel: String,
+private fun ComponentPickRow(
+    item: AddTrackedComponentViewModel.Item,
+    vehicleType: VehicleType,
     onClick: () -> Unit,
 ) {
     val font = plusJakartaSansFontFamily()
+    val component = item.component
+    val color = component.uiColor()
+    val locked = item.alreadyTracked
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+            .clip(RoundedCornerShape(14.dp))
+            .background(AppColors.Surface)
+            .border(BorderStroke(1.dp, AppColors.Border), RoundedCornerShape(14.dp))
+            .clickable(enabled = !locked, onClick = onClick)
+            .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         IconBadge(
-            icon = component.icon,
-            foreground = component.color,
-            background = component.color.copy(alpha = 0.13f),
-            size = 36.dp,
+            icon = component.faIcon(),
+            foreground = color,
+            background = color.copy(alpha = 0.13f),
+            size = 38.dp,
             iconSize = 18.sp,
             corner = 10.dp,
         )
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = component.label,
-                color = AppColors.TextPrimary,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = font,
-            )
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    text = interval,
-                    color = AppColors.TextMuted,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
+                    text = component.label,
+                    color = AppColors.TextPrimary,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
                     fontFamily = font,
                 )
-                if (outOfSubtype) {
-                    Text(
-                        text = "· bukan tipikal $subLabel",
-                        color = AppColors.Warning,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = font,
-                    )
-                }
+                TagChip(tag = component.tag)
             }
+            Text(
+                text = if (locked) "Sudah dipantau" else component.intervalLabelFor(vehicleType),
+                color = if (locked) AppColors.Primary else AppColors.TextMuted,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                fontFamily = if (locked) font else FontFamily.Monospace,
+            )
         }
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
-                .background(AppColors.PrimarySoft),
-            contentAlignment = Alignment.Center,
-        ) {
-            FaIcon(icon = FaIcons.PLUS, color = AppColors.Primary, size = 14.sp)
+        if (locked) {
+            FaIcon(icon = FaIcons.CHECK, color = AppColors.Primary, size = 14.sp)
+        } else {
+            Box(
+                modifier = Modifier.size(32.dp).clip(CircleShape).background(AppColors.PrimarySoft),
+                contentAlignment = Alignment.Center,
+            ) {
+                FaIcon(icon = FaIcons.PLUS, color = AppColors.Primary, size = 14.sp)
+            }
         }
     }
 }
 
 @Composable
-private fun EmptyResults(query: String, onAddNew: () -> Unit) {
+private fun CustomPromptRow(query: String, onAdd: () -> Unit) {
     val font = plusJakartaSansFontFamily()
-    Column(
+    Row(
         modifier = Modifier
             .padding(horizontal = 16.dp)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(AppColors.Surface)
-            .border(BorderStroke(1.dp, AppColors.Border), RoundedCornerShape(16.dp))
-            .padding(18.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .border(BorderStroke(1.dp, AppColors.Border), RoundedCornerShape(14.dp))
+            .clickable(onClick = onAdd)
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(
-            text = "Tidak ada hasil untuk \"$query\"",
-            color = AppColors.TextMuted,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
-            fontFamily = font,
-        )
-        Row(
-            modifier = Modifier
-                .clip(CircleShape)
-                .background(AppColors.Primary)
-                .clickable(onClick = onAddNew)
-                .padding(horizontal = 18.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        Box(
+            modifier = Modifier.size(32.dp).clip(CircleShape).background(AppColors.Primary),
+            contentAlignment = Alignment.Center,
         ) {
             FaIcon(icon = FaIcons.PLUS, color = Color.White, size = 14.sp)
-            Text(
-                text = "Tambahkan \"$query\" sebagai baru",
-                color = Color.White,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = font,
-            )
         }
+        Text(
+            text = "Tambahkan \"$query\" sebagai komponen baru",
+            color = AppColors.TextPrimary,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = font,
+        )
+    }
+}
+
+@Composable
+private fun TagChip(tag: ComponentTag) {
+    val font = plusJakartaSansFontFamily()
+    val (fg, bg) = when (tag) {
+        ComponentTag.Core -> AppColors.Primary to AppColors.PrimarySoft
+        ComponentTag.Plus -> AppColors.Warning to AppColors.WarningSoft
+        ComponentTag.Pro -> AppColors.TextMuted to AppColors.SurfaceAlt
+    }
+    Box(
+        modifier = Modifier.clip(CircleShape).background(bg).padding(horizontal = 7.dp, vertical = 2.dp),
+    ) {
+        Text(
+            text = tag.label().uppercase(),
+            color = fg,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = 0.5.sp,
+            fontFamily = font,
+        )
     }
 }
 
@@ -378,17 +332,17 @@ private fun FreeformHint() {
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        FaIcon(icon = FaIcons.PEN, color = AppColors.TextMuted, size = 14.sp)
+        FaIcon(icon = FaIcons.LIGHTBULB, color = AppColors.TextMuted, size = 14.sp)
         Column {
             Text(
-                text = "Tidak ketemu?",
+                text = "Pilih satu untuk atur interval",
                 color = AppColors.TextPrimary,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = font,
             )
             Text(
-                text = "Ketik nama komponen apapun di kolom pencarian — kamu bisa atur intervalnya sendiri.",
+                text = "Tiap komponen bisa kamu atur interval km / bulannya sebelum dipantau.",
                 color = AppColors.TextMuted,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,

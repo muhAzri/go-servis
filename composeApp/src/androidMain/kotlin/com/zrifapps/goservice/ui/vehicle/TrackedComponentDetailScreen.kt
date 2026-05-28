@@ -9,14 +9,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -26,6 +26,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,38 +41,49 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zrifapps.goservice.feature.component.domain.model.Component
+import com.zrifapps.goservice.feature.component.domain.model.TrackedComponent
+import com.zrifapps.goservice.feature.component.presentation.TrackedComponentDetailViewModel
 import com.zrifapps.goservice.ui.components.AppButton
 import com.zrifapps.goservice.ui.components.CircleIconButton
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
 import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
-import com.zrifapps.goservice.ui.vehicle.components.ComponentInfo
-import com.zrifapps.goservice.ui.vehicle.components.ComponentsCatalog
-
-private enum class IntervalMode { Preset, Custom }
-private enum class IntervalUnit { Km, Bulan, Keduanya }
+import com.zrifapps.goservice.ui.vehicle.components.faIcon
+import com.zrifapps.goservice.ui.vehicle.components.uiColor
+import org.koin.androidx.compose.koinViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
-fun ComponentDetailScreen(
-    componentId: String,
+fun TrackedComponentDetailScreen(
+    trackedId: String,
     onBack: () -> Unit,
-    onSave: () -> Unit,
-    onStopMonitoring: () -> Unit,
+    onStopped: () -> Unit,
     onLogServiceForComponent: () -> Unit = {},
     onCreateReminderForComponent: () -> Unit = {},
-    vehicleType: String = "motor",
+    vm: TrackedComponentDetailViewModel = koinViewModel(),
 ) {
-    val component: ComponentInfo = remember(componentId) {
-        ComponentsCatalog.byId(componentId) ?: ComponentsCatalog.all.first()
+    val state by vm.state.collectAsStateWithLifecycle()
+    LaunchedEffect(trackedId) { vm.load(trackedId) }
+    DisposableEffect(vm) {
+        val cancellable = vm.observeEvents { event ->
+            when (event) {
+                is TrackedComponentDetailViewModel.Event.Saved -> Unit
+                is TrackedComponentDetailViewModel.Event.Stopped -> onStopped()
+                is TrackedComponentDetailViewModel.Event.Failed -> Unit
+            }
+        }
+        onDispose { cancellable.cancel() }
     }
-    val intervalStr = component.intervalFor(vehicleType)
 
-    var mode by remember { mutableStateOf(IntervalMode.Preset) }
-    var unit by remember { mutableStateOf(IntervalUnit.Km) }
-    var kmVal by remember { mutableStateOf(2000) }
-    var monthVal by remember { mutableStateOf(2) }
     var showStopDialog by remember { mutableStateOf(false) }
+
+    val tracked = state.tracked
+    val catalog = state.catalog
 
     Column(
         modifier = Modifier
@@ -85,28 +98,35 @@ fun ComponentDetailScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
         ) {
-            HeroCard(component = component)
+            if (tracked == null) {
+                Spacer(Modifier.height(20.dp))
+                Text(
+                    text = if (state.isLoading) "Memuat…" else "Komponen tidak ditemukan",
+                    color = AppColors.TextMuted,
+                    fontSize = 13.sp,
+                )
+                return@Column
+            }
+            HeroCard(tracked = tracked, catalog = catalog)
             Spacer(Modifier.height(16.dp))
             SectionLabel("Interval pengingat")
             ModeSelector(
-                mode = mode,
-                presetSub = intervalStr,
-                onSelect = { mode = it },
+                mode = state.mode,
+                presetSub = catalog?.let { presetIntervalLabel(tracked, it) } ?: "—",
+                onSelect = vm::setMode,
             )
-            if (mode == IntervalMode.Custom) {
+            if (state.mode == TrackedComponentDetailViewModel.IntervalMode.Custom) {
                 Spacer(Modifier.height(8.dp))
                 CustomIntervalCard(
-                    unit = unit,
-                    kmVal = kmVal,
-                    monthVal = monthVal,
-                    onUnit = { unit = it },
-                    onKm = { kmVal = it },
-                    onMonth = { monthVal = it },
+                    kmVal = state.customKmOverride,
+                    monthVal = state.customDaysOverride?.let { it / 30 },
+                    onKm = vm::setCustomKm,
+                    onMonth = { months -> vm.setCustomDays(months?.let { it * 30 }) },
                 )
             }
             Spacer(Modifier.height(16.dp))
             SectionLabel("Terakhir diservis")
-            LastServiceCard()
+            LastServiceCard(tracked = tracked)
             Spacer(Modifier.height(20.dp))
             ComponentCtaSection(
                 onLogService = onLogServiceForComponent,
@@ -122,21 +142,24 @@ fun ComponentDetailScreen(
                 .background(AppColors.Surface)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
         ) {
-            AppButton(text = "Simpan perubahan", onClick = onSave)
+            AppButton(
+                text = if (state.isSaving) "Menyimpan…" else "Simpan perubahan",
+                onClick = vm::save,
+            )
         }
     }
 
     if (showStopDialog) {
         AlertDialog(
             onDismissRequest = { showStopDialog = false },
-            title = { Text(text = "Berhenti pantau ${component.label}?") },
+            title = { Text(text = "Berhenti pantau ${catalog?.label ?: "komponen"}?") },
             text = {
                 Text(text = "Pengingat untuk komponen ini akan dimatikan. Kamu masih bisa mengaktifkannya lagi nanti.")
             },
             confirmButton = {
                 TextButton(onClick = {
                     showStopDialog = false
-                    onStopMonitoring()
+                    vm.stopMonitoring()
                 }) {
                     Text(text = "Berhenti pantau", color = AppColors.Danger)
                 }
@@ -171,18 +194,22 @@ private fun TopBar(onBack: () -> Unit) {
 }
 
 @Composable
-private fun HeroCard(component: ComponentInfo) {
+private fun HeroCard(tracked: TrackedComponent, catalog: Component?) {
     val font = plusJakartaSansFontFamily()
+    val color = catalog?.uiColor() ?: AppColors.Primary
+    val icon = catalog?.faIcon() ?: FaIcons.WRENCH
+    val label = tracked.displayName(catalog)
+    val why = catalog?.why.orEmpty()
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
             .background(
                 Brush.linearGradient(
-                    listOf(component.color.copy(alpha = 0.13f), component.color.copy(alpha = 0.03f)),
+                    listOf(color.copy(alpha = 0.13f), color.copy(alpha = 0.03f)),
                 ),
             )
-            .border(BorderStroke(1.dp, component.color.copy(alpha = 0.2f)), RoundedCornerShape(20.dp))
+            .border(BorderStroke(1.dp, color.copy(alpha = 0.2f)), RoundedCornerShape(20.dp))
             .padding(18.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -191,10 +218,10 @@ private fun HeroCard(component: ComponentInfo) {
             modifier = Modifier
                 .size(56.dp)
                 .clip(RoundedCornerShape(14.dp))
-                .background(component.color.copy(alpha = 0.2f)),
+                .background(color.copy(alpha = 0.2f)),
             contentAlignment = Alignment.Center,
         ) {
-            FaIcon(icon = component.icon, color = component.color, size = 28.sp)
+            FaIcon(icon = icon, color = color, size = 28.sp)
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -206,21 +233,23 @@ private fun HeroCard(component: ComponentInfo) {
                 fontFamily = font,
             )
             Text(
-                text = component.label,
+                text = label,
                 color = AppColors.TextPrimary,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = (-0.3).sp,
                 fontFamily = font,
             )
-            Text(
-                text = component.why,
-                color = AppColors.TextMuted,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                fontFamily = font,
-                modifier = Modifier.padding(top = 2.dp),
-            )
+            if (why.isNotBlank()) {
+                Text(
+                    text = why,
+                    color = AppColors.TextMuted,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = font,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
         }
     }
 }
@@ -241,25 +270,25 @@ private fun SectionLabel(text: String) {
 
 @Composable
 private fun ModeSelector(
-    mode: IntervalMode,
+    mode: TrackedComponentDetailViewModel.IntervalMode,
     presetSub: String,
-    onSelect: (IntervalMode) -> Unit,
+    onSelect: (TrackedComponentDetailViewModel.IntervalMode) -> Unit,
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         ModeCard(
             label = "Pakai rekomendasi",
             sub = presetSub,
-            selected = mode == IntervalMode.Preset,
+            selected = mode == TrackedComponentDetailViewModel.IntervalMode.Preset,
             subMonospace = true,
-            onClick = { onSelect(IntervalMode.Preset) },
+            onClick = { onSelect(TrackedComponentDetailViewModel.IntervalMode.Preset) },
             modifier = Modifier.weight(1f),
         )
         ModeCard(
             label = "Atur sendiri",
-            sub = "KM atau tanggal",
-            selected = mode == IntervalMode.Custom,
+            sub = "KM atau bulan",
+            selected = mode == TrackedComponentDetailViewModel.IntervalMode.Custom,
             subMonospace = false,
-            onClick = { onSelect(IntervalMode.Custom) },
+            onClick = { onSelect(TrackedComponentDetailViewModel.IntervalMode.Custom) },
             modifier = Modifier.weight(1f),
         )
     }
@@ -305,12 +334,10 @@ private fun ModeCard(
 
 @Composable
 private fun CustomIntervalCard(
-    unit: IntervalUnit,
-    kmVal: Int,
-    monthVal: Int,
-    onUnit: (IntervalUnit) -> Unit,
-    onKm: (Int) -> Unit,
-    onMonth: (Int) -> Unit,
+    kmVal: Long?,
+    monthVal: Int?,
+    onKm: (Long?) -> Unit,
+    onMonth: (Int?) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -320,54 +347,24 @@ private fun CustomIntervalCard(
             .border(BorderStroke(1.dp, AppColors.Border), RoundedCornerShape(16.dp))
             .padding(14.dp),
     ) {
-        UnitTabs(unit = unit, onChange = onUnit)
-        if (unit == IntervalUnit.Km || unit == IntervalUnit.Keduanya) {
-            Spacer(Modifier.height(12.dp))
-            StepperField(
-                label = "Setiap KM",
-                valueText = "${formatThousands(kmVal)} km",
-                onMinus = { onKm(maxOf(500, kmVal - 500)) },
-                onPlus = { onKm(kmVal + 500) },
-            )
-        }
-        if (unit == IntervalUnit.Bulan || unit == IntervalUnit.Keduanya) {
-            Spacer(Modifier.height(12.dp))
-            StepperField(
-                label = "Setiap bulan",
-                valueText = "$monthVal bulan",
-                onMinus = { onMonth(maxOf(1, monthVal - 1)) },
-                onPlus = { onMonth(monthVal + 1) },
-            )
-        }
-    }
-}
-
-@Composable
-private fun UnitTabs(unit: IntervalUnit, onChange: (IntervalUnit) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        UnitTab("KM", unit == IntervalUnit.Km, { onChange(IntervalUnit.Km) }, Modifier.weight(1f))
-        UnitTab("Bulan", unit == IntervalUnit.Bulan, { onChange(IntervalUnit.Bulan) }, Modifier.weight(1f))
-        UnitTab("Keduanya", unit == IntervalUnit.Keduanya, { onChange(IntervalUnit.Keduanya) }, Modifier.weight(1f))
-    }
-}
-
-@Composable
-private fun UnitTab(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val font = plusJakartaSansFontFamily()
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
-            .background(if (selected) AppColors.Primary else AppColors.SurfaceAlt)
-            .clickable(onClick = onClick)
-            .padding(vertical = 8.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = label,
-            color = if (selected) Color.White else AppColors.TextPrimary,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = font,
+        StepperField(
+            label = "Setiap KM (kosongkan untuk tidak pakai)",
+            valueText = kmVal?.let { "${formatThousands(it.toInt())} km" } ?: "—",
+            onMinus = {
+                val next = ((kmVal ?: 0L) - 500L).coerceAtLeast(0L)
+                onKm(if (next == 0L) null else next)
+            },
+            onPlus = { onKm((kmVal ?: 0L) + 500L) },
+        )
+        Spacer(Modifier.height(12.dp))
+        StepperField(
+            label = "Setiap bulan (opsional)",
+            valueText = monthVal?.let { "$it bulan" } ?: "—",
+            onMinus = {
+                val next = ((monthVal ?: 0) - 1).coerceAtLeast(0)
+                onMonth(if (next == 0) null else next)
+            },
+            onPlus = { onMonth((monthVal ?: 0) + 1) },
         )
     }
 }
@@ -430,8 +427,10 @@ private fun StepperButton(symbol: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun LastServiceCard() {
+private fun LastServiceCard(tracked: TrackedComponent) {
     val font = plusJakartaSansFontFamily()
+    val dateLabel = tracked.lastServiceDate?.let { dateFormat.format(Date(it)) } ?: "belum tercatat"
+    val kmLabel = tracked.lastServiceOdometer?.kilometers?.let { "${formatThousands(it.toInt())} km" }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -440,55 +439,21 @@ private fun LastServiceCard() {
             .border(BorderStroke(1.dp, AppColors.Border), RoundedCornerShape(16.dp))
             .padding(14.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "20 Feb 2026",
-                    color = AppColors.TextPrimary,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = font,
-                )
-                Text(
-                    text = "pada 16.000 km · 2.420 km lalu",
-                    color = AppColors.TextMuted,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = FontFamily.Monospace,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(AppColors.SurfaceAlt)
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-            ) {
-                Text(
-                    text = "AHASS Kebon Jeruk",
-                    color = AppColors.TextPrimary,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = font,
-                )
-            }
-        }
-        Spacer(Modifier.height(12.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(AppColors.Border),
+        Text(
+            text = dateLabel,
+            color = AppColors.TextPrimary,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = font,
         )
-        Spacer(Modifier.height(12.dp))
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FaIcon(icon = FaIcons.BELL, color = AppColors.Primary, size = 12.sp)
+        if (kmLabel != null) {
             Text(
-                text = "Berikutnya: 20.420 km / 6 Juli 2026",
-                color = AppColors.TextPrimary,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                fontFamily = font,
+                text = "pada $kmLabel",
+                color = AppColors.TextMuted,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                fontFamily = FontFamily.Monospace,
+                modifier = Modifier.padding(top = 2.dp),
             )
         }
     }
@@ -510,10 +475,7 @@ private fun ComponentCtaSection(
                 .clickable(onClick = onLogService),
             contentAlignment = Alignment.Center,
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FaIcon(icon = FaIcons.PLUS, color = Color.White, size = 16.sp)
                 Text(
                     text = "Catat servis untuk komponen ini",
@@ -589,7 +551,19 @@ private fun StopMonitoringButton(onClick: () -> Unit) {
     }
 }
 
+private val dateFormat: SimpleDateFormat by lazy {
+    SimpleDateFormat("d MMM yyyy", Locale.forLanguageTag("id-ID"))
+}
+
+private fun presetIntervalLabel(tracked: TrackedComponent, catalog: Component): String {
+    val motor = catalog.intervalMotor?.displayLabel
+    val mobil = catalog.intervalMobil?.displayLabel
+    return listOfNotNull(motor, mobil).firstOrNull() ?: "—"
+}
+
 private fun formatThousands(value: Int): String {
-    val s = value.toString().reversed().chunked(3).joinToString(".").reversed()
-    return s
+    if (value == 0) return "0"
+    val abs = kotlin.math.abs(value).toString()
+    val grouped = abs.reversed().chunked(3).joinToString(".").reversed()
+    return if (value < 0) "-$grouped" else grouped
 }

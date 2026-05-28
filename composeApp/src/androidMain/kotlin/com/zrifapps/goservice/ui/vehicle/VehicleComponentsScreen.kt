@@ -9,12 +9,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -23,6 +23,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,33 +37,31 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zrifapps.goservice.feature.component.domain.model.ComponentUrgency
+import com.zrifapps.goservice.feature.component.presentation.VehicleComponentsViewModel
+import com.zrifapps.goservice.feature.vehicle.domain.model.Vehicle
+import com.zrifapps.goservice.feature.vehicle.domain.model.VehicleType
 import com.zrifapps.goservice.ui.components.CircleIconButton
 import com.zrifapps.goservice.ui.components.EmptyState
 import com.zrifapps.goservice.ui.components.FilterChipBar
 import com.zrifapps.goservice.ui.components.FilterChipItem
 import com.zrifapps.goservice.ui.components.IconBadge
-import com.zrifapps.goservice.ui.components.ReminderUrgency
 import com.zrifapps.goservice.ui.components.Skeleton
 import com.zrifapps.goservice.ui.components.SkeletonLeading
-import com.zrifapps.goservice.ui.components.StatusDot
-import com.zrifapps.goservice.ui.components.color
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
 import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
-import com.zrifapps.goservice.ui.vehicle.components.ComponentInfo
-import com.zrifapps.goservice.ui.vehicle.components.ComponentsCatalog
 import com.zrifapps.goservice.ui.vehicle.components.VehicleSubtypes
 import com.zrifapps.goservice.ui.vehicle.components.dashedBorder
-
-private const val DEFAULT_VEHICLE_TYPE = "motor"
-private const val DEFAULT_SUBTYPE = "matic"
-private const val VEHICLE_NAME = "Beat Hitam"
-private val accent = Color(0xFF2E8B57)
+import com.zrifapps.goservice.ui.vehicle.components.faIcon
+import com.zrifapps.goservice.ui.vehicle.components.intervalLabelFor
+import com.zrifapps.goservice.ui.vehicle.components.uiColor
+import org.koin.androidx.compose.koinViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 private enum class CompCategory(val id: String, val label: String) {
     All("all", "Semua"),
@@ -68,7 +71,7 @@ private enum class CompCategory(val id: String, val label: String) {
     Pendingin("pendingin", "Pendingin"),
 }
 
-private fun categoryOf(id: String): CompCategory = when (id) {
+private fun categoryOf(catalogId: String): CompCategory = when (catalogId) {
     "oli_mesin", "busi", "filter_udara", "filter_oli", "tune_up", "timing_belt", "vbelt", "roller" -> CompCategory.Mesin
     "aki" -> CompCategory.Kelistrikan
     "ban", "kampas_rem", "shock", "rantai", "kampas_kopling", "oli_kopling" -> CompCategory.KakiKaki
@@ -78,26 +81,33 @@ private fun categoryOf(id: String): CompCategory = when (id) {
 
 @Composable
 fun VehicleComponentsScreen(
+    vehicleId: String,
     onBack: () -> Unit,
-    onOpenComponent: (String) -> Unit,
+    onOpenTracked: (String) -> Unit,
+    onOpenCatalog: (String) -> Unit,
     onAdd: () -> Unit,
-    onChangeSubtype: () -> Unit = {},
-    vehicleType: String = DEFAULT_VEHICLE_TYPE,
-    subtype: String = DEFAULT_SUBTYPE,
-    isEmpty: Boolean = false,
-    isLoading: Boolean = false,
+    vm: VehicleComponentsViewModel = koinViewModel(),
 ) {
-    val allComponents = ComponentsCatalog.forSubtype(subtype)
-    val subLabel = VehicleSubtypes.labelOf(vehicleType, subtype)
-    val typeLabel = if (vehicleType == "mobil") "Mobil" else "Motor"
+    val state by vm.state.collectAsStateWithLifecycle()
+    LaunchedEffect(vehicleId) { vm.load(vehicleId) }
+
     var activeCategory by remember { mutableStateOf("all") }
 
-    val components = remember(allComponents, activeCategory) {
-        if (activeCategory == "all") allComponents
-        else allComponents.filter { categoryOf(it.id).id == activeCategory }
+    val vehicle = state.vehicle
+    val vehicleType = vehicle?.type ?: VehicleType.Motor
+    val vehicleLabel = vehicle?.displayTitle ?: "—"
+    val subtype = vehicle?.subtypeId?.takeIf { it.isNotBlank() && it != "*" }
+        ?: VehicleSubtypes.defaultFor(vehicleType.key)
+    val subLabel = VehicleSubtypes.labelOf(vehicleType.key, subtype)
+    val typeLabel = if (vehicleType == VehicleType.Mobil) "Mobil" else "Motor"
+
+    val items = state.items
+    val filteredItems = remember(items, activeCategory) {
+        if (activeCategory == "all") items
+        else items.filter { categoryOf(it.tracked.catalogComponentId).id == activeCategory }
     }
 
-    if (isLoading) {
+    if (state.isLoading) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -114,19 +124,24 @@ fun VehicleComponentsScreen(
         return
     }
 
-    if (isEmpty) {
+    if (state.isEmpty) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(AppColors.BgWarm)
                 .windowInsetsPadding(WindowInsets.statusBars),
         ) {
-            TopBar(title = "Komponen", subtitle = "$VEHICLE_NAME · belum ada komponen", onBack = onBack, onAdd = onAdd)
+            TopBar(
+                title = "Komponen",
+                subtitle = "$vehicleLabel · belum ada komponen",
+                onBack = onBack,
+                onAdd = onAdd,
+            )
             EmptyState(
                 modifier = Modifier.weight(1f),
                 icon = FaIcons.WRENCH,
                 title = "Belum ada komponen dipantau",
-                body = "Pilih komponen yang ingin kamu pantau usianya — kami pakai interval pabrikan.",
+                body = "Pilih dari rekomendasi sesuai $subLabel — atur intervalnya, lalu pantau.",
                 ctaLabel = "Pilih Komponen",
                 onCta = onAdd,
             )
@@ -135,11 +150,11 @@ fun VehicleComponentsScreen(
     }
 
     val chips = listOf(
-        FilterChipItem(id = "all",         label = "Semua",       count = allComponents.size),
-        FilterChipItem(id = "mesin",       label = "Mesin",       count = allComponents.count { categoryOf(it.id) == CompCategory.Mesin }),
-        FilterChipItem(id = "kelistrikan", label = "Kelistrikan", count = allComponents.count { categoryOf(it.id) == CompCategory.Kelistrikan }),
-        FilterChipItem(id = "kaki",        label = "Kaki-kaki",   count = allComponents.count { categoryOf(it.id) == CompCategory.KakiKaki }),
-        FilterChipItem(id = "pendingin",   label = "Pendingin",   count = allComponents.count { categoryOf(it.id) == CompCategory.Pendingin }),
+        FilterChipItem(id = "all",         label = "Semua",       count = items.size),
+        FilterChipItem(id = "mesin",       label = "Mesin",       count = items.count { categoryOf(it.tracked.catalogComponentId) == CompCategory.Mesin }),
+        FilterChipItem(id = "kelistrikan", label = "Kelistrikan", count = items.count { categoryOf(it.tracked.catalogComponentId) == CompCategory.Kelistrikan }),
+        FilterChipItem(id = "kaki",        label = "Kaki-kaki",   count = items.count { categoryOf(it.tracked.catalogComponentId) == CompCategory.KakiKaki }),
+        FilterChipItem(id = "pendingin",   label = "Pendingin",   count = items.count { categoryOf(it.tracked.catalogComponentId) == CompCategory.Pendingin }),
     ).filter { it.id == "all" || (it.count ?: 0) > 0 }
 
     Column(
@@ -151,14 +166,14 @@ fun VehicleComponentsScreen(
     ) {
         TopBar(
             title = "Komponen",
-            subtitle = "$VEHICLE_NAME · ${allComponents.size} dipantau",
+            subtitle = "$vehicleLabel · ${items.size} dipantau",
             onBack = onBack,
             onAdd = onAdd,
         )
         SubtypeBanner(
             subLabel = subLabel,
             typeLabel = typeLabel,
-            onChange = onChangeSubtype,
+            vehicleType = vehicleType,
         )
         Spacer(Modifier.height(12.dp))
         FilterChipBar(
@@ -167,10 +182,11 @@ fun VehicleComponentsScreen(
             onSelect = { activeCategory = it },
         )
         Spacer(Modifier.height(8.dp))
-        ComponentsList(
-            components = components,
+        TrackedComponentsList(
+            items = filteredItems,
             vehicleType = vehicleType,
-            onOpenComponent = onOpenComponent,
+            onOpenTracked = onOpenTracked,
+            onOpenCatalog = onOpenCatalog,
         )
         Spacer(Modifier.height(12.dp))
         AddRow(onAdd = onAdd)
@@ -205,22 +221,20 @@ private fun TopBar(title: String, subtitle: String, onBack: () -> Unit, onAdd: (
                 fontFamily = font,
             )
         }
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(AppColors.Primary)
-                .clickable(onClick = onAdd),
-            contentAlignment = Alignment.Center,
-        ) {
-            FaIcon(icon = FaIcons.PLUS, color = Color.White, size = 16.sp)
-        }
+        CircleIconButton(
+            icon = FaIcons.PLUS,
+            onClick = onAdd,
+            iconColor = AppColors.Primary,
+        )
     }
 }
 
+private val accent = Color(0xFF2E8B57)
+
 @Composable
-private fun SubtypeBanner(subLabel: String, typeLabel: String, onChange: () -> Unit) {
+private fun SubtypeBanner(subLabel: String, typeLabel: String, vehicleType: VehicleType) {
     val font = plusJakartaSansFontFamily()
+    val icon = if (vehicleType == VehicleType.Mobil) FaIcons.CAR else FaIcons.MOTORCYCLE
     Row(
         modifier = Modifier
             .padding(horizontal = 16.dp)
@@ -243,7 +257,7 @@ private fun SubtypeBanner(subLabel: String, typeLabel: String, onChange: () -> U
                 .background(accent.copy(alpha = 0.13f)),
             contentAlignment = Alignment.Center,
         ) {
-            FaIcon(icon = FaIcons.MOTORCYCLE, color = accent, size = 22.sp)
+            FaIcon(icon = icon, color = accent, size = 22.sp)
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -262,30 +276,15 @@ private fun SubtypeBanner(subLabel: String, typeLabel: String, onChange: () -> U
                 fontFamily = font,
             )
         }
-        Box(
-            modifier = Modifier
-                .clip(CircleShape)
-                .background(AppColors.Surface)
-                .border(BorderStroke(1.dp, AppColors.Border), CircleShape)
-                .clickable(onClick = onChange)
-                .padding(horizontal = 14.dp, vertical = 8.dp),
-        ) {
-            Text(
-                text = "Ubah",
-                color = AppColors.TextPrimary,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = font,
-            )
-        }
     }
 }
 
 @Composable
-private fun ComponentsList(
-    components: List<ComponentInfo>,
-    vehicleType: String,
-    onOpenComponent: (String) -> Unit,
+private fun TrackedComponentsList(
+    items: List<VehicleComponentsViewModel.TrackedItem>,
+    vehicleType: VehicleType,
+    onOpenTracked: (String) -> Unit,
+    onOpenCatalog: (String) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -295,7 +294,7 @@ private fun ComponentsList(
             .background(AppColors.Surface)
             .border(BorderStroke(1.dp, AppColors.Border), RoundedCornerShape(16.dp)),
     ) {
-        components.forEachIndexed { index, c ->
+        items.forEachIndexed { index, item ->
             if (index > 0) {
                 Box(
                     modifier = Modifier
@@ -305,11 +304,13 @@ private fun ComponentsList(
                 )
             }
             ComponentRow(
-                component = c,
-                interval = c.intervalFor(vehicleType),
-                last = lastServiceFor(c.id),
-                urgency = if (c.id == "oli_mesin") ReminderUrgency.Overdue else ReminderUrgency.Ok,
-                onClick = { onOpenComponent(c.id) },
+                item = item,
+                vehicleType = vehicleType,
+                onClick = {
+                    val trackedId = item.tracked.id
+                    if (trackedId.isNotBlank()) onOpenTracked(trackedId)
+                    else onOpenCatalog(item.tracked.catalogComponentId)
+                },
             )
         }
     }
@@ -317,13 +318,21 @@ private fun ComponentsList(
 
 @Composable
 private fun ComponentRow(
-    component: ComponentInfo,
-    interval: String,
-    last: String,
-    urgency: ReminderUrgency,
+    item: VehicleComponentsViewModel.TrackedItem,
+    vehicleType: VehicleType,
     onClick: () -> Unit,
 ) {
     val font = plusJakartaSansFontFamily()
+    val catalog = item.catalog
+    val icon = catalog?.faIcon() ?: FaIcons.WRENCH
+    val color = catalog?.uiColor() ?: AppColors.TextMuted
+    val intervalLabel = item.tracked.intervalKmOverride?.let { km -> "${formatThousands(km.toInt())} km" }
+        ?: catalog?.intervalLabelFor(vehicleType)
+        ?: "—"
+    val lastLabel = formatLastService(
+        date = item.tracked.lastServiceDate,
+        km = item.tracked.lastServiceOdometer?.kilometers,
+    )
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -333,9 +342,9 @@ private fun ComponentRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         IconBadge(
-            icon = component.icon,
-            foreground = component.color,
-            background = component.color.copy(alpha = 0.13f),
+            icon = icon,
+            foreground = color,
+            background = color.copy(alpha = 0.13f),
             size = 38.dp,
             iconSize = 20.sp,
             corner = 10.dp,
@@ -343,18 +352,18 @@ private fun ComponentRow(
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    text = component.label,
+                    text = item.displayName,
                     color = AppColors.TextPrimary,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = font,
                 )
-                if (urgency == ReminderUrgency.Overdue) {
-                    Box(Modifier.size(8.dp).clip(CircleShape).background(urgency.color()))
+                if (item.urgency == ComponentUrgency.Overdue) {
+                    Box(Modifier.size(8.dp).clip(CircleShape).background(AppColors.Danger))
                 }
             }
             Text(
-                text = "Terakhir: $last",
+                text = "Terakhir: $lastLabel",
                 color = AppColors.TextMuted,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
@@ -371,7 +380,7 @@ private fun ComponentRow(
                 fontFamily = font,
             )
             Text(
-                text = interval,
+                text = intervalLabel,
                 color = AppColors.TextPrimary,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -416,7 +425,7 @@ private fun AddRow(onAdd: () -> Unit) {
                 fontFamily = font,
             )
             Text(
-                text = "Dari katalog atau ketik sendiri",
+                text = "Dari rekomendasi atau ketik sendiri",
                 color = AppColors.TextMuted,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
@@ -427,14 +436,21 @@ private fun AddRow(onAdd: () -> Unit) {
     }
 }
 
-private fun lastServiceFor(id: String): String = when (id) {
-    "oli_mesin"    -> "2.420 km lalu · 20 Feb 2026"
-    "kampas_rem"   -> "belum tercatat"
-    "ban"          -> "4.200 km lalu"
-    "busi"         -> "4.600 km lalu"
-    "aki"          -> "8 bulan lalu"
-    "vbelt"        -> "belum tercatat"
-    "rantai"       -> "1.200 km lalu"
-    "filter_udara" -> "4.500 km lalu"
-    else -> "belum tercatat"
+private val dateFormat: SimpleDateFormat by lazy {
+    SimpleDateFormat("d MMM yyyy", Locale.forLanguageTag("id-ID"))
+}
+
+private fun formatLastService(date: Long?, km: Long?): String {
+    if (date == null && km == null) return "belum tercatat"
+    val parts = mutableListOf<String>()
+    km?.let { parts.add("${formatThousands(it.toInt())} km") }
+    date?.let { parts.add(dateFormat.format(Date(it))) }
+    return parts.joinToString(" · ")
+}
+
+private fun formatThousands(value: Int): String {
+    if (value == 0) return "0"
+    val abs = kotlin.math.abs(value).toString()
+    val grouped = abs.reversed().chunked(3).joinToString(".").reversed()
+    return if (value < 0) "-$grouped" else grouped
 }
