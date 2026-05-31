@@ -3,6 +3,7 @@ package com.zrifapps.goservice.core.di
 import com.zrifapps.goservice.core.notification.ReminderNotificationPlanner
 import com.zrifapps.goservice.core.notification.ReminderNotificationScheduler
 import com.zrifapps.goservice.core.notification.notificationModule
+import com.zrifapps.goservice.feature.backup.di.backupModule
 import com.zrifapps.goservice.feature.component.data.seed.ComponentCatalogSeeder
 import com.zrifapps.goservice.feature.component.di.componentModule
 import com.zrifapps.goservice.feature.onboarding.di.onboardingModule
@@ -34,6 +35,7 @@ val appModules = listOf(
     onboardingModule,
     settingsModule,
     notificationModule,
+    backupModule,
 )
 
 fun startAppKoin(extra: KoinApplication.() -> Unit = {}) = startKoin {
