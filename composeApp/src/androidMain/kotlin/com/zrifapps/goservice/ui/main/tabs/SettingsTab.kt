@@ -44,6 +44,14 @@ import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
 import org.koin.androidx.compose.koinViewModel
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import com.zrifapps.goservice.feature.backup.presentation.BackupViewModel
+import com.zrifapps.goservice.ui.main.sheets.readTextFromUri
+import kotlinx.coroutines.launch
 
 private data class SettingItem(
     val icon: String,
@@ -73,11 +81,35 @@ fun SettingsTab(
     vehicleVm: VehicleListViewModel = koinViewModel(),
     serviceVm: ServiceHistoryViewModel = koinViewModel(),
     settingsVm: SettingsViewModel = koinViewModel(),
+    backupVm: BackupViewModel = koinViewModel(),
 ) {
     val profileState by profileVm.state.collectAsStateWithLifecycle()
     val vehicleState by vehicleVm.state.collectAsStateWithLifecycle()
     val serviceState by serviceVm.state.collectAsStateWithLifecycle()
     val settingsState by settingsVm.state.collectAsStateWithLifecycle()
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val text = readTextFromUri(context, uri)
+                val message = if (text == null) {
+                    "Gagal membaca file"
+                } else {
+                    val result = backupVm.importCsv(text)
+                    if (result.malformed) {
+                        "File CSV tidak dikenali"
+                    } else {
+                        "Impor selesai: ${result.imported} ditambah · ${result.skipped} dilewati"
+                    }
+                }
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     val displayName = profileState.displayName
     val userColor = remember(profileState.avatarColorHex) {
@@ -97,6 +129,11 @@ fun SettingsTab(
                     icon = FaIcons.FILE,
                     label = "Ekspor Data (CSV)",
                     onClick = { showExportSheet = true },
+                ),
+                SettingItem(
+                    icon = FaIcons.FILE,
+                    label = "Impor Data (CSV)",
+                    onClick = { importLauncher.launch(arrayOf("*/*")) },
                 ),
                 SettingItem(
                     icon = FaIcons.TRASH,

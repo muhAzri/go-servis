@@ -33,15 +33,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zrifapps.goservice.feature.backup.presentation.BackupViewModel
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
 import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 private data class ExportSection(val id: String, val label: String)
 
@@ -57,21 +61,21 @@ private val exportRanges = listOf(
     "month" to "Bulan ini",
     "3m" to "3 bulan",
     "1y" to "1 tahun",
-    "custom" to "Custom",
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExportCsvSheet(
     onDismiss: () -> Unit,
-    onShare: () -> Unit,
-    vehicleCount: Int = 4,
-    serviceCount: Int = 12,
-    reminderCount: Int = 6,
+    onShare: () -> Unit = {},
+    vm: BackupViewModel = koinViewModel(),
 ) {
     val font = plusJakartaSansFontFamily()
+    val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
+    val state by vm.state.collectAsStateWithLifecycle()
+    val counts = state.counts
 
     var selectedSections by remember {
         mutableStateOf(exportSections.map { it.id }.toSet())
@@ -108,7 +112,7 @@ fun ExportCsvSheet(
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "$vehicleCount kendaraan · $serviceCount servis · $reminderCount pengingat",
+                text = "${counts.vehicles} kendaraan · ${counts.services} servis · ${counts.reminders} pengingat",
                 color = AppColors.TextMuted,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
@@ -143,13 +147,16 @@ fun ExportCsvSheet(
             Spacer(Modifier.height(18.dp))
             SectionLabel("File preview")
             Spacer(Modifier.height(8.dp))
-            FilePreviewRow(filename = "servisgo-2026-05.csv", meta = "~14 KB · CSV")
+            FilePreviewRow(filename = "servisgo-backup-….csv", meta = "Format CSV (.csv)")
 
             Spacer(Modifier.height(20.dp))
 
             Button(
                 onClick = {
-                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                    scope.launch {
+                        val export = vm.export(selectedSections, selectedRange)
+                        shareCsvFile(context, export.filename, export.content)
+                        sheetState.hide()
                         onShare()
                         onDismiss()
                     }
