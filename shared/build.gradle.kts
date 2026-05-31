@@ -38,6 +38,7 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(libs.koin.android)
+            implementation(libs.androidx.work.runtime)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
