@@ -13,7 +13,7 @@ import com.zrifapps.goservice.feature.component.domain.model.TrackedComponentDra
 import com.zrifapps.goservice.feature.component.domain.repository.ComponentCatalogRepository
 import com.zrifapps.goservice.feature.component.domain.usecase.GetCatalogComponent
 import com.zrifapps.goservice.feature.component.domain.usecase.ObserveTrackedComponents
-import com.zrifapps.goservice.feature.component.domain.usecase.TrackComponent
+import com.zrifapps.goservice.feature.component.domain.usecase.TrackComponentWithReminder
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +27,7 @@ import kotlinx.coroutines.launch
 class ComponentInfoViewModel(
     private val getCatalogComponent: GetCatalogComponent,
     private val observeTrackedComponents: ObserveTrackedComponents,
-    private val trackComponent: TrackComponent,
+    private val trackComponent: TrackComponentWithReminder,
     private val catalogRepository: ComponentCatalogRepository,
     private val clock: AppClock,
 ) : ViewModel() {

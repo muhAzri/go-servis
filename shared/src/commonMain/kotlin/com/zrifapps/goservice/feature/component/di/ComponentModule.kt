@@ -13,7 +13,9 @@ import com.zrifapps.goservice.feature.component.domain.usecase.ObserveComponentC
 import com.zrifapps.goservice.feature.component.domain.usecase.ObserveComponentCatalogAll
 import com.zrifapps.goservice.feature.component.domain.usecase.ObserveTrackedComponent
 import com.zrifapps.goservice.feature.component.domain.usecase.ObserveTrackedComponents
+import com.zrifapps.goservice.feature.component.domain.usecase.ResolveComponentServiceCycle
 import com.zrifapps.goservice.feature.component.domain.usecase.TrackComponent
+import com.zrifapps.goservice.feature.component.domain.usecase.TrackComponentWithReminder
 import com.zrifapps.goservice.feature.component.domain.usecase.UntrackComponent
 import com.zrifapps.goservice.feature.component.domain.usecase.UpdateTrackedComponent
 import com.zrifapps.goservice.feature.component.presentation.AddTrackedComponentViewModel
@@ -34,6 +36,8 @@ val componentModule = module {
     factory { ObserveComponentCatalogAll(get()) }
     factory { GetCatalogComponent(get()) }
     factory { TrackComponent(get()) }
+    factory { TrackComponentWithReminder(get(), get(), get(), get(), get()) }
+    factory { ResolveComponentServiceCycle(get(), get(), get(), get(), get(), get()) }
     factory { UntrackComponent(get()) }
     factory { ObserveTrackedComponents(get()) }
     factory { ObserveTrackedComponent(get()) }
