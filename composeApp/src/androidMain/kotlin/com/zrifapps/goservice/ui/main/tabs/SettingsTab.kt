@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zrifapps.goservice.feature.profile.presentation.ProfileViewModel
 import com.zrifapps.goservice.feature.service.presentation.ServiceHistoryViewModel
+import com.zrifapps.goservice.feature.settings.presentation.SettingsViewModel
 import com.zrifapps.goservice.feature.vehicle.presentation.VehicleListViewModel
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
@@ -66,16 +67,17 @@ fun SettingsTab(
     onOpenTerms: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
     onOpenHelp: () -> Unit = {},
-    onOpenTestScreen: () -> Unit = {},
     onOpenEditProfile: () -> Unit = {},
     onOpenNotifSheet: () -> Unit = {},
     profileVm: ProfileViewModel = koinViewModel(),
     vehicleVm: VehicleListViewModel = koinViewModel(),
     serviceVm: ServiceHistoryViewModel = koinViewModel(),
+    settingsVm: SettingsViewModel = koinViewModel(),
 ) {
     val profileState by profileVm.state.collectAsStateWithLifecycle()
     val vehicleState by vehicleVm.state.collectAsStateWithLifecycle()
     val serviceState by serviceVm.state.collectAsStateWithLifecycle()
+    val settingsState by settingsVm.state.collectAsStateWithLifecycle()
 
     val displayName = profileState.displayName
     val userColor = remember(profileState.avatarColorHex) {
@@ -84,7 +86,6 @@ fun SettingsTab(
     val vehicleCount = vehicleState.vehicles.size
     val serviceCount = serviceState.records.size
 
-    var notifPengingatOn by remember { mutableStateOf(true) }
     var showExportSheet by remember { mutableStateOf(false) }
     var showWipeDialog by remember { mutableStateOf(false) }
 
@@ -111,8 +112,8 @@ fun SettingsTab(
                 SettingItem(
                     icon = FaIcons.BELL,
                     label = "Pengingat servis",
-                    toggleState = notifPengingatOn,
-                    onToggle = { notifPengingatOn = it },
+                    toggleState = settingsState.serviceReminderNotificationsEnabled,
+                    onToggle = { settingsVm.setServiceReminderNotificationsEnabled(it) },
                 ),
             ),
         ),

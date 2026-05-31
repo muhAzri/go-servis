@@ -6,14 +6,13 @@ struct SettingsView: View {
     var onOpenTerms: () -> Void = {}
     var onOpenAbout: () -> Void = {}
     var onOpenHelp: () -> Void = {}
-    var onOpenTestScreen: () -> Void = {}
     var onOpenEditProfile: () -> Void = {}
 
     @ObservedObject private var profile = ProfileModel.shared
     @ObservedObject private var vehicles = VehicleListModel.shared
     @ObservedObject private var services = ServiceHistoryModel.shared
+    @ObservedObject private var settings = SettingsModel.shared
 
-    @State private var notifPengingatOn = true
     @State private var showExportSheet = false
     @State private var showWipeFlow = false
 
@@ -59,7 +58,10 @@ struct SettingsView: View {
                     ToggleRow(
                         icon: "\u{f0f3}",
                         label: "Pengingat servis",
-                        isOn: $notifPengingatOn
+                        isOn: Binding(
+                            get: { settings.state.serviceReminderNotificationsEnabled },
+                            set: { settings.setServiceReminderNotificationsEnabled($0) }
+                        )
                     )
                 }
 

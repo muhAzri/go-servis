@@ -72,3 +72,25 @@ final class ProfileModel: ObservableObject {
         }
     }
 }
+
+@MainActor
+final class SettingsModel: ObservableObject {
+    static let shared = SettingsModel()
+
+    @Published private(set) var state: SettingsViewModel.UiState
+
+    let vm: SettingsViewModel
+    private var cancellable: Cancellable?
+
+    private init() {
+        vm = PresentationFactory.shared.settingsViewModel()
+        state = vm.state.value as! SettingsViewModel.UiState
+        cancellable = vm.observeState { [weak self] newState in
+            DispatchQueue.main.async { self?.state = newState }
+        }
+    }
+
+    func setServiceReminderNotificationsEnabled(_ enabled: Bool) {
+        vm.setServiceReminderNotificationsEnabled(enabled: enabled)
+    }
+}

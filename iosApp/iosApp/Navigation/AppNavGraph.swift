@@ -56,8 +56,6 @@ struct AppNavGraph: View {
             AddVehicleView(
                 onSaved: { router.navigateBack() }
             )
-        case .test:
-            TestView()
         case .privacy:
             PrivacyView(onBack: { router.navigateBack() })
         case .terms:

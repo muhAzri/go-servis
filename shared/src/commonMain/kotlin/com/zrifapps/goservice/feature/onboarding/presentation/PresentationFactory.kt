@@ -15,6 +15,7 @@ import com.zrifapps.goservice.feature.service.presentation.AddServiceViewModel
 import com.zrifapps.goservice.feature.service.presentation.EditServiceViewModel
 import com.zrifapps.goservice.feature.service.presentation.ServiceDetailViewModel
 import com.zrifapps.goservice.feature.service.presentation.ServiceHistoryViewModel
+import com.zrifapps.goservice.feature.settings.presentation.SettingsViewModel
 import com.zrifapps.goservice.feature.vehicle.domain.model.Vehicle
 import com.zrifapps.goservice.feature.vehicle.domain.model.VehicleType
 import com.zrifapps.goservice.feature.vehicle.presentation.AddVehicleViewModel
@@ -46,6 +47,7 @@ object PresentationFactory {
     fun trackedComponentDetailViewModel(): TrackedComponentDetailViewModel = KoinPlatform.getKoin().get()
     fun addTrackedComponentViewModel(): AddTrackedComponentViewModel = KoinPlatform.getKoin().get()
     fun componentInfoViewModel(): ComponentInfoViewModel = KoinPlatform.getKoin().get()
+    fun settingsViewModel(): SettingsViewModel = KoinPlatform.getKoin().get()
 
     fun vehicleColorHex(vehicle: Vehicle): String = vehicle.color.value
     fun profileAvatarHex(profile: Profile): String = profile.avatarColor.value

@@ -44,7 +44,6 @@ struct MainTabsView: View {
                         onOpenTerms: { router.navigate(to: .terms) },
                         onOpenAbout: { router.navigate(to: .about) },
                         onOpenHelp: { router.navigate(to: .help) },
-                        onOpenTestScreen: { router.navigate(to: .test) },
                         onOpenEditProfile: { router.navigate(to: .editProfile) }
                     )
                 }

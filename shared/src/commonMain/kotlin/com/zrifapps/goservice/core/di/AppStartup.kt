@@ -6,6 +6,7 @@ import com.zrifapps.goservice.feature.onboarding.di.onboardingModule
 import com.zrifapps.goservice.feature.profile.di.profileModule
 import com.zrifapps.goservice.feature.reminder.di.reminderModule
 import com.zrifapps.goservice.feature.service.di.serviceModule
+import com.zrifapps.goservice.feature.settings.di.settingsModule
 import com.zrifapps.goservice.feature.vehicle.di.vehicleModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -22,6 +23,7 @@ val appModules = listOf(
     reminderModule,
     profileModule,
     onboardingModule,
+    settingsModule,
 )
 
 fun startAppKoin(extra: KoinApplication.() -> Unit = {}) = startKoin {

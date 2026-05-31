@@ -36,7 +36,6 @@ import com.zrifapps.goservice.ui.service.InterstitialAdScreen
 import com.zrifapps.goservice.ui.service.ServiceDetailScreen
 import com.zrifapps.goservice.ui.service.ServiceSavedScreen
 import com.zrifapps.goservice.ui.splash.SplashScreen
-import com.zrifapps.goservice.ui.test.TestScreen
 import com.zrifapps.goservice.ui.tips.TipsDetailScreen
 import com.zrifapps.goservice.ui.tips.TipsScreen
 import com.zrifapps.goservice.ui.vehicle.AddCustomComponentScreen
@@ -167,7 +166,6 @@ fun AppNavGraph() {
                 onOpenVehicleDetail = { navController.navigate(Screen.VehicleDetail()) },
                 onOpenServiceDetail = { recordId -> navController.navigate(Screen.ServiceDetail(recordId)) },
                 onOpenAddReminder = { navController.navigate(Screen.AddReminder()) },
-                onOpenTestScreen = { navController.navigate(Screen.Test) },
                 onOpenPrivacy = { navController.navigate(Screen.Privacy) },
                 onOpenTerms = { navController.navigate(Screen.Terms) },
                 onOpenAbout = { navController.navigate(Screen.About) },
@@ -181,13 +179,6 @@ fun AppNavGraph() {
             EditProfileScreen(
                 onBack = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() },
-            )
-        }
-
-        composable<Screen.Test> {
-            TestScreen(
-                onBack = { navController.popBackStack() },
-                onAddVehicle = { navController.navigate(Screen.AddVehicleForm) },
             )
         }
 

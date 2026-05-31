@@ -33,7 +33,6 @@ fun MainTabsScreen(
     onOpenVehicleDetail: () -> Unit = {},
     onOpenServiceDetail: (String) -> Unit = {},
     onOpenAddReminder: () -> Unit = {},
-    onOpenTestScreen: () -> Unit = {},
     onOpenPrivacy: () -> Unit = {},
     onOpenTerms: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
@@ -79,7 +78,6 @@ fun MainTabsScreen(
                     onOpenTerms = onOpenTerms,
                     onOpenAbout = onOpenAbout,
                     onOpenHelp = onOpenHelp,
-                    onOpenTestScreen = onOpenTestScreen,
                     onOpenEditProfile = onOpenEditProfile,
                 )
                 BottomTab.Add -> HomeTab(userName = userName)
