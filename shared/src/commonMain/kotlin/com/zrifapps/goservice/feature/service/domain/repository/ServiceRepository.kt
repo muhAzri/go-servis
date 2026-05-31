@@ -35,4 +35,7 @@ interface ServiceRepository {
     suspend fun softDelete(id: String): DomainResult<Unit>
 
     suspend fun refresh(): DomainResult<Unit>
+
+    /** Inserts service records whose id is not already present; returns count inserted. */
+    suspend fun importMissing(items: List<ServiceRecord>): Int
 }

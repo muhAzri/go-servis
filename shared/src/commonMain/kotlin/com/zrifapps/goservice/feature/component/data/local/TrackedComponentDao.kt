@@ -17,6 +17,15 @@ interface TrackedComponentDao {
     )
     fun observeForVehicle(vehicleId: String): Flow<List<TrackedComponentEntity>>
 
+    @Query(
+        """
+        SELECT * FROM tracked_components
+        WHERE sync_deleted_at IS NULL
+        ORDER BY created_at ASC
+        """
+    )
+    fun observeAll(): Flow<List<TrackedComponentEntity>>
+
     @Query("SELECT * FROM tracked_components WHERE id = :id AND sync_deleted_at IS NULL")
     fun observeOne(id: String): Flow<TrackedComponentEntity?>
 

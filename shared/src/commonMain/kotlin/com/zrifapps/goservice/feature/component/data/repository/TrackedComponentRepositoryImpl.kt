@@ -27,6 +27,9 @@ class TrackedComponentRepositoryImpl(
     override fun observeForVehicle(vehicleId: String): Flow<List<TrackedComponent>> =
         dao.observeForVehicle(vehicleId).map { list -> list.map { it.toDomain() } }
 
+    override fun observeAll(): Flow<List<TrackedComponent>> =
+        dao.observeAll().map { list -> list.map { it.toDomain() } }
+
     override fun observeOne(id: String): Flow<TrackedComponent?> =
         dao.observeOne(id).map { it?.toDomain() }
 
@@ -103,4 +106,15 @@ class TrackedComponentRepositoryImpl(
 
     override suspend fun refreshUrgency(vehicleId: String): DomainResult<Unit> =
         DomainResult.Success(Unit)
+
+    override suspend fun importMissing(items: List<TrackedComponent>): Int {
+        var inserted = 0
+        for (component in items) {
+            if (dao.getById(component.id) == null) {
+                dao.upsert(component.toEntity())
+                inserted++
+            }
+        }
+        return inserted
+    }
 }

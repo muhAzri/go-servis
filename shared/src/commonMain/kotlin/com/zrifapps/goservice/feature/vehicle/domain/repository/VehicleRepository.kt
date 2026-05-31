@@ -27,6 +27,9 @@ interface VehicleRepository {
     suspend fun softDelete(id: String): DomainResult<Unit>
 
     suspend fun refresh(): DomainResult<Unit>
+
+    /** Inserts vehicles whose id is not already present; returns count inserted. */
+    suspend fun importMissing(items: List<Vehicle>): Int
 }
 
 interface VehicleSubtypeRepository {

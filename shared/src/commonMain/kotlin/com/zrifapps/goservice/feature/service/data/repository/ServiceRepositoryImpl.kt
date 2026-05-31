@@ -103,6 +103,17 @@ class ServiceRepositoryImpl(
     }
 
     override suspend fun refresh(): DomainResult<Unit> = DomainResult.Success(Unit)
+
+    override suspend fun importMissing(items: List<ServiceRecord>): Int {
+        var inserted = 0
+        for (record in items) {
+            if (dao.getById(record.id) == null) {
+                dao.upsertWithComponents(record.toEntity(), record.componentIds)
+                inserted++
+            }
+        }
+        return inserted
+    }
 }
 
 private fun List<ServiceRecord>.applyFilter(filter: ServiceFilter): List<ServiceRecord> {

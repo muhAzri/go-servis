@@ -10,6 +10,8 @@ interface TrackedComponentRepository {
 
     fun observeForVehicle(vehicleId: String): Flow<List<TrackedComponent>>
 
+    fun observeAll(): Flow<List<TrackedComponent>>
+
     fun observeOne(id: String): Flow<TrackedComponent?>
 
     suspend fun getById(id: String): DomainResult<TrackedComponent>
@@ -27,4 +29,7 @@ interface TrackedComponentRepository {
     ): DomainResult<TrackedComponent>
 
     suspend fun refreshUrgency(vehicleId: String): DomainResult<Unit>
+
+    /** Inserts tracked components whose id is not already present; returns count inserted. */
+    suspend fun importMissing(items: List<TrackedComponent>): Int
 }

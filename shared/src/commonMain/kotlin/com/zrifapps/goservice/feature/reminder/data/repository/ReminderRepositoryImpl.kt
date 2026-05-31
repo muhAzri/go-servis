@@ -120,6 +120,17 @@ class ReminderRepositoryImpl(
     override suspend fun recomputeUrgency(): DomainResult<Unit> = DomainResult.Success(Unit)
 
     override suspend fun refresh(): DomainResult<Unit> = DomainResult.Success(Unit)
+
+    override suspend fun importMissing(items: List<Reminder>): Int {
+        var inserted = 0
+        for (reminder in items) {
+            if (dao.getById(reminder.id) == null) {
+                dao.upsert(reminder.toEntity())
+                inserted++
+            }
+        }
+        return inserted
+    }
 }
 
 private fun List<Reminder>.applyFilter(filter: ReminderFilter): List<Reminder> {

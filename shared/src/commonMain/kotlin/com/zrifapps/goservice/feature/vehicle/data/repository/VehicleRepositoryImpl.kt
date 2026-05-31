@@ -105,4 +105,15 @@ class VehicleRepositoryImpl(
     }
 
     override suspend fun refresh(): DomainResult<Unit> = DomainResult.Success(Unit)
+
+    override suspend fun importMissing(items: List<Vehicle>): Int {
+        var inserted = 0
+        for (vehicle in items) {
+            if (dao.getById(vehicle.id) == null) {
+                dao.upsert(vehicle.toEntity())
+                inserted++
+            }
+        }
+        return inserted
+    }
 }

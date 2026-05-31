@@ -35,4 +35,7 @@ interface ReminderRepository {
     suspend fun recomputeUrgency(): DomainResult<Unit>
 
     suspend fun refresh(): DomainResult<Unit>
+
+    /** Inserts reminders whose id is not already present; returns count inserted. */
+    suspend fun importMissing(items: List<Reminder>): Int
 }
