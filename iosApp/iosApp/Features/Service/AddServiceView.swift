@@ -1,4 +1,5 @@
 import SwiftUI
+import Shared
 
 enum AddServiceContext { case manual, fromReminder, fromComponent }
 
@@ -22,26 +23,23 @@ private let trackedComponents: [TrackedComponent] = [
 ]
 
 struct AddServiceView: View {
-    var onSaved: () -> Void = {}
-    var context: AddServiceContext = .manual
+    var onSaved: (String) -> Void = { _ in }
+    var vehicleId: String? = nil
+    var sourceReminderId: String? = nil
+    var trackedComponentId: String? = nil
 
-    @State private var selectedVehicle: VehicleOption = VehicleOptions.defaults[0]
-    @State private var selectedService: String = "oli"
-    @State private var serviceDate: Date = Date()
-    @State private var kmText: String = ""
-    @State private var workshop: String = ""
-    @State private var costText: String = ""
-    @State private var note: String = ""
-    @State private var selectedComponents: Set<String> = ["oli_mesin", "filter_oli"]
+    @StateObject private var model = AddServiceModel()
     @State private var contextDismissed: Bool = false
-
     @State private var showVehiclePicker: Bool = false
     @State private var showDatePicker: Bool = false
     @State private var showComponentPicker: Bool = false
 
-    private var contextActive: Bool {
-        !contextDismissed && context != .manual
+    private var context: AddServiceContext {
+        if sourceReminderId != nil { return .fromReminder }
+        if trackedComponentId != nil { return .fromComponent }
+        return .manual
     }
+    private var contextActive: Bool { !contextDismissed && context != .manual }
 
     private static let dateFormatter: DateFormatter = {
         let df = DateFormatter()
@@ -50,15 +48,56 @@ struct AddServiceView: View {
         return df
     }()
 
+    private var vehicleOptions: [VehicleOption] {
+        model.state.vehicles.map { $0.toVehicleOption() }
+    }
+    private var selectedOption: VehicleOption? {
+        let id = model.state.selectedVehicleId
+        return vehicleOptions.first { $0.id == id } ?? vehicleOptions.first
+    }
+    private var serviceDate: Date {
+        Date(timeIntervalSince1970: TimeInterval(model.state.serviceDateMillis) / 1000.0)
+    }
+    private var kmText: Binding<String> {
+        Binding(
+            get: { model.state.odometerKm.map { String(Int64(truncating: $0)) } ?? "" },
+            set: { newValue in
+                let digits = newValue.filter(\.isNumber)
+                model.setOdometer(km: Int64(digits))
+            }
+        )
+    }
+    private var workshopText: Binding<String> {
+        Binding(get: { model.state.workshop }, set: { model.setWorkshop($0) })
+    }
+    private var costText: Binding<String> {
+        Binding(
+            get: { model.state.costIdr > 0 ? String(model.state.costIdr) : "" },
+            set: { newValue in
+                let digits = newValue.filter(\.isNumber)
+                model.setCost(Int64(digits) ?? 0)
+            }
+        )
+    }
+    private var noteText: Binding<String> {
+        Binding(get: { model.state.note }, set: { model.setNote($0) })
+    }
+    private var serviceTypeBinding: Binding<String> {
+        Binding(
+            get: { model.state.serviceType.key },
+            set: { model.setServiceType(ServiceType.companion.fromKey(key: $0)) }
+        )
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     if contextActive {
                         ContextBanner(
-                            title: context == .fromReminder ? "Dari reminder" : "Untuk komponen: Oli mesin",
+                            title: context == .fromReminder ? "Dari reminder" : "Untuk komponen yang dipantau",
                             body: context == .fromReminder
-                                ? "Ganti Oli Mesin · Beat Hitam — field di bawah sudah diisi otomatis."
+                                ? "Reminder akan otomatis ditandai selesai setelah kamu simpan."
                                 : "Servis ini akan tercatat sebagai update komponen yang dipantau.",
                             iconUnicode: context == .fromReminder ? "\u{f0f3}" : "\u{f0ad}",
                             tone: .info,
@@ -68,23 +107,25 @@ struct AddServiceView: View {
                     }
 
                     FieldLabel(text: "Kendaraan")
-                    VehiclePickerRow(selected: selectedVehicle, locked: contextActive) {
-                        if !contextActive { showVehiclePicker = true }
+                    if let option = selectedOption {
+                        VehiclePickerRow(selected: option, locked: vehicleId != nil) {
+                            if vehicleId == nil { showVehiclePicker = true }
+                        }
+                        .padding(.bottom, 18)
                     }
-                    .padding(.bottom, 18)
 
                     FieldLabel(text: "Jenis servis")
-                    ServiceTypeGrid(selected: $selectedService)
+                    ServiceTypeGrid(selected: serviceTypeBinding)
                         .padding(.bottom, 18)
 
-                    FieldLabel(text: "Komponen yang diservis · \(selectedComponents.count)")
+                    FieldLabel(text: "Komponen yang diservis · \(model.state.selectedComponentIds.count)")
                     ComponentChipsRow(
-                        selectedIds: selectedComponents,
+                        selectedIds: Set(model.state.selectedComponentIds),
                         allItems: trackedComponents,
-                        onRemove: { id in selectedComponents.remove(id) },
+                        onRemove: { id in model.toggleComponent(id) },
                         onAdd: { showComponentPicker = true }
                     )
-                    Text("Daftar diambil dari komponen yang kamu pantau. Tambah di Detail Kendaraan → Komponen.")
+                    Text("Daftar diambil dari komponen yang kamu pantau.")
                         .font(.custom("PlusJakartaSans-Medium", size: 11))
                         .foregroundColor(.sgTextSubtle)
                         .lineSpacing(2)
@@ -99,7 +140,7 @@ struct AddServiceView: View {
 
                     EditableRowField(
                         label: "KM saat servis",
-                        text: $kmText,
+                        text: kmText,
                         placeholder: "cth. 18420",
                         iconUnicode: "\u{f625}",
                         keyboardType: .numberPad,
@@ -108,14 +149,14 @@ struct AddServiceView: View {
 
                     EditableRowField(
                         label: "Bengkel",
-                        text: $workshop,
+                        text: workshopText,
                         placeholder: "cth. AHASS Kebon Jeruk",
                         iconUnicode: "\u{f3c5}"
                     )
 
                     EditableRowField(
                         label: "Biaya",
-                        text: $costText,
+                        text: costText,
                         placeholder: "cth. 65000",
                         iconUnicode: nil,
                         keyboardType: .numberPad,
@@ -125,7 +166,7 @@ struct AddServiceView: View {
 
                     EditableRowField(
                         label: "Catatan",
-                        text: $note,
+                        text: noteText,
                         placeholder: "cth. AHM MPX2 0.8L",
                         iconUnicode: nil,
                         axis: .vertical
@@ -139,30 +180,52 @@ struct AddServiceView: View {
                 .padding(.bottom, 20)
             }
 
-            AddServiceSaveBar(onSave: onSaved)
+            AddServiceSaveBar(
+                onSave: { model.submit() },
+                enabled: model.state.canSave
+            )
         }
         .background(Color.sgBgWarm)
         .navigationTitle("Catat Servis")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showVehiclePicker) {
-            VehiclePickerSheet(
-                options: VehicleOptions.defaults,
-                selectedId: selectedVehicle.id,
-                onPick: { selectedVehicle = $0 }
+        .onAppear {
+            model.preselect(
+                vehicleId: vehicleId,
+                sourceReminderId: sourceReminderId,
+                trackedComponentId: trackedComponentId
             )
-            .presentationDetents([.medium])
-            .presentationDragIndicator(.visible)
+            model.onSaved = onSaved
+        }
+        .onDisappear { model.onSaved = nil }
+        .sheet(isPresented: $showVehiclePicker) {
+            if let option = selectedOption {
+                VehiclePickerSheet(
+                    options: vehicleOptions,
+                    selectedId: option.id,
+                    onPick: { picked in model.selectVehicle(picked.id) }
+                )
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+            }
         }
         .sheet(isPresented: $showDatePicker) {
-            DatePickerSheet(date: $serviceDate, onDone: { showDatePicker = false })
-                .presentationDetents([.medium])
+            DatePickerSheet(
+                date: Binding(
+                    get: { serviceDate },
+                    set: { newDate in
+                        model.setServiceDate(millis: Int64(newDate.timeIntervalSince1970 * 1000))
+                    }
+                ),
+                onDone: { showDatePicker = false }
+            )
+            .presentationDetents([.medium])
         }
         .sheet(isPresented: $showComponentPicker) {
             ComponentPickerSheet(
                 allItems: trackedComponents,
-                initiallySelected: selectedComponents,
+                initiallySelected: Set(model.state.selectedComponentIds),
                 onApply: { picked in
-                    selectedComponents = picked
+                    model.setComponents(picked)
                     showComponentPicker = false
                 },
                 onDismiss: { showComponentPicker = false }
@@ -562,10 +625,11 @@ private struct AutoReminderInfoCard: View {
 
 private struct AddServiceSaveBar: View {
     let onSave: () -> Void
+    var enabled: Bool = true
 
     var body: some View {
         VStack {
-            AppButton(title: "Simpan Servis", action: onSave)
+            AppButton(title: "Simpan Servis", action: onSave, isEnabled: enabled)
         }
         .padding(EdgeInsets(top: 10, leading: 16, bottom: 24, trailing: 16))
         .background(

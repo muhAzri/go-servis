@@ -2,7 +2,7 @@ import SwiftUI
 import Shared
 
 struct HistoryView: View {
-    var onOpenServiceDetail: () -> Void = {}
+    var onOpenServiceDetail: (String) -> Void = { _ in }
     var onAddService: () -> Void = {}
     var isRefreshing: Bool = false
 
@@ -141,7 +141,7 @@ struct HistoryView: View {
                         HistoryRowCard(
                             record: record,
                             vehicle: vehicleById[record.vehicleId],
-                            onTap: onOpenServiceDetail
+                            onTap: { onOpenServiceDetail(record.id) }
                         )
                     }
                     if idx == 2 {

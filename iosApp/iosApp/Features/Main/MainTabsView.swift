@@ -17,7 +17,7 @@ struct MainTabsView: View {
                         onOpenReminderDetail: { router.navigate(to: .reminderDetail) },
                         onOpenVehicleDetail: { router.navigate(to: .vehicleDetail()) },
                         onOpenVehicleList: { router.navigate(to: .vehicleList) },
-                        onAddService: { router.navigate(to: .addService) },
+                        onAddService: { router.navigate(to: .addService()) },
                         onAddVehicle: { router.navigate(to: .addVehicle) },
                         onUpdateOdometer: { router.navigate(to: .updateOdometer()) },
                         onOpenTips: { router.navigate(to: .tips) }
@@ -34,8 +34,8 @@ struct MainTabsView: View {
 
                 case .history:
                     HistoryView(
-                        onOpenServiceDetail: { router.navigate(to: .serviceDetail) },
-                        onAddService: { router.navigate(to: .addService) }
+                        onOpenServiceDetail: { recordId in router.navigate(to: .serviceDetail(recordId: recordId)) },
+                        onAddService: { router.navigate(to: .addService()) }
                     )
 
                 case .settings:
@@ -55,7 +55,7 @@ struct MainTabsView: View {
             BottomNavBar(
                 selected: $selectedTab,
                 onSelect: { tab in
-                    if tab == .add { router.navigate(to: .addService) }
+                    if tab == .add { router.navigate(to: .addService()) }
                 }
             )
         }

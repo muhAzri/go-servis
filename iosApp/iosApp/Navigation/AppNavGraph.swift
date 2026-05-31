@@ -69,7 +69,7 @@ struct AppNavGraph: View {
 
         case .reminderDetail:
             ReminderDetailView(
-                onMarkServiced: { router.navigate(to: .addService) },
+                onMarkServiced: { router.navigate(to: .addService()) },
                 onEdit: { router.navigate(to: .editReminder) },
                 onDelete: { router.navigateBack() }
             )
@@ -82,32 +82,46 @@ struct AppNavGraph: View {
                 onSaved: { router.navigateBack() },
                 fromContext: true
             )
-        case .addService:
+        case .addService(let vehicleId, let sourceReminderId, let trackedComponentId):
             AddServiceView(
-                onSaved: { router.navigate(to: .interstitialAd) }
+                onSaved: { recordId in router.navigate(to: .interstitialAd(recordId: recordId)) },
+                vehicleId: vehicleId,
+                sourceReminderId: sourceReminderId,
+                trackedComponentId: trackedComponentId
             )
-        case .interstitialAd:
+        case .editService(let recordId):
+            EditServiceView(
+                recordId: recordId,
+                onSaved: { router.navigateBack() },
+                onDeleted: { router.popToRoot() }
+            )
+        case .interstitialAd(let recordId):
             InterstitialAdView(
-                onClose: { router.navigate(to: .serviceSaved) }
+                onClose: { router.navigate(to: .serviceSaved(recordId: recordId)) }
             )
-        case .serviceSaved:
+        case .serviceSaved(let recordId):
             ServiceSavedView(
                 onBackToHome: { router.popToRoot() },
                 onOpenHistory: { router.popToRoot() },
                 onOpenServiceDetail: {
-                    router.popToRoot()
-                    router.navigate(to: .serviceDetail)
+                    if let id = recordId {
+                        router.popToRoot()
+                        router.navigate(to: .serviceDetail(recordId: id))
+                    } else {
+                        router.popToRoot()
+                    }
                 },
                 onAddReminderFromContext: {
                     router.popToRoot()
-                    router.navigate(to: .addReminderFromContext)
-                }
+                    router.navigate(to: .addReminderFromContext())
+                },
+                recordId: recordId
             )
-        case .serviceDetail:
+        case .serviceDetail(let recordId):
             ServiceDetailView(
-                onEdit: { router.navigate(to: .addService) },
-                onDelete: { router.navigateBack() },
-                onOpenNextReminder: { router.navigate(to: .reminderDetail) }
+                recordId: recordId,
+                onEdit: { router.navigate(to: .editService(recordId: recordId)) },
+                onOpenNextReminder: { /* TBD */ }
             )
         case .vehicleDetail(let vehicleId):
             VehicleDetailView(
@@ -125,7 +139,7 @@ struct AppNavGraph: View {
             )
         case .tipsDetail:
             TipsDetailView(
-                onOpenAddService: { router.navigate(to: .addService) }
+                onOpenAddService: { router.navigate(to: .addService()) }
             )
         case .editProfile:
             EditProfileView(
@@ -158,7 +172,9 @@ struct AppNavGraph: View {
             TrackedComponentDetailView(
                 trackedId: trackedId,
                 onStopped: { router.navigateBack() },
-                onLogServiceForComponent: { router.navigate(to: .addService) },
+                onLogServiceForComponent: {
+                    router.navigate(to: .addService(trackedComponentId: trackedId))
+                },
                 onCreateReminderForComponent: { router.navigate(to: .addReminder) }
             )
         case .addCustomComponent(let vehicleId):
