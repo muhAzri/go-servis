@@ -369,6 +369,22 @@ private fun ComponentRow(
                 fontWeight = FontWeight.Medium,
                 fontFamily = font,
             )
+            formatNextService(
+                date = item.tracked.nextServiceDate,
+                km = item.tracked.nextServiceOdometer?.kilometers,
+            )?.let { nextLabel ->
+                Text(
+                    text = "Berikutnya: $nextLabel",
+                    color = when (item.urgency) {
+                        ComponentUrgency.Overdue -> AppColors.Danger
+                        ComponentUrgency.Soon -> AppColors.Primary
+                        ComponentUrgency.Ok -> AppColors.TextMuted
+                    },
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = font,
+                )
+            }
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(
@@ -442,6 +458,14 @@ private val dateFormat: SimpleDateFormat by lazy {
 
 private fun formatLastService(date: Long?, km: Long?): String {
     if (date == null && km == null) return "belum tercatat"
+    val parts = mutableListOf<String>()
+    km?.let { parts.add("${formatThousands(it.toInt())} km") }
+    date?.let { parts.add(dateFormat.format(Date(it))) }
+    return parts.joinToString(" · ")
+}
+
+private fun formatNextService(date: Long?, km: Long?): String? {
+    if (date == null && km == null) return null
     val parts = mutableListOf<String>()
     km?.let { parts.add("${formatThousands(it.toInt())} km") }
     date?.let { parts.add(dateFormat.format(Date(it))) }

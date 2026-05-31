@@ -248,6 +248,24 @@ private struct TrackedComponentRow: View {
         }
         return parts.isEmpty ? "belum tercatat" : parts.joined(separator: " · ")
     }
+    private var nextText: String? {
+        var parts: [String] = []
+        if let dist = item.tracked.nextServiceOdometer as? KotlinLong {
+            parts.append("\(formatThousands(Int(truncating: dist))) km")
+        }
+        if let raw = item.tracked.nextServiceDate {
+            let date = Date(timeIntervalSince1970: TimeInterval(truncating: raw) / 1000.0)
+            parts.append(Self.dateFormatter.string(from: date))
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+    private var nextColor: Color {
+        switch item.urgency {
+        case .overdue: return .sgDanger
+        case .soon: return .sgPrimary
+        default: return .sgTextMuted
+        }
+    }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -269,6 +287,11 @@ private struct TrackedComponentRow: View {
                 Text("Terakhir: \(lastText)")
                     .font(.custom("PlusJakartaSans-Medium", size: 11))
                     .foregroundColor(.sgTextMuted)
+                if let nextText {
+                    Text("Berikutnya: \(nextText)")
+                        .font(.custom("PlusJakartaSans-SemiBold", size: 11))
+                        .foregroundColor(nextColor)
+                }
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
