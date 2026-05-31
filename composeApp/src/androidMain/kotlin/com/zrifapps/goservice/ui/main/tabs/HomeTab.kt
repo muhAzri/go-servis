@@ -71,7 +71,7 @@ fun HomeTab(
     modifier: Modifier = Modifier,
     userName: String = "",
     onOpenReminders: () -> Unit = {},
-    onOpenReminderDetail: () -> Unit = {},
+    onOpenReminderDetail: (String) -> Unit = {},
     onOpenVehicleDetail: () -> Unit = {},
     onOpenVehicleList: () -> Unit = {},
     onAddService: () -> Unit = {},
@@ -188,7 +188,7 @@ fun HomeTab(
                         title = reminder.title,
                         subtitle = reminderSubtitle(reminder, vehicleById[reminder.vehicleId]),
                         urgency = reminder.urgency.toUi(),
-                        onClick = onOpenReminderDetail,
+                        onClick = { onOpenReminderDetail(reminder.id) },
                     )
                 }
             }

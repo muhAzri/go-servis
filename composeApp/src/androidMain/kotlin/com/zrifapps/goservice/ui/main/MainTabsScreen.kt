@@ -29,7 +29,7 @@ fun MainTabsScreen(
     onAddVehicle: () -> Unit = {},
     onUpdateOdometer: () -> Unit = {},
     onOpenTips: () -> Unit = {},
-    onOpenReminderDetail: () -> Unit = {},
+    onOpenReminderDetail: (String) -> Unit = {},
     onOpenVehicleDetail: () -> Unit = {},
     onOpenServiceDetail: (String) -> Unit = {},
     onOpenAddReminder: () -> Unit = {},

@@ -66,7 +66,7 @@ enum class ReminderFilter(val label: String) {
 @Composable
 fun RemindersTab(
     modifier: Modifier = Modifier,
-    onOpenReminderDetail: () -> Unit = {},
+    onOpenReminderDetail: (String) -> Unit = {},
     onAddReminder: () -> Unit = {},
     isRefreshing: Boolean = false,
     reminderVm: ReminderListViewModel = koinViewModel(),
@@ -168,7 +168,7 @@ private fun ReminderGroup(
     accent: Color,
     reminders: List<Reminder>,
     vehicleById: Map<String, Vehicle>,
-    onOpenDetail: () -> Unit,
+    onOpenDetail: (String) -> Unit,
 ) {
     if (reminders.isEmpty()) return
     ReminderGroupHeader(label = label, accent = accent, count = reminders.size)
@@ -180,7 +180,7 @@ private fun ReminderGroup(
             ReminderListCard(
                 reminder = reminder,
                 vehicle = vehicleById[reminder.vehicleId],
-                onClick = onOpenDetail,
+                onClick = { onOpenDetail(reminder.id) },
             )
         }
     }

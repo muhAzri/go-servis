@@ -18,9 +18,15 @@ sealed interface Screen {
     @Serializable data object Help : Screen
 
     // Core flow
-    @Serializable data object ReminderDetail : Screen
-    @Serializable data object AddReminder : Screen
-    @Serializable data class AddReminderFromContext(val fromContext: Boolean = true) : Screen
+    @Serializable data class ReminderDetail(val reminderId: String) : Screen
+    @Serializable data class AddReminder(
+        val vehicleId: String? = null,
+        val trackedComponentId: String? = null,
+    ) : Screen
+    @Serializable data class AddReminderFromContext(
+        val fromContext: Boolean = true,
+        val vehicleId: String? = null,
+    ) : Screen
     @Serializable data class AddService(
         val vehicleId: String? = null,
         val sourceReminderId: String? = null,
@@ -48,6 +54,6 @@ sealed interface Screen {
 
     // New screens from plot-hole design
     @Serializable data class EditVehicle(val vehicleId: String? = null) : Screen
-    @Serializable data object EditReminder : Screen
+    @Serializable data class EditReminder(val reminderId: String) : Screen
     @Serializable data object VehicleList : Screen
 }

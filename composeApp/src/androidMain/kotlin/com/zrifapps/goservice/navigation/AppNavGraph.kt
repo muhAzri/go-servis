@@ -163,10 +163,10 @@ fun AppNavGraph() {
                 onAddVehicle = { navController.navigate(Screen.AddVehicleForm) },
                 onUpdateOdometer = { navController.navigate(Screen.UpdateOdometer()) },
                 onOpenTips = { navController.navigate(Screen.Tips) },
-                onOpenReminderDetail = { navController.navigate(Screen.ReminderDetail) },
+                onOpenReminderDetail = { reminderId -> navController.navigate(Screen.ReminderDetail(reminderId)) },
                 onOpenVehicleDetail = { navController.navigate(Screen.VehicleDetail()) },
                 onOpenServiceDetail = { recordId -> navController.navigate(Screen.ServiceDetail(recordId)) },
-                onOpenAddReminder = { navController.navigate(Screen.AddReminder) },
+                onOpenAddReminder = { navController.navigate(Screen.AddReminder()) },
                 onOpenTestScreen = { navController.navigate(Screen.Test) },
                 onOpenPrivacy = { navController.navigate(Screen.Privacy) },
                 onOpenTerms = { navController.navigate(Screen.Terms) },
@@ -215,12 +215,21 @@ fun AppNavGraph() {
             HelpScreen(onBack = { navController.popBackStack() })
         }
 
-        composable<Screen.ReminderDetail> {
+        composable<Screen.ReminderDetail> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.ReminderDetail>()
             ReminderDetailScreen(
+                reminderId = args.reminderId,
                 onBack = { navController.popBackStack() },
-                onMarkServiced = { navController.navigate(Screen.AddService()) },
-                onEdit = { navController.navigate(Screen.EditReminder) },
-                onDelete = { navController.popBackStack() },
+                onMarkServiced = { reminderId, vehicleId ->
+                    navController.navigate(
+                        Screen.AddService(
+                            vehicleId = vehicleId.takeIf(String::isNotBlank),
+                            sourceReminderId = reminderId,
+                        ),
+                    )
+                },
+                onEdit = { reminderId -> navController.navigate(Screen.EditReminder(reminderId)) },
+                onDeleted = { navController.popBackStack() },
             )
         }
 
@@ -343,7 +352,9 @@ fun AppNavGraph() {
                 onLogServiceForComponent = {
                     navController.navigate(Screen.AddService(trackedComponentId = args.trackedId))
                 },
-                onCreateReminderForComponent = { navController.navigate(Screen.AddReminder) },
+                onCreateReminderForComponent = {
+                    navController.navigate(Screen.AddReminder(trackedComponentId = args.trackedId))
+                },
             )
         }
 
@@ -373,13 +384,13 @@ fun AppNavGraph() {
             )
         }
 
-        composable<Screen.EditReminder> {
+        composable<Screen.EditReminder> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.EditReminder>()
             EditReminderScreen(
+                reminderId = args.reminderId,
                 onBack = { navController.popBackStack() },
                 onSave = { navController.popBackStack() },
-                onDelete = {
-                    navController.popBackStack(Screen.Main, inclusive = false)
-                },
+                onDelete = { navController.popBackStack(Screen.Main, inclusive = false) },
             )
         }
 
@@ -435,10 +446,13 @@ fun AppNavGraph() {
             )
         }
 
-        composable<Screen.AddReminder> {
+        composable<Screen.AddReminder> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.AddReminder>()
             AddReminderScreen(
                 onClose = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() },
+                vehicleId = args.vehicleId,
+                trackedComponentId = args.trackedComponentId,
             )
         }
 
@@ -447,6 +461,7 @@ fun AppNavGraph() {
             AddReminderScreen(
                 onClose = { navController.popBackStack() },
                 onSaved = { navController.popBackStack() },
+                vehicleId = args.vehicleId,
                 fromContext = args.fromContext,
             )
         }
