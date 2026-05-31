@@ -4,6 +4,7 @@ import Shared
 struct AppNavGraph: View {
     @StateObject private var gateModel = AppGateModel()
     @StateObject private var onboardingModel = OnboardingFlowModel()
+    @ObservedObject private var notificationRouter = NotificationRouter.shared
     @State private var router = AppRouter()
     @State private var splashResolved = false
     @State private var resolvedGate: any AppGate = AppGateLoading.shared
@@ -36,6 +37,11 @@ struct AppNavGraph: View {
                     }
                 }
                 .environment(router)
+                .onChange(of: notificationRouter.pendingReminderId, initial: true) { _, newValue in
+                    guard let reminderId = newValue else { return }
+                    router.navigate(to: .reminderDetail(reminderId: reminderId))
+                    notificationRouter.consume()
+                }
             }
         }
         .onReceive(gateModel.$gate) { newGate in
