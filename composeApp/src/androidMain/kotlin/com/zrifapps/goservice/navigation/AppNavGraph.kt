@@ -87,6 +87,16 @@ fun AppNavGraph() {
         AdsManager.setAppOpenAllowed(currentRoute == Screen.Main::class.qualifiedName)
     }
 
+    // Tapped reminder notification -> open its detail once we're past the gate.
+    val pendingDeepLink by ReminderDeepLinks.pending.collectAsStateWithLifecycle()
+    LaunchedEffect(pendingDeepLink, gate) {
+        val reminderId = pendingDeepLink ?: return@LaunchedEffect
+        if (gate is AppGate.Main) {
+            navController.navigate(Screen.ReminderDetail(reminderId))
+            ReminderDeepLinks.consume()
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = Screen.Splash,
