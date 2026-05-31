@@ -1,27 +1,31 @@
 import SwiftUI
+import Shared
 
 struct ExportCsvSheet: View {
     var onDismiss: () -> Void = {}
     var onShare: () -> Void = {}
 
+    @ObservedObject private var backup = BackupModel.shared
+
     @State private var picks: [String: Bool] = [
-        "veh": true, "hist": true, "rem": true, "comp": false,
+        "veh": true, "hist": true, "rem": true, "comp": true,
     ]
     @State private var range: String = "all"
 
-    private let items: [(String, String, String)] = [
-        ("veh", "Kendaraan", "3 kendaraan"),
-        ("hist", "Riwayat servis", "5 entri"),
-        ("rem", "Pengingat", "6 aktif"),
-        ("comp", "Komponen dipantau", "12 komponen"),
-    ]
+    private var items: [(String, String, String)] {
+        [
+            ("veh", "Kendaraan", "\(backup.counts.vehicles) kendaraan"),
+            ("hist", "Riwayat servis", "\(backup.counts.services) entri"),
+            ("rem", "Pengingat", "\(backup.counts.reminders) pengingat"),
+            ("comp", "Komponen dipantau", "\(backup.counts.components) komponen"),
+        ]
+    }
 
     private let ranges: [(String, String)] = [
         ("all", "Semua waktu"),
         ("month", "Bulan ini"),
         ("3m", "3 bulan"),
         ("year", "1 tahun"),
-        ("custom", "Custom…"),
     ]
 
     var body: some View {
@@ -30,7 +34,7 @@ struct ExportCsvSheet: View {
                 Text("Ekspor Data")
                     .font(.custom("PlusJakartaSans-ExtraBold", size: 20))
                     .foregroundColor(.sgTextPrimary)
-                Text("3 kendaraan · 5 servis · 6 pengingat")
+                Text("\(backup.counts.vehicles) kendaraan · \(backup.counts.services) servis · \(backup.counts.reminders) pengingat")
                     .font(.custom("PlusJakartaSans-Medium", size: 12))
                     .foregroundColor(.sgTextMuted)
             }
@@ -91,10 +95,10 @@ struct ExportCsvSheet: View {
                             .font(.custom("FontAwesome6Free-Solid", size: 18))
                             .foregroundColor(.sgTextMuted)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("servisgo-2026-05.csv")
+                            Text("servisgo-backup-….csv")
                                 .font(.custom("PlusJakartaSans-Bold", size: 12))
                                 .foregroundColor(.sgTextPrimary)
-                            Text("~14 KB · CSV (comma-separated)")
+                            Text("Format CSV (comma-separated)")
                                 .font(.system(size: 10, weight: .regular, design: .monospaced))
                                 .foregroundColor(.sgTextSubtle)
                         }
@@ -112,7 +116,7 @@ struct ExportCsvSheet: View {
             Divider().background(Color.sgBorder)
 
             VStack(spacing: 4) {
-                Button(action: onShare) {
+                Button(action: shareCsv) {
                     HStack(spacing: 8) {
                         Text("\u{f1e0}")
                             .font(.custom("FontAwesome6Free-Solid", size: 16))
@@ -164,6 +168,38 @@ struct ExportCsvSheet: View {
                     .foregroundColor(.white)
             }
         }
+    }
+
+    private func shareCsv() {
+        let selected = Set(picks.filter { $0.value }.keys.compactMap(Self.sectionKey))
+        let rangeKey = Self.rangeKey(range)
+        Task {
+            do {
+                let export = try await backup.export(sections: selected, range: rangeKey)
+                if let url = writeBackupTempFile(export) {
+                    onShare()
+                    presentBackupShareSheet(items: [url]) { onDismiss() }
+                } else {
+                    onDismiss()
+                }
+            } catch {
+                onDismiss()
+            }
+        }
+    }
+
+    private static func sectionKey(_ id: String) -> String? {
+        switch id {
+        case "veh": return "vehicles"
+        case "hist": return "services"
+        case "rem": return "reminders"
+        case "comp": return "components"
+        default: return nil
+        }
+    }
+
+    private static func rangeKey(_ r: String) -> String {
+        r == "year" ? "1y" : r
     }
 }
 

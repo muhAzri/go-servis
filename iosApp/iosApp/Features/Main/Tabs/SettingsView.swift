@@ -1,5 +1,6 @@
 import SwiftUI
 import Shared
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     var onOpenPrivacy: () -> Void = {}
@@ -15,6 +16,9 @@ struct SettingsView: View {
 
     @State private var showExportSheet = false
     @State private var showWipeFlow = false
+    @State private var showImporter = false
+    @State private var showImportAlert = false
+    @State private var importMessage = ""
 
     private var displayName: String { profile.state.displayName }
     private var avatarHex: String? {
@@ -44,6 +48,12 @@ struct SettingsView: View {
                         icon: "\u{f15b}",
                         label: "Ekspor Data (CSV)",
                         action: { showExportSheet = true }
+                    )
+                    SectionDivider()
+                    SettingsRow(
+                        icon: "\u{f56f}",
+                        label: "Impor Data (CSV)",
+                        action: { showImporter = true }
                     )
                     SectionDivider()
                     SettingsRow(
@@ -94,6 +104,41 @@ struct SettingsView: View {
                     onConfirmed: { showWipeFlow = false }
                 )
             }
+        }
+        .fileImporter(
+            isPresented: $showImporter,
+            allowedContentTypes: [.commaSeparatedText, .plainText, .text, .data],
+            allowsMultipleSelection: false
+        ) { result in
+            handleImport(result)
+        }
+        .alert("Impor Data", isPresented: $showImportAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(importMessage)
+        }
+    }
+
+    private func handleImport(_ result: Result<[URL], Error>) {
+        guard case let .success(urls) = result, let url = urls.first else { return }
+        let accessed = url.startAccessingSecurityScopedResource()
+        defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+        guard let data = try? Data(contentsOf: url),
+              let text = String(data: data, encoding: .utf8) else {
+            importMessage = "Gagal membaca file."
+            showImportAlert = true
+            return
+        }
+        Task {
+            do {
+                let outcome = try await BackupModel.shared.importCsv(text)
+                importMessage = outcome.malformed
+                    ? "File CSV tidak dikenali."
+                    : "Impor selesai: \(outcome.imported) ditambah · \(outcome.skipped) dilewati."
+            } catch {
+                importMessage = "Gagal mengimpor data."
+            }
+            showImportAlert = true
         }
     }
 }
