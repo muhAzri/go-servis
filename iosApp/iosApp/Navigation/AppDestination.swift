@@ -10,9 +10,9 @@ enum AppDestination: Hashable {
     case help
 
     // Core flow
-    case reminderDetail
-    case addReminder
-    case addReminderFromContext
+    case reminderDetail(reminderId: String)
+    case addReminder(vehicleId: String? = nil, trackedComponentId: String? = nil)
+    case addReminderFromContext(fromContext: Bool = true, vehicleId: String? = nil)
     case addService(vehicleId: String? = nil, sourceReminderId: String? = nil, trackedComponentId: String? = nil)
     case editService(recordId: String)
     case interstitialAd(recordId: String? = nil)
@@ -32,6 +32,6 @@ enum AppDestination: Hashable {
 
     // New plot-hole screens
     case editVehicle(vehicleId: String? = nil)
-    case editReminder
+    case editReminder(reminderId: String)
     case vehicleList
 }

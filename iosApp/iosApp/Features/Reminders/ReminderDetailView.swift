@@ -1,240 +1,208 @@
 import SwiftUI
+import Shared
 
 struct ReminderDetailView: View {
-    var onMarkServiced: () -> Void = {}
-    var onEdit: () -> Void = {}
-    var onDelete: () -> Void = {}
+    let reminderId: String
+    var onMarkServiced: (String, String) -> Void = { _, _ in }
+    var onEdit: (String) -> Void = { _ in }
+    var onDeleted: () -> Void = {}
 
-    @State private var isSnoozeSheetPresented = false
-    @State private var showDeleteConfirm: Bool = false
+    @StateObject private var model = ReminderDetailModel()
+    @State private var showSnoozeSheet = false
+    @State private var showDeleteConfirm = false
+
+    private static let dateFormatter: DateFormatter = {
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "id_ID")
+        df.dateFormat = "d MMM yyyy"
+        return df
+    }()
 
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        StatusPill(urgency: .overdue)
-                        Text("Ganti Oli Mesin")
-                            .font(.custom("PlusJakartaSans-ExtraBold", size: 28))
-                            .foregroundColor(.sgTextPrimary)
-                            .kerning(-0.5)
-                        Text("Beat Hitam · Honda BeAT 110 2022")
-                            .font(.custom("PlusJakartaSans-Medium", size: 14))
-                            .foregroundColor(.sgTextMuted)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                if let reminder = model.state.reminder {
+                    let meta = ServiceTypeMeta.for(key: reminder.serviceType.key)
+                    let vehicleLine: String = {
+                        guard let v = model.state.vehicle else { return "Kendaraan dihapus" }
+                        let plate = v.plateNumber.isEmpty ? nil : v.plateNumber
+                        return plate.map { "\(v.displayTitle) · \($0)" } ?? v.displayTitle
+                    }()
+
+                    HStack(spacing: 14) {
+                        IconBadge(
+                            iconUnicode: meta.icon,
+                            foreground: meta.color,
+                            background: meta.color.opacity(0.15),
+                            size: 56, iconSize: 28, corner: 16
+                        )
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(reminder.title)
+                                .font(.custom("PlusJakartaSans-ExtraBold", size: 22))
+                                .foregroundColor(.sgTextPrimary)
+                                .kerning(-0.3)
+                            Text(vehicleLine)
+                                .font(.custom("PlusJakartaSans-Medium", size: 13))
+                                .foregroundColor(.sgTextMuted)
+                        }
+                        Spacer()
+                        StatusPill(urgency: toUiUrgency(reminder.urgency))
                     }
                     .padding(.horizontal, 20)
-                    .padding(.top, 8)
-                    .padding(.bottom, 16)
+                    .padding(.top, 12)
 
-                    OverdueStatsCard()
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(triggerLines(for: reminder.trigger), id: \.0) { (_, label, mono) in
+                            Text(label)
+                                .font(mono
+                                      ? .system(size: 14, weight: .semibold, design: .monospaced)
+                                      : .custom("PlusJakartaSans-SemiBold", size: 14))
+                                .foregroundColor(.sgTextPrimary)
+                        }
+                        Text("Notif \(reminder.notifyDaysBefore) hari sebelumnya")
+                            .font(.custom("PlusJakartaSans-SemiBold", size: 14))
+                            .foregroundColor(.sgTextMuted)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
+                    .background(Color.sgSurface)
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18)
+                            .strokeBorder(Color.sgBorder, lineWidth: 1)
+                    )
+                    .padding(.horizontal, 16)
+
+                    if let note = reminder.note, !note.isEmpty {
+                        Text(note)
+                            .font(.custom("PlusJakartaSans-Medium", size: 14))
+                            .foregroundColor(.sgTextPrimary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(16)
+                            .background(Color.sgSurface)
+                            .clipShape(RoundedRectangle(cornerRadius: 18))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 18)
+                                    .strokeBorder(Color.sgBorder, lineWidth: 1)
+                            )
+                            .padding(.horizontal, 16)
+                    }
+
+                    let status = reminder.status
+                    if status == ReminderStatus.active || status == ReminderStatus.snoozed {
+                        VStack(spacing: 8) {
+                            Button(action: { onMarkServiced(reminder.id, reminder.vehicleId) }) {
+                                HStack(spacing: 8) {
+                                    Text("\u{f00c}")
+                                        .font(.custom("FontAwesome6Free-Solid", size: 14))
+                                    Text("Tandai sudah servis")
+                                        .font(.custom("PlusJakartaSans-Bold", size: 15))
+                                }
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity, minHeight: 54)
+                                .background(Color.sgPrimary)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(model.state.isBusy)
+
+                            Button(action: { showSnoozeSheet = true }) {
+                                HStack(spacing: 8) {
+                                    Text("\u{f017}")
+                                        .font(.custom("FontAwesome6Free-Solid", size: 13))
+                                    Text("Tunda pengingat")
+                                        .font(.custom("PlusJakartaSans-Bold", size: 14))
+                                }
+                                .foregroundColor(.sgTextPrimary)
+                                .frame(maxWidth: .infinity, minHeight: 50)
+                                .background(Color.sgSurface)
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .strokeBorder(Color.sgBorder, lineWidth: 1.5)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(model.state.isBusy)
+                        }
                         .padding(.horizontal, 16)
-                        .padding(.bottom, 16)
-
-                    DetailSectionLabel(text: "Detail servis")
-                    ServiceDetailRows()
-
-                    NativeAdCard()
-                        .padding(.top, 8)
-                        .padding(.bottom, 24)
+                    } else {
+                        Text(status == ReminderStatus.completed ? "Sudah selesai" : "Dilewatkan")
+                            .font(.custom("PlusJakartaSans-Bold", size: 14))
+                            .foregroundColor(.sgPrimary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Color.sgPrimarySoft)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .padding(.horizontal, 16)
+                    }
+                } else {
+                    Text(model.state.isLoading ? "Memuat…" : "Pengingat tidak ditemukan")
+                        .font(.custom("PlusJakartaSans-Medium", size: 14))
+                        .foregroundColor(.sgTextMuted)
+                        .padding(40)
+                        .frame(maxWidth: .infinity)
                 }
             }
-
-            ReminderActionBar(
-                onSnooze: { isSnoozeSheetPresented = true },
-                onMarkServiced: onMarkServiced
-            )
+            .padding(.bottom, 24)
         }
         .background(Color.sgBgWarm)
+        .navigationTitle("Detail Pengingat")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                Button(action: onEdit) {
-                    Image(systemName: "square.and.pencil")
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    Button("Edit") { onEdit(reminderId) }
+                    Button("Hapus", role: .destructive) { showDeleteConfirm = true }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
                 }
-                Button(action: { showDeleteConfirm = true }) {
-                    Image(systemName: "trash")
-                }
-                .tint(.sgDanger)
             }
         }
-        .sheet(isPresented: $isSnoozeSheetPresented) {
-            SnoozeSheet(onDismiss: { isSnoozeSheetPresented = false })
-                .presentationDetents([.fraction(0.55)])
-                .presentationDragIndicator(.hidden)
+        .onAppear {
+            model.load(reminderId: reminderId)
+            model.onDeleted = onDeleted
+            model.onDismissed = onDeleted
+        }
+        .onDisappear {
+            model.onDeleted = nil
+            model.onDismissed = nil
         }
         .confirmationDialog(
             "Hapus pengingat?",
             isPresented: $showDeleteConfirm,
             titleVisibility: .visible
         ) {
-            Button("Hapus pengingat", role: .destructive, action: onDelete)
+            Button("Hapus", role: .destructive) { model.delete() }
             Button("Batal", role: .cancel) { }
         } message: {
-            Text("Pengingat ini akan dihapus dan tidak akan muncul lagi di lock screen.")
+            Text("Pengingat ini akan dihapus permanen.")
+        }
+        .sheet(isPresented: $showSnoozeSheet) {
+            SnoozeSheet(
+                onPick: { duration in
+                    model.snooze(duration)
+                    showSnoozeSheet = false
+                }
+            )
+            .presentationDetents([.medium])
         }
     }
-}
 
-// MARK: - Subviews
-
-private struct OverdueStatsCard: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("TELAT 16 HARI · 420 KM")
-                .font(.custom("PlusJakartaSans-ExtraBold", size: 12))
-                .kerning(0.5)
-                .foregroundColor(.sgDanger)
-
-            HStack(alignment: .top, spacing: 14) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Target servis")
-                        .font(.custom("PlusJakartaSans-Medium", size: 11))
-                        .foregroundColor(.sgTextMuted)
-                    Text("18.000 km")
-                        .font(.system(size: 20, weight: .bold, design: .monospaced))
-                        .foregroundColor(.sgTextPrimary)
-                    Text("20 Apr 2026")
-                        .font(.custom("PlusJakartaSans-Medium", size: 11))
-                        .foregroundColor(.sgTextMuted)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("KM sekarang")
-                        .font(.custom("PlusJakartaSans-Medium", size: 11))
-                        .foregroundColor(.sgTextMuted)
-                    Text("18.420 km")
-                        .font(.system(size: 20, weight: .bold, design: .monospaced))
-                        .foregroundColor(.sgDanger)
-                    Text("diperbarui 2h lalu")
-                        .font(.custom("PlusJakartaSans-Medium", size: 11))
-                        .foregroundColor(.sgTextMuted)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
-            Capsule()
-                .fill(Color.sgDanger)
-                .frame(height: 8)
-                .background(Color.black.opacity(0.06))
-                .clipShape(Capsule())
+    private func triggerLines(for trigger: ReminderTrigger) -> [(String, String, Bool)] {
+        var result: [(String, String, Bool)] = []
+        if let km = trigger.targetKm {
+            let kmInt = Int64(truncating: km)
+            let formatter = NumberFormatter()
+            formatter.numberStyle = .decimal
+            formatter.groupingSeparator = "."
+            let s = formatter.string(from: NSNumber(value: kmInt)) ?? "\(kmInt)"
+            result.append(("km", "\(s) km", true))
         }
-        .padding(20)
-        .background(Color.sgDangerSoft)
-        .clipShape(RoundedRectangle(cornerRadius: 22))
-        .overlay(
-            RoundedRectangle(cornerRadius: 22)
-                .strokeBorder(Color.sgDanger.opacity(0.19), lineWidth: 1)
-        )
-    }
-}
-
-private struct DetailSectionLabel: View {
-    let text: String
-    var trailing: String? = nil
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Text(text.uppercased())
-                .font(.custom("PlusJakartaSans-ExtraBold", size: 11))
-                .kerning(1)
-                .foregroundColor(.sgTextMuted)
-            if let trailing {
-                Text(trailing)
-                    .font(.custom("PlusJakartaSans-Bold", size: 11))
-                    .foregroundColor(.sgWarning)
-            }
+        if let date = trigger.targetDateMillis {
+            let d = Date(timeIntervalSince1970: TimeInterval(Int64(truncating: date)) / 1000.0)
+            result.append(("date", Self.dateFormatter.string(from: d), false))
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 8)
-        .padding(.bottom, 6)
+        return result
     }
-}
-
-private struct ServiceDetailRows: View {
-    private let rows: [(String, String)] = [
-        ("Interval", "2.000 km / 2 bln"),
-        ("Servis terakhir", "20 Feb 2026 · 16.000 km"),
-        ("Bengkel terakhir", "AHASS Kebon Jeruk"),
-        ("Biaya terakhir", "Rp 65.000"),
-    ]
-
-    var body: some View {
-        VStack(spacing: 0) {
-            ForEach(rows.indices, id: \.self) { idx in
-                HStack {
-                    Text(rows[idx].0)
-                        .font(.custom("PlusJakartaSans-Medium", size: 13))
-                        .foregroundColor(.sgTextMuted)
-                    Spacer()
-                    Text(rows[idx].1)
-                        .font(.custom("PlusJakartaSans-SemiBold", size: 13))
-                        .foregroundColor(.sgTextPrimary)
-                }
-                .padding(.vertical, 14)
-
-                if idx < rows.count - 1 {
-                    Rectangle().fill(Color.sgBorder).frame(height: 1)
-                }
-            }
-        }
-        .padding(.horizontal, 16)
-        .background(Color.sgSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 18))
-        .overlay(
-            RoundedRectangle(cornerRadius: 18)
-                .strokeBorder(Color.sgBorder, lineWidth: 1)
-        )
-        .padding(.horizontal, 16)
-        .padding(.bottom, 12)
-    }
-}
-
-private struct ReminderActionBar: View {
-    let onSnooze: () -> Void
-    let onMarkServiced: () -> Void
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Button(action: onSnooze) {
-                Text("Tunda")
-                    .font(.custom("PlusJakartaSans-Bold", size: 14))
-                    .foregroundColor(.sgTextPrimary)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(Color.sgSurfaceAlt)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-            }
-            .buttonStyle(.plain)
-            .frame(maxWidth: .infinity)
-
-            Button(action: onMarkServiced) {
-                HStack(spacing: 6) {
-                    Text("\u{f00c}")
-                        .font(.custom("FontAwesome6Free-Solid", size: 14))
-                    Text("Tandai Sudah Servis")
-                        .font(.custom("PlusJakartaSans-Bold", size: 14))
-                }
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 50)
-                .background(Color.sgPrimary)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-            }
-            .buttonStyle(.plain)
-            .frame(maxWidth: .infinity)
-            .layoutPriority(1)
-        }
-        .padding(EdgeInsets(top: 10, leading: 16, bottom: 24, trailing: 16))
-        .background(
-            Color.sgSurface
-                .overlay(alignment: .top) {
-                    Rectangle().fill(Color.sgBorder).frame(height: 1)
-                }
-        )
-    }
-}
-
-#Preview {
-    NavigationStack { ReminderDetailView() }
 }

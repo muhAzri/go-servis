@@ -14,7 +14,7 @@ struct MainTabsView: View {
                     HomeView(
                         userName: userName,
                         onOpenReminders: { selectedTab = .reminders },
-                        onOpenReminderDetail: { router.navigate(to: .reminderDetail) },
+                        onOpenReminderDetail: { reminderId in router.navigate(to: .reminderDetail(reminderId: reminderId)) },
                         onOpenVehicleDetail: { router.navigate(to: .vehicleDetail()) },
                         onOpenVehicleList: { router.navigate(to: .vehicleList) },
                         onAddService: { router.navigate(to: .addService()) },
@@ -25,8 +25,8 @@ struct MainTabsView: View {
 
                 case .reminders:
                     RemindersView(
-                        onOpenReminderDetail: { router.navigate(to: .reminderDetail) },
-                        onAddReminder: { router.navigate(to: .addReminder) }
+                        onOpenReminderDetail: { reminderId in router.navigate(to: .reminderDetail(reminderId: reminderId)) },
+                        onAddReminder: { router.navigate(to: .addReminder()) }
                     )
 
                 case .add:

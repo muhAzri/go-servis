@@ -5,7 +5,7 @@ import UserNotifications
 struct HomeView: View {
     var userName: String = ""
     var onOpenReminders: () -> Void = {}
-    var onOpenReminderDetail: () -> Void = {}
+    var onOpenReminderDetail: (String) -> Void = { _ in }
     var onOpenVehicleDetail: () -> Void = {}
     var onOpenVehicleList: () -> Void = {}
     var onAddService: () -> Void = {}
@@ -130,7 +130,7 @@ struct HomeView: View {
                                 title: reminder.title,
                                 subtitle: reminderSubtitle(reminder, vehicle: vehicleById[reminder.vehicleId]),
                                 urgency: toUiUrgency(reminder.urgency),
-                                onTap: onOpenReminderDetail
+                                onTap: { onOpenReminderDetail(reminder.id) }
                             )
                         }
                     }

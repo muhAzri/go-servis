@@ -67,20 +67,26 @@ struct AppNavGraph: View {
         case .help:
             HelpView(onBack: { router.navigateBack() })
 
-        case .reminderDetail:
+        case .reminderDetail(let reminderId):
             ReminderDetailView(
-                onMarkServiced: { router.navigate(to: .addService()) },
-                onEdit: { router.navigate(to: .editReminder) },
-                onDelete: { router.navigateBack() }
+                reminderId: reminderId,
+                onMarkServiced: { reminderId, vehicleId in
+                    router.navigate(to: .addService(vehicleId: vehicleId.isEmpty ? nil : vehicleId, sourceReminderId: reminderId))
+                },
+                onEdit: { id in router.navigate(to: .editReminder(reminderId: id)) },
+                onDeleted: { router.navigateBack() }
             )
-        case .addReminder:
-            AddReminderView(
-                onSaved: { router.navigateBack() }
-            )
-        case .addReminderFromContext:
+        case .addReminder(let vehicleId, let trackedComponentId):
             AddReminderView(
                 onSaved: { router.navigateBack() },
-                fromContext: true
+                vehicleId: vehicleId,
+                trackedComponentId: trackedComponentId
+            )
+        case .addReminderFromContext(let fromContext, let vehicleId):
+            AddReminderView(
+                onSaved: { router.navigateBack() },
+                vehicleId: vehicleId,
+                fromContext: fromContext
             )
         case .addService(let vehicleId, let sourceReminderId, let trackedComponentId):
             AddServiceView(
@@ -175,7 +181,9 @@ struct AppNavGraph: View {
                 onLogServiceForComponent: {
                     router.navigate(to: .addService(trackedComponentId: trackedId))
                 },
-                onCreateReminderForComponent: { router.navigate(to: .addReminder) }
+                onCreateReminderForComponent: {
+                    router.navigate(to: .addReminder(trackedComponentId: trackedId))
+                }
             )
         case .addCustomComponent(let vehicleId):
             AddCustomComponentView(
@@ -194,8 +202,9 @@ struct AppNavGraph: View {
                 onSaved: { router.navigateBack() },
                 onDeleted: { router.popToRoot() }
             )
-        case .editReminder:
+        case .editReminder(let reminderId):
             EditReminderView(
+                reminderId: reminderId,
                 onSave: { router.navigateBack() },
                 onDelete: { router.popToRoot() }
             )

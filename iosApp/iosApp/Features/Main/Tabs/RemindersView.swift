@@ -2,7 +2,7 @@ import SwiftUI
 import Shared
 
 struct RemindersView: View {
-    var onOpenReminderDetail: () -> Void = {}
+    var onOpenReminderDetail: (String) -> Void = { _ in }
     var onAddReminder: () -> Void = {}
     var isRefreshing: Bool = false
 
@@ -197,7 +197,7 @@ private struct ReminderGroup: View {
     let accent: Color
     let reminders: [Reminder]
     let vehicleById: [String: Vehicle]
-    let onOpenDetail: () -> Void
+    let onOpenDetail: (String) -> Void
 
     var body: some View {
         if reminders.isEmpty {
@@ -210,7 +210,7 @@ private struct ReminderGroup: View {
                         ReminderListCard(
                             reminder: reminder,
                             vehicle: vehicleById[reminder.vehicleId],
-                            onTap: onOpenDetail
+                            onTap: { onOpenDetail(reminder.id) }
                         )
                     }
                 }
