@@ -1,6 +1,9 @@
 package com.zrifapps.goservice.ui.service
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,8 +19,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -26,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -33,18 +40,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zrifapps.goservice.feature.service.domain.model.ServiceType
-import com.zrifapps.goservice.feature.service.presentation.AddServiceViewModel
+import com.zrifapps.goservice.feature.service.presentation.EditServiceViewModel
+import com.zrifapps.goservice.ui.components.AppBackButton
 import com.zrifapps.goservice.ui.components.AppButton
-import com.zrifapps.goservice.ui.components.CircleIconButton
-import com.zrifapps.goservice.ui.components.ContextBanner
-import com.zrifapps.goservice.ui.components.ContextBannerTone
 import com.zrifapps.goservice.ui.components.MultiPicker
 import com.zrifapps.goservice.ui.components.MultiPickerGroup
 import com.zrifapps.goservice.ui.components.VehicleOption
 import com.zrifapps.goservice.ui.components.VehiclePickerRow
 import com.zrifapps.goservice.ui.components.VehiclePickerSheet
 import com.zrifapps.goservice.ui.components.toVehicleOption
-import com.zrifapps.goservice.ui.service.components.AddServiceContext
 import com.zrifapps.goservice.ui.service.components.AutoReminderInfoCard
 import com.zrifapps.goservice.ui.service.components.ComponentChipsRow
 import com.zrifapps.goservice.ui.service.components.DateField
@@ -54,42 +58,35 @@ import com.zrifapps.goservice.ui.service.components.ServiceDatePickerDialog
 import com.zrifapps.goservice.ui.service.components.ServiceTypeGrid
 import com.zrifapps.goservice.ui.service.components.trackedComponents
 import com.zrifapps.goservice.ui.theme.AppColors
+import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
 import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun AddServiceScreen(
-    onClose: () -> Unit,
-    onSaved: (String) -> Unit = {},
-    vehicleId: String? = null,
-    sourceReminderId: String? = null,
-    trackedComponentId: String? = null,
-    vm: AddServiceViewModel = koinViewModel(),
+fun EditServiceScreen(
+    recordId: String,
+    onBack: () -> Unit,
+    onSaved: () -> Unit,
+    onDeleted: () -> Unit,
+    vm: EditServiceViewModel = koinViewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
 
-    LaunchedEffect(vehicleId, sourceReminderId, trackedComponentId) {
-        vm.preselect(vehicleId, sourceReminderId, trackedComponentId)
-    }
+    LaunchedEffect(recordId) { vm.load(recordId) }
     LaunchedEffect(vm) {
         vm.events.collect { event ->
-            if (event is AddServiceViewModel.Event.Saved) onSaved(event.recordId)
+            when (event) {
+                is EditServiceViewModel.Event.Saved -> onSaved()
+                is EditServiceViewModel.Event.Deleted -> onDeleted()
+                is EditServiceViewModel.Event.Failed -> Unit
+            }
         }
     }
-
-    val context = when {
-        sourceReminderId != null -> AddServiceContext.FromReminder
-        trackedComponentId != null -> AddServiceContext.FromComponent
-        else -> AddServiceContext.Manual
-    }
-    var contextDismissed by remember { mutableStateOf(false) }
-    val contextActive = !contextDismissed && context != AddServiceContext.Manual
 
     val vehicleOptions = remember(state.vehicles) { state.vehicles.map { it.toVehicleOption() } }
     val selectedOption: VehicleOption? = remember(vehicleOptions, state.selectedVehicleId) {
         vehicleOptions.firstOrNull { it.id == state.selectedVehicleId }
-            ?: vehicleOptions.firstOrNull()
     }
     val kmText = state.odometerKm?.toString().orEmpty()
     val costText = state.costIdr.takeIf { it > 0L }?.toString().orEmpty()
@@ -97,6 +94,7 @@ fun AddServiceScreen(
     var showVehicleSheet by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showComponentPicker by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -104,7 +102,20 @@ fun AddServiceScreen(
             .background(AppColors.BgWarm)
             .windowInsetsPadding(WindowInsets.statusBars),
     ) {
-        TopBar(onClose = onClose)
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            AppBackButton(onClick = onBack)
+            Text(
+                text = "Edit Servis",
+                color = AppColors.TextPrimary,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.ExtraBold,
+                fontFamily = plusJakartaSansFontFamily(),
+            )
+        }
 
         Column(
             modifier = Modifier
@@ -113,25 +124,11 @@ fun AddServiceScreen(
                 .padding(horizontal = 20.dp)
                 .padding(vertical = 8.dp),
         ) {
-            if (contextActive) {
-                ContextBanner(
-                    title = if (context == AddServiceContext.FromReminder) "Dari reminder" else "Untuk komponen yang dipantau",
-                    body = if (context == AddServiceContext.FromReminder)
-                        "Reminder akan otomatis ditandai selesai setelah kamu simpan."
-                    else
-                        "Servis ini akan tercatat sebagai update komponen yang dipantau.",
-                    icon = if (context == AddServiceContext.FromReminder) FaIcons.BELL else FaIcons.WRENCH,
-                    tone = ContextBannerTone.Info,
-                    onDismiss = { contextDismissed = true },
-                )
-                Spacer(Modifier.height(14.dp))
-            }
             FieldLabel("Kendaraan")
             if (selectedOption != null) {
                 VehiclePickerRow(
                     selected = selectedOption,
-                    locked = contextActive,
-                    onClick = { if (!contextActive) showVehicleSheet = true },
+                    onClick = { showVehicleSheet = true },
                 )
             }
             Spacer(Modifier.height(18.dp))
@@ -139,7 +136,7 @@ fun AddServiceScreen(
             FieldLabel("Jenis servis")
             ServiceTypeGrid(
                 selected = state.serviceType.key,
-                onSelect = { key -> if (!contextActive) vm.setServiceType(ServiceType.fromKey(key)) },
+                onSelect = { key -> vm.setServiceType(ServiceType.fromKey(key)) },
             )
             Spacer(Modifier.height(18.dp))
 
@@ -147,18 +144,10 @@ fun AddServiceScreen(
             ComponentChipsRow(
                 selectedIds = state.selectedComponentIds,
                 allItems = trackedComponents,
-                onRemove = { id -> vm.toggleComponent(id) },
+                onRemove = vm::toggleComponent,
                 onAdd = { showComponentPicker = true },
             )
-            Text(
-                text = "Daftar diambil dari komponen yang kamu pantau. Tambah di Detail Kendaraan → Komponen.",
-                color = AppColors.TextSubtle,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
-                fontFamily = plusJakartaSansFontFamily(),
-                lineHeight = 16.sp,
-                modifier = Modifier.padding(top = 6.dp, bottom = 18.dp),
-            )
+            Spacer(Modifier.height(18.dp))
 
             DateField(
                 label = "Tanggal servis",
@@ -200,13 +189,15 @@ fun AddServiceScreen(
                 singleLine = false,
                 imeAction = ImeAction.Default,
             )
-
             Spacer(Modifier.height(4.dp))
             AutoReminderInfoCard()
             Spacer(Modifier.height(20.dp))
+
+            DeleteButton(onClick = { showDeleteDialog = true })
+            Spacer(Modifier.height(24.dp))
         }
 
-        SaveBar(onSave = { vm.submit() }, enabled = state.canSave)
+        SaveBar(onSave = { vm.save() }, enabled = state.canSave)
     }
 
     if (showVehicleSheet && selectedOption != null) {
@@ -242,31 +233,59 @@ fun AddServiceScreen(
             },
         )
     }
-}
 
-@Composable
-private fun TopBar(onClose: () -> Unit) {
-    val font = plusJakartaSansFontFamily()
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp)),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        CircleIconButton(icon = FaIcons.XMARK, onClick = onClose)
-        Text(
-            text = "Catat Servis",
-            color = AppColors.TextPrimary,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.ExtraBold,
-            fontFamily = font,
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Hapus servis?") },
+            text = { Text("Catatan servis ini akan dihapus permanen.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteDialog = false
+                    vm.delete()
+                }) {
+                    Text("Hapus", color = AppColors.Danger)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) { Text("Batal") }
+            },
+            containerColor = AppColors.Surface,
         )
     }
 }
 
 @Composable
-private fun SaveBar(onSave: () -> Unit, enabled: Boolean = true) {
+private fun DeleteButton(onClick: () -> Unit) {
+    val font = plusJakartaSansFontFamily()
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(AppColors.Surface)
+            .border(BorderStroke(1.5.dp, AppColors.Danger.copy(alpha = 0.4f)), RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FaIcon(icon = FaIcons.TRASH, color = AppColors.Danger, size = 13.sp)
+            Text(
+                text = "Hapus servis",
+                color = AppColors.Danger,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = font,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SaveBar(onSave: () -> Unit, enabled: Boolean) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -274,6 +293,6 @@ private fun SaveBar(onSave: () -> Unit, enabled: Boolean = true) {
             .windowInsetsPadding(WindowInsets.navigationBars)
             .padding(PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 16.dp)),
     ) {
-        AppButton(text = "Simpan Servis", onClick = onSave, enabled = enabled)
+        AppButton(text = "Simpan Perubahan", onClick = onSave, enabled = enabled)
     }
 }

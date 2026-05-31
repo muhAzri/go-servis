@@ -69,7 +69,7 @@ private val sortOptions = listOf(
 @Composable
 fun HistoryTab(
     modifier: Modifier = Modifier,
-    onOpenServiceDetail: () -> Unit = {},
+    onOpenServiceDetail: (String) -> Unit = {},
     onAddService: () -> Unit = {},
     isRefreshing: Boolean = false,
     serviceVm: ServiceHistoryViewModel = koinViewModel(),
@@ -190,7 +190,7 @@ fun HistoryTab(
                 HistoryRowCard(
                     record = record,
                     vehicle = vehicleById[record.vehicleId],
-                    onClick = onOpenServiceDetail,
+                    onClick = { onOpenServiceDetail(record.id) },
                 )
             }
             if (idx == 2) {

@@ -20,40 +20,45 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zrifapps.goservice.feature.service.presentation.ServiceDetailViewModel
 import com.zrifapps.goservice.ui.components.CircleIconButton
 import com.zrifapps.goservice.ui.components.IconBadge
-import com.zrifapps.goservice.ui.components.ReminderUrgency
-import com.zrifapps.goservice.ui.components.StatusPill
+import com.zrifapps.goservice.ui.service.components.formatRupiah
+import com.zrifapps.goservice.ui.service.components.formatKmDisplay
+import com.zrifapps.goservice.ui.service.components.formatServiceDate
+import com.zrifapps.goservice.ui.service.components.serviceTypeMeta
+import com.zrifapps.goservice.ui.service.components.trackedComponentMeta
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
 import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun ServiceDetailScreen(
     onBack: () -> Unit,
     onEdit: () -> Unit = {},
-    onDelete: () -> Unit = {},
+    @Suppress("UNUSED_PARAMETER") onDelete: () -> Unit = {},
     onOpenNextReminder: () -> Unit = {},
+    recordId: String,
+    vm: ServiceDetailViewModel = koinViewModel(),
 ) {
-    val font = plusJakartaSansFontFamily()
-    var showDeleteDialog by remember { mutableStateOf(false) }
+    LaunchedEffect(recordId) { vm.load(recordId) }
+    val state by vm.state.collectAsStateWithLifecycle()
+    val record = state.record
+    val vehicle = state.vehicle
 
     Column(
         modifier = Modifier
@@ -68,64 +73,63 @@ fun ServiceDetailScreen(
                 .weight(1f)
                 .verticalScroll(rememberScrollState()),
         ) {
-            HeaderRow()
+            if (record == null) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(32.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = if (state.isLoading) "Memuat…" else "Catatan tidak ditemukan",
+                        color = AppColors.TextMuted,
+                        fontFamily = plusJakartaSansFontFamily(),
+                        fontSize = 14.sp,
+                    )
+                }
+                return@Column
+            }
+
+            val meta = serviceTypeMeta(record.serviceType.key)
+            val typeLabel = meta.label.replace("\n", " ")
+            val vehicleLine = vehicle?.let {
+                val plate = it.plateNumber.takeIf(String::isNotBlank)
+                if (plate != null) "${it.displayTitle} · $plate" else it.displayTitle
+            } ?: "Kendaraan dihapus"
+
+            HeaderRow(
+                icon = meta.icon,
+                accent = meta.color,
+                title = typeLabel,
+                subtitle = vehicleLine,
+            )
             Spacer(Modifier.height(16.dp))
-            FactsCard()
+            FactsCard(
+                dateLabel = formatServiceDate(record.serviceDate),
+                kmLabel = formatKmDisplay(record.odometer.kilometers),
+                workshopLabel = record.workshop?.takeIf(String::isNotBlank) ?: "—",
+                costLabel = formatRupiah(record.cost.amountIdr),
+            )
             Spacer(Modifier.height(20.dp))
 
-            SectionLabel("Catatan")
-            NoteBlock(text = "AHM MPX2 0.8L. Mekanik bilang filter masih bagus, tidak perlu ganti.")
-            Spacer(Modifier.height(20.dp))
+            val note = record.note?.takeIf(String::isNotBlank)
+            if (note != null) {
+                SectionLabel("Catatan")
+                NoteBlock(text = note)
+                Spacer(Modifier.height(20.dp))
+            }
 
-            SectionLabel("Komponen yang diservis")
-            ComponentList()
-            Spacer(Modifier.height(20.dp))
+            if (record.componentIds.isNotEmpty()) {
+                SectionLabel("Komponen yang diservis")
+                ComponentList(componentIds = record.componentIds)
+                Spacer(Modifier.height(20.dp))
+            }
 
-            SectionLabel("Pengingat berikutnya")
-            NextReminderCard(onClick = onOpenNextReminder)
-            Spacer(Modifier.height(24.dp))
-
-            ActionRow(onEdit = onEdit, onDelete = { showDeleteDialog = true })
+            ActionRow(onEdit = onEdit)
             Spacer(Modifier.height(24.dp))
         }
     }
 
-    if (showDeleteDialog) {
-        ConfirmDeleteDialog(
-            title = "Hapus servis?",
-            message = "Catatan servis ini akan dihapus permanen. Aksi ini tidak bisa dibatalkan.",
-            confirmLabel = "Hapus",
-            onConfirm = {
-                showDeleteDialog = false
-                onDelete()
-            },
-            onDismiss = { showDeleteDialog = false },
-        )
-    }
-}
-
-@Composable
-private fun ConfirmDeleteDialog(
-    title: String,
-    message: String,
-    confirmLabel: String,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(text = title) },
-        text = { Text(text = message) },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text(text = confirmLabel, color = AppColors.Danger)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Batal") }
-        },
-        containerColor = AppColors.Surface,
-    )
+    // Reminder-next card requires reminder lookup — wired in Reminder phase.
+    @Suppress("UNUSED_EXPRESSION") onOpenNextReminder
 }
 
 @Composable
@@ -151,7 +155,12 @@ private fun TopBar(onBack: () -> Unit) {
 }
 
 @Composable
-private fun HeaderRow() {
+private fun HeaderRow(
+    icon: String,
+    accent: androidx.compose.ui.graphics.Color,
+    title: String,
+    subtitle: String,
+) {
     val font = plusJakartaSansFontFamily()
     Row(
         modifier = Modifier
@@ -161,16 +170,16 @@ private fun HeaderRow() {
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         IconBadge(
-            icon = FaIcons.OIL_CAN,
-            foreground = Color(0xFFE89C2E),
-            background = Color(0xFFE89C2E).copy(alpha = 0.15f),
+            icon = icon,
+            foreground = accent,
+            background = accent.copy(alpha = 0.15f),
             size = 56.dp,
             iconSize = 28.sp,
             corner = 16.dp,
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "Ganti Oli Mesin",
+                text = title,
                 color = AppColors.TextPrimary,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.ExtraBold,
@@ -178,7 +187,7 @@ private fun HeaderRow() {
                 fontFamily = font,
             )
             Text(
-                text = "Beat Hitam · B 4521 KZA",
+                text = subtitle,
                 color = AppColors.TextMuted,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
@@ -190,13 +199,18 @@ private fun HeaderRow() {
 }
 
 @Composable
-private fun FactsCard() {
+private fun FactsCard(
+    dateLabel: String,
+    kmLabel: String,
+    workshopLabel: String,
+    costLabel: String,
+) {
     val font = plusJakartaSansFontFamily()
     val rows = listOf(
-        Triple(FaIcons.CALENDAR, "20 Februari 2026", false),
-        Triple(FaIcons.GAUGE,    "16.000 km",        true),
-        Triple(FaIcons.LOCATION_DOT, "AHASS Kebon Jeruk", false),
-        Triple(FaIcons.OIL_CAN,  "Rp 65.000",        true),
+        Triple(FaIcons.CALENDAR, dateLabel, false),
+        Triple(FaIcons.GAUGE, kmLabel, true),
+        Triple(FaIcons.LOCATION_DOT, workshopLabel, false),
+        Triple(FaIcons.OIL_CAN, costLabel, true),
     )
     Column(
         modifier = Modifier
@@ -276,12 +290,8 @@ private fun NoteBlock(text: String) {
 }
 
 @Composable
-private fun ComponentList() {
+private fun ComponentList(componentIds: List<String>) {
     val font = plusJakartaSansFontFamily()
-    val items = listOf(
-        Triple(FaIcons.OIL_CAN, "Oli mesin",  "4.420 km lalu" to Color(0xFFE89C2E)),
-        Triple(FaIcons.FILTER,  "Filter oli", "4.420 km lalu" to Color(0xFF7B6FE8)),
-    )
     Column(
         modifier = Modifier
             .padding(horizontal = 16.dp)
@@ -290,7 +300,12 @@ private fun ComponentList() {
             .background(AppColors.Surface)
             .border(BorderStroke(1.dp, AppColors.Border), RoundedCornerShape(18.dp)),
     ) {
-        items.forEachIndexed { index, (icon, label, trailing) ->
+        componentIds.forEachIndexed { index, id ->
+            val item = trackedComponentMeta(id)
+            val label = item?.label ?: id
+            val icon = item?.icon ?: FaIcons.WRENCH
+            val color = item?.color ?: AppColors.Primary
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -300,8 +315,8 @@ private fun ComponentList() {
             ) {
                 IconBadge(
                     icon = icon,
-                    foreground = trailing.second,
-                    background = trailing.second.copy(alpha = 0.13f),
+                    foreground = color,
+                    background = color.copy(alpha = 0.13f),
                     size = 36.dp,
                     iconSize = 16.sp,
                     corner = 10.dp,
@@ -314,15 +329,8 @@ private fun ComponentList() {
                     fontFamily = font,
                     modifier = Modifier.weight(1f),
                 )
-                Text(
-                    text = trailing.first,
-                    color = AppColors.TextMuted,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = FontFamily.Monospace,
-                )
             }
-            if (index < items.lastIndex) {
+            if (index < componentIds.lastIndex) {
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
@@ -336,50 +344,7 @@ private fun ComponentList() {
 }
 
 @Composable
-private fun NextReminderCard(onClick: () -> Unit) {
-    val font = plusJakartaSansFontFamily()
-    Row(
-        modifier = Modifier
-            .padding(horizontal = 16.dp)
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(AppColors.Surface)
-            .border(BorderStroke(1.dp, AppColors.Border), RoundedCornerShape(18.dp))
-            .clickable(onClick = onClick)
-            .padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        IconBadge(
-            icon = FaIcons.BELL,
-            foreground = AppColors.Primary,
-            background = AppColors.PrimarySoft,
-            size = 36.dp,
-            iconSize = 16.sp,
-            corner = 10.dp,
-        )
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = "20.420 km · 6 Jul 2026",
-                color = AppColors.TextPrimary,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Monospace,
-            )
-            Text(
-                text = "Pengingat aktif untuk servis berikutnya",
-                color = AppColors.TextMuted,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                fontFamily = font,
-            )
-        }
-        StatusPill(urgency = ReminderUrgency.Ok)
-    }
-}
-
-@Composable
-private fun ActionRow(onEdit: () -> Unit, onDelete: () -> Unit) {
+private fun ActionRow(onEdit: () -> Unit) {
     val font = plusJakartaSansFontFamily()
     Row(
         modifier = Modifier
@@ -405,30 +370,6 @@ private fun ActionRow(onEdit: () -> Unit, onDelete: () -> Unit) {
                 Text(
                     text = "Edit",
                     color = AppColors.TextPrimary,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = font,
-                )
-            }
-        }
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .height(50.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(AppColors.Surface)
-                .border(BorderStroke(1.5.dp, AppColors.Danger.copy(alpha = 0.4f)), RoundedCornerShape(14.dp))
-                .clickable(onClick = onDelete),
-            contentAlignment = Alignment.Center,
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FaIcon(icon = FaIcons.TRASH, color = AppColors.Danger, size = 13.sp)
-                Text(
-                    text = "Hapus servis",
-                    color = AppColors.Danger,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = font,

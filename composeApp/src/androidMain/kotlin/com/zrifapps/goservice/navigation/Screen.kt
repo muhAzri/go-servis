@@ -21,10 +21,15 @@ sealed interface Screen {
     @Serializable data object ReminderDetail : Screen
     @Serializable data object AddReminder : Screen
     @Serializable data class AddReminderFromContext(val fromContext: Boolean = true) : Screen
-    @Serializable data object AddService : Screen
-    @Serializable data object InterstitialAd : Screen
-    @Serializable data object ServiceSaved : Screen
-    @Serializable data object ServiceDetail : Screen
+    @Serializable data class AddService(
+        val vehicleId: String? = null,
+        val sourceReminderId: String? = null,
+        val trackedComponentId: String? = null,
+    ) : Screen
+    @Serializable data class EditService(val recordId: String) : Screen
+    @Serializable data class InterstitialAd(val recordId: String? = null) : Screen
+    @Serializable data class ServiceSaved(val recordId: String? = null) : Screen
+    @Serializable data class ServiceDetail(val recordId: String) : Screen
     @Serializable data class VehicleDetail(val vehicleId: String? = null) : Screen
     @Serializable data class UpdateOdometer(val vehicleId: String? = null) : Screen
     @Serializable data object Tips : Screen

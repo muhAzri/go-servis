@@ -31,6 +31,7 @@ import com.zrifapps.goservice.ui.reminders.AddReminderScreen
 import com.zrifapps.goservice.ui.reminders.EditReminderScreen
 import com.zrifapps.goservice.ui.reminders.ReminderDetailScreen
 import com.zrifapps.goservice.ui.service.AddServiceScreen
+import com.zrifapps.goservice.ui.service.EditServiceScreen
 import com.zrifapps.goservice.ui.service.InterstitialAdScreen
 import com.zrifapps.goservice.ui.service.ServiceDetailScreen
 import com.zrifapps.goservice.ui.service.ServiceSavedScreen
@@ -158,13 +159,13 @@ fun AppNavGraph() {
         composable<Screen.Main> {
             MainTabsScreen(
                 userName = onboardingState.persistedName.orEmpty(),
-                onAddService = { navController.navigate(Screen.AddService) },
+                onAddService = { navController.navigate(Screen.AddService()) },
                 onAddVehicle = { navController.navigate(Screen.AddVehicleForm) },
                 onUpdateOdometer = { navController.navigate(Screen.UpdateOdometer()) },
                 onOpenTips = { navController.navigate(Screen.Tips) },
                 onOpenReminderDetail = { navController.navigate(Screen.ReminderDetail) },
                 onOpenVehicleDetail = { navController.navigate(Screen.VehicleDetail()) },
-                onOpenServiceDetail = { navController.navigate(Screen.ServiceDetail) },
+                onOpenServiceDetail = { recordId -> navController.navigate(Screen.ServiceDetail(recordId)) },
                 onOpenAddReminder = { navController.navigate(Screen.AddReminder) },
                 onOpenTestScreen = { navController.navigate(Screen.Test) },
                 onOpenPrivacy = { navController.navigate(Screen.Privacy) },
@@ -217,26 +218,44 @@ fun AppNavGraph() {
         composable<Screen.ReminderDetail> {
             ReminderDetailScreen(
                 onBack = { navController.popBackStack() },
-                onMarkServiced = { navController.navigate(Screen.AddService) },
+                onMarkServiced = { navController.navigate(Screen.AddService()) },
                 onEdit = { navController.navigate(Screen.EditReminder) },
                 onDelete = { navController.popBackStack() },
             )
         }
 
-        composable<Screen.AddService> {
+        composable<Screen.AddService> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.AddService>()
             AddServiceScreen(
                 onClose = { navController.popBackStack() },
-                onSaved = { navController.navigate(Screen.InterstitialAd) },
+                onSaved = { recordId ->
+                    navController.navigate(Screen.InterstitialAd(recordId)) {
+                        popUpTo(Screen.AddService(
+                            vehicleId = args.vehicleId,
+                            sourceReminderId = args.sourceReminderId,
+                            trackedComponentId = args.trackedComponentId,
+                        )) { inclusive = true }
+                    }
+                },
+                vehicleId = args.vehicleId,
+                sourceReminderId = args.sourceReminderId,
+                trackedComponentId = args.trackedComponentId,
             )
         }
 
-        composable<Screen.InterstitialAd> {
+        composable<Screen.InterstitialAd> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.InterstitialAd>()
             InterstitialAdScreen(
-                onClose = { navController.navigate(Screen.ServiceSaved) },
+                onClose = {
+                    navController.navigate(Screen.ServiceSaved(args.recordId)) {
+                        popUpTo(Screen.InterstitialAd(args.recordId)) { inclusive = true }
+                    }
+                },
             )
         }
 
-        composable<Screen.ServiceSaved> {
+        composable<Screen.ServiceSaved> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.ServiceSaved>()
             ServiceSavedScreen(
                 onBackToHome = {
                     navController.popBackStack(Screen.Main, inclusive = false)
@@ -245,8 +264,13 @@ fun AppNavGraph() {
                     navController.popBackStack(Screen.Main, inclusive = false)
                 },
                 onOpenServiceDetail = {
-                    navController.navigate(Screen.ServiceDetail) {
-                        popUpTo(Screen.Main) { inclusive = false }
+                    val id = args.recordId
+                    if (id != null) {
+                        navController.navigate(Screen.ServiceDetail(id)) {
+                            popUpTo(Screen.Main) { inclusive = false }
+                        }
+                    } else {
+                        navController.popBackStack(Screen.Main, inclusive = false)
                     }
                 },
                 onAddReminderFromContext = {
@@ -254,6 +278,7 @@ fun AppNavGraph() {
                         popUpTo(Screen.Main) { inclusive = false }
                     }
                 },
+                recordId = args.recordId,
             )
         }
 
@@ -315,7 +340,9 @@ fun AppNavGraph() {
                 trackedId = args.trackedId,
                 onBack = { navController.popBackStack() },
                 onStopped = { navController.popBackStack() },
-                onLogServiceForComponent = { navController.navigate(Screen.AddService) },
+                onLogServiceForComponent = {
+                    navController.navigate(Screen.AddService(trackedComponentId = args.trackedId))
+                },
                 onCreateReminderForComponent = { navController.navigate(Screen.AddReminder) },
             )
         }
@@ -383,16 +410,28 @@ fun AppNavGraph() {
         composable<Screen.TipsDetail> {
             TipsDetailScreen(
                 onBack = { navController.popBackStack() },
-                onOpenAddService = { navController.navigate(Screen.AddService) },
+                onOpenAddService = { navController.navigate(Screen.AddService()) },
             )
         }
 
-        composable<Screen.ServiceDetail> {
+        composable<Screen.ServiceDetail> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.ServiceDetail>()
             ServiceDetailScreen(
                 onBack = { navController.popBackStack() },
-                onEdit = { navController.navigate(Screen.AddService) },
+                onEdit = { navController.navigate(Screen.EditService(args.recordId)) },
                 onDelete = { navController.popBackStack() },
-                onOpenNextReminder = { navController.navigate(Screen.ReminderDetail) },
+                onOpenNextReminder = { /* next-reminder linkage TBD */ },
+                recordId = args.recordId,
+            )
+        }
+
+        composable<Screen.EditService> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.EditService>()
+            EditServiceScreen(
+                recordId = args.recordId,
+                onBack = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
+                onDeleted = { navController.popBackStack(Screen.Main, inclusive = false) },
             )
         }
 

@@ -31,7 +31,7 @@ fun MainTabsScreen(
     onOpenTips: () -> Unit = {},
     onOpenReminderDetail: () -> Unit = {},
     onOpenVehicleDetail: () -> Unit = {},
-    onOpenServiceDetail: () -> Unit = {},
+    onOpenServiceDetail: (String) -> Unit = {},
     onOpenAddReminder: () -> Unit = {},
     onOpenTestScreen: () -> Unit = {},
     onOpenPrivacy: () -> Unit = {},
