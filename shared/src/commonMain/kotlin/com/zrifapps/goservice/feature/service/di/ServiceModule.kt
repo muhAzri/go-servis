@@ -29,7 +29,7 @@ val serviceModule = module {
     factory { DeleteServiceRecord(get()) }
 
     viewModel { ServiceHistoryViewModel(get()) }
-    viewModel { AddServiceViewModel(get(), get(), get(), get()) }
+    viewModel { AddServiceViewModel(get(), get(), get(), get(), get()) }
     viewModel { EditServiceViewModel(get(), get(), get(), get()) }
     viewModel { ServiceDetailViewModel(get(), get()) }
 }

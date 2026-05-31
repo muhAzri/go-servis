@@ -9,6 +9,7 @@ import com.zrifapps.goservice.core.result.DomainResult
 import com.zrifapps.goservice.core.time.AppClock
 import com.zrifapps.goservice.core.value.Distance
 import com.zrifapps.goservice.core.value.Money
+import com.zrifapps.goservice.feature.component.domain.usecase.ResolveComponentServiceCycle
 import com.zrifapps.goservice.feature.reminder.domain.usecase.CompleteReminder
 import com.zrifapps.goservice.feature.service.domain.model.ServiceRecordDraft
 import com.zrifapps.goservice.feature.service.domain.model.ServiceType
@@ -28,6 +29,7 @@ class AddServiceViewModel(
     observeVehicles: ObserveVehicles,
     private val recordService: RecordService,
     private val completeReminder: CompleteReminder,
+    private val resolveComponentServiceCycle: ResolveComponentServiceCycle,
     private val clock: AppClock,
 ) : ViewModel() {
 
@@ -179,6 +181,16 @@ class AddServiceViewModel(
                             completeReminder(
                                 CompleteReminder.Params(
                                     reminderId = reminderId,
+                                    serviceRecordId = recordId,
+                                ),
+                            )
+                        }
+                        snapshot.trackedComponentId?.let { trackedComponentId ->
+                            resolveComponentServiceCycle(
+                                ResolveComponentServiceCycle.Params(
+                                    trackedComponentId = trackedComponentId,
+                                    serviceDate = snapshot.serviceDateMillis,
+                                    serviceOdometer = Distance.ofKm(km),
                                     serviceRecordId = recordId,
                                 ),
                             )
