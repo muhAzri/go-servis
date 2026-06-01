@@ -28,6 +28,12 @@ interface ServiceRepository {
         page: PageRequest,
     ): DomainResult<Page<ServiceRecord>>
 
+    /** Total cost across the whole filtered set (not paged); 0 when empty. */
+    suspend fun sumCost(filter: ServiceFilter): DomainResult<Long>
+
+    /** Emits whenever service records change, as a trigger to re-run paged queries. */
+    fun observeChanges(): Flow<Unit>
+
     suspend fun create(draft: ServiceRecordDraft): DomainResult<ServiceRecord>
 
     suspend fun update(record: ServiceRecord): DomainResult<ServiceRecord>

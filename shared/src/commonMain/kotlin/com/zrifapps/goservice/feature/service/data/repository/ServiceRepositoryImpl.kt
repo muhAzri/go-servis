@@ -10,6 +10,7 @@ import com.zrifapps.goservice.core.sync.SyncMetadata
 import com.zrifapps.goservice.core.sync.SyncStatus
 import com.zrifapps.goservice.core.time.AppClock
 import com.zrifapps.goservice.feature.service.data.local.ServiceRecordDao
+import com.zrifapps.goservice.feature.service.data.local.ServiceRecordQueryBuilder
 import com.zrifapps.goservice.feature.service.data.local.toDomain
 import com.zrifapps.goservice.feature.service.data.local.toEntity
 import com.zrifapps.goservice.feature.service.domain.model.ServiceFilter
@@ -50,11 +51,18 @@ class ServiceRepositoryImpl(
         filter: ServiceFilter,
         sort: ServiceSort,
         page: PageRequest,
-    ): DomainResult<Page<ServiceRecord>> {
-        return DomainResult.Failure(
-            DomainError.Storage.ReadFailed("paged query not implemented yet; observe instead")
-        )
+    ): DomainResult<Page<ServiceRecord>> = runStorage {
+        val total = dao.queryCount(ServiceRecordQueryBuilder.count(filter))
+        val items = dao.queryPaged(ServiceRecordQueryBuilder.page(filter, sort, page))
+            .map { it.toDomain() }
+        Page(items = items, total = total, request = page)
     }
+
+    override suspend fun sumCost(filter: ServiceFilter): DomainResult<Long> = runStorage {
+        dao.querySumCost(ServiceRecordQueryBuilder.sumCost(filter))
+    }
+
+    override fun observeChanges(): Flow<Unit> = dao.observeChangeCount().map { }
 
     override suspend fun create(draft: ServiceRecordDraft): DomainResult<ServiceRecord> {
         val now = clock.nowEpochMillis()

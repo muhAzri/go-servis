@@ -4,6 +4,8 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.RawQuery
+import androidx.room.RoomRawQuery
 import androidx.room.Transaction
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
@@ -32,6 +34,29 @@ interface ServiceRecordDao {
     @Transaction
     @Query("SELECT * FROM service_records WHERE id = :id")
     suspend fun getById(id: String): ServiceRecordWithComponents?
+
+    /**
+     * Runs a dynamically built filter/sort/paging query (see [ServiceRecordQueryBuilder]).
+     * The caller is responsible for the WHERE/ORDER BY/LIMIT clauses and bind args.
+     */
+    @Transaction
+    @RawQuery
+    suspend fun queryPaged(query: RoomRawQuery): List<ServiceRecordWithComponents>
+
+    /** Counts rows matching the same WHERE clause used by [queryPaged], ignoring paging. */
+    @RawQuery
+    suspend fun queryCount(query: RoomRawQuery): Int
+
+    /** Sums cost over the same WHERE clause used by [queryPaged], ignoring paging. */
+    @RawQuery
+    suspend fun querySumCost(query: RoomRawQuery): Long
+
+    /**
+     * Emits the live record count and, because Room re-runs on every write to the
+     * table, doubles as a change trigger for re-running paged queries reactively.
+     */
+    @Query("SELECT COUNT(*) FROM service_records WHERE sync_deleted_at IS NULL")
+    fun observeChangeCount(): Flow<Int>
 
     @Upsert
     suspend fun upsertRecord(entity: ServiceRecordEntity)

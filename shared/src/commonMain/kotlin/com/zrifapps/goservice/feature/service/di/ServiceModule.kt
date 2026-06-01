@@ -5,10 +5,12 @@ import com.zrifapps.goservice.feature.service.data.local.ServiceRecordDao
 import com.zrifapps.goservice.feature.service.data.repository.ServiceRepositoryImpl
 import com.zrifapps.goservice.feature.service.domain.repository.ServiceRepository
 import com.zrifapps.goservice.feature.service.domain.usecase.DeleteServiceRecord
-import com.zrifapps.goservice.feature.service.domain.usecase.ObserveServiceHistory
+import com.zrifapps.goservice.feature.service.domain.usecase.ObserveServiceChanges
 import com.zrifapps.goservice.feature.service.domain.usecase.ObserveServiceRecord
 import com.zrifapps.goservice.feature.service.domain.usecase.ObserveVehicleServiceHistory
+import com.zrifapps.goservice.feature.service.domain.usecase.PageServiceHistory
 import com.zrifapps.goservice.feature.service.domain.usecase.RecordService
+import com.zrifapps.goservice.feature.service.domain.usecase.SumServiceCost
 import com.zrifapps.goservice.feature.service.domain.usecase.UpdateService
 import com.zrifapps.goservice.feature.service.presentation.AddServiceViewModel
 import com.zrifapps.goservice.feature.service.presentation.EditServiceViewModel
@@ -21,14 +23,16 @@ val serviceModule = module {
     single<ServiceRecordDao> { get<GoServiceDatabase>().serviceRecordDao() }
     single<ServiceRepository> { ServiceRepositoryImpl(get(), get(), get()) }
 
-    factory { ObserveServiceHistory(get()) }
     factory { ObserveVehicleServiceHistory(get()) }
     factory { ObserveServiceRecord(get()) }
+    factory { PageServiceHistory(get()) }
+    factory { SumServiceCost(get()) }
+    factory { ObserveServiceChanges(get()) }
     factory { RecordService(get(), get()) }
     factory { UpdateService(get(), get()) }
     factory { DeleteServiceRecord(get()) }
 
-    viewModel { ServiceHistoryViewModel(get()) }
+    viewModel { ServiceHistoryViewModel(get(), get(), get()) }
     viewModel { AddServiceViewModel(get(), get(), get(), get(), get()) }
     viewModel { EditServiceViewModel(get(), get(), get(), get()) }
     viewModel { ServiceDetailViewModel(get(), get()) }
