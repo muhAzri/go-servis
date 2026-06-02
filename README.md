@@ -16,24 +16,45 @@ reminded before the next service is due — all stored locally on the device.
 
 - **Vehicles** — add motorcycles/cars with nickname, brand, model, year,
   plate, colour, and odometer. Odometer is protected against accidental
-  rollback (smaller-than-current needs explicit confirmation).
-- **Service records** — log type, date, odometer, workshop, cost (IDR), notes,
-  and related components. Logging a higher odometer automatically advances the
-  vehicle's odometer. History is **paged from SQLite** with search, per-vehicle
-  filter, sorting, and a filtered total-cost summary.
+  rollback (smaller-than-current needs explicit confirmation). The bottom-nav
+  "+" prompts the user to add a vehicle first when the garage is empty.
+- **Service records (3-mode)** — log a service as one of:
+  - **Komponen** — pick from the selected vehicle's tracked components; the
+    next-service cycle for each picked component is recalculated automatically.
+  - **Rutin** — generic periodic service (no specific component); auto-creates
+    a reminder ~6 months / 4.000 km (motor) or 10.000 km (mobil) ahead.
+  - **Manual** — one-off service with a free-text title (e.g. spion, jok); no
+    auto-reminder.
+  All modes share date / odometer / workshop / cost (IDR) / notes. Logging a
+  higher odometer automatically advances the vehicle's odometer. History is
+  **paged from SQLite** with search, per-vehicle filter, sorting, and a
+  filtered total-cost summary.
 - **Tracked components** — track wearable parts from a catalog (or add custom
   ones). The app derives the next-service schedule (by km and/or date) and
   shows an urgency badge: **Aman / Segera / Terlewat** (OK / Soon / Overdue).
-- **Reminders** — trigger by kilometres, by date, or both; snooze, complete,
-  or dismiss. Completing a reminder or servicing a component automatically
-  closes the open reminder and opens the next cycle. Local notifications fire
-  ahead of the due point.
+- **Reminders (2-mode)** — choose Komponen (pick a tracked component; title +
+  target km + target date auto-fill from the component's interval) or Manual
+  (free-text title + your choice of Km / Date / Both trigger). Snooze, complete,
+  or dismiss; completing a reminder or servicing a component automatically
+  closes the open reminder and opens the next cycle.
+- **Notifications** — two independent local-notification channels:
+  - **Pengingat servis** — fires ahead of each reminder's due point.
+  - **Update KM** — fires per-vehicle when the odometer hasn't been written
+    for 14 days, at 9 AM local; tap deep-links into the Update KM screen for
+    that vehicle. Both can be toggled separately in Settings; Settings also has
+    test-fire buttons that prompt for `POST_NOTIFICATIONS` (Android 13+) and
+    fall back to system-settings deep-links if denied.
 - **Backup & restore** — export a single-file CSV (per-section, per-time-range)
   and share it; import merges by id so re-importing never duplicates data.
 - **Onboarding** — guided first-run flow (profile → vehicle type → first
-  vehicle → notification permission), resumable and skippable.
-- **Profile & settings** — editable profile (name, avatar colour, email) and a
-  toggle for service-reminder notifications.
+  vehicle → notification permission), resumable and skippable. The previously
+  in-Home permission banner has been removed; permission is strictly an
+  onboarding concern.
+- **Profile & settings** — editable profile (name, avatar colour, email),
+  toggles for both notification kinds, and the test-fire shortcuts above.
+- **Error surfacing** — every form's `Failed` event funnels through a single
+  app-wide Snackbar host with localized (`DomainError.message`) messages, so no
+  more silent "tombol tidak bereaksi" failures.
 
 A manual-QA test scenario for the whole app lives in
 [`docs/qa/`](./docs/qa/GoService_Test_Scenario_QA.xlsx).
@@ -45,16 +66,17 @@ A manual-QA test scenario for the whole app lives in
 | Area | Choice |
 | --- | --- |
 | Language | Kotlin 2.3.21 (Multiplatform) |
+| Build | Android Gradle Plugin 9.1.1, Gradle 9.3.1 |
 | Shared core | `:shared` framework consumed by both apps (domain + data + ViewModels + DI) |
-| Android UI | Jetpack Compose 1.11 + Material 3 + Navigation Compose |
+| Android UI | Jetpack Compose Multiplatform 1.11 + Material 3 + Navigation Compose |
 | iOS UI | SwiftUI (consumes the shared `Shared` framework) |
 | Targets | Android (minSdk 24, target/compile 36), iOS (arm64 + simulator arm64) |
 | DI | Koin |
 | Persistence | Room (KMP, via KSP) on bundled SQLite |
 | Async | Kotlinx Coroutines / Flow |
-| Date/time | Kotlinx Datetime |
+| Date/time | Kotlinx Datetime 0.8 + `kotlin.time.Instant` |
 | Serialization | Kotlinx Serialization (JSON) |
-| Notifications | WorkManager (Android) + `UNUserNotificationCenter` (iOS), behind a shared scheduler |
+| Notifications | WorkManager (Android) + `UNUserNotificationCenter` (iOS), two independent channels/categories (`Pengingat servis`, `Update KM`) behind shared planners + schedulers |
 | Ads | Yandex Mobile Ads (banner / interstitial / native / app-open) |
 
 ---
@@ -75,9 +97,11 @@ shared/src/commonMain/.../feature/<name>/
 ```
 
 Features: `onboarding`, `profile`, `vehicle`, `service`, `component`,
-`reminder`, `backup`, `settings`, `tip`. Cross-cutting helpers live under
-`core/` (value types like `Money`/`Distance`/`HexColor`, `AppClock`, paging,
-sync metadata, result types, DI).
+`reminder`, `backup`, `settings`. (A `tip` feature still exists in the tree
+but its UI entry points are hidden until post-MVP.) Cross-cutting helpers
+live under `core/` (value types like `Money`/`Distance`/`HexColor`, `AppClock`,
+paging, sync metadata, result types, DI, **notification planners + schedulers
++ deep-link sinks**).
 
 ```
 GoService/
