@@ -41,10 +41,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zrifapps.goservice.feature.component.domain.model.Component
 import com.zrifapps.goservice.feature.component.domain.model.TrackedComponent
 import com.zrifapps.goservice.feature.component.presentation.TrackedComponentDetailViewModel
+import com.zrifapps.goservice.ui.common.toastError
 import com.zrifapps.goservice.ui.components.AppButton
 import com.zrifapps.goservice.ui.components.CircleIconButton
 import com.zrifapps.goservice.ui.theme.AppColors
@@ -68,13 +70,14 @@ fun TrackedComponentDetailScreen(
     vm: TrackedComponentDetailViewModel = koinViewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val ctx = LocalContext.current
     LaunchedEffect(trackedId) { vm.load(trackedId) }
     DisposableEffect(vm) {
         val cancellable = vm.observeEvents { event ->
             when (event) {
                 is TrackedComponentDetailViewModel.Event.Saved -> Unit
                 is TrackedComponentDetailViewModel.Event.Stopped -> onStopped()
-                is TrackedComponentDetailViewModel.Event.Failed -> Unit
+                is TrackedComponentDetailViewModel.Event.Failed -> ctx.toastError(event.error)
             }
         }
         onDispose { cancellable.cancel() }

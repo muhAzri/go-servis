@@ -38,10 +38,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zrifapps.goservice.feature.vehicle.domain.model.Vehicle
 import com.zrifapps.goservice.feature.vehicle.domain.model.VehicleType
 import com.zrifapps.goservice.feature.vehicle.presentation.UpdateOdometerViewModel
+import com.zrifapps.goservice.ui.common.toastError
 import com.zrifapps.goservice.ui.components.AppButton
 import com.zrifapps.goservice.ui.components.CircleIconButton
 import com.zrifapps.goservice.ui.theme.AppColors
@@ -58,11 +60,15 @@ fun UpdateOdometerScreen(
     vm: UpdateOdometerViewModel = koinViewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val ctx = LocalContext.current
 
     LaunchedEffect(vehicleId) { vm.preselect(vehicleId) }
     LaunchedEffect(vm) {
         vm.events.collect { event ->
-            if (event is UpdateOdometerViewModel.Event.Saved) onSaved()
+            when (event) {
+                is UpdateOdometerViewModel.Event.Saved -> onSaved()
+                is UpdateOdometerViewModel.Event.Failed -> ctx.toastError(event.error)
+            }
         }
     }
 

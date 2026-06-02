@@ -12,10 +12,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zrifapps.goservice.feature.vehicle.domain.model.Vehicle
 import com.zrifapps.goservice.feature.vehicle.presentation.EditVehicleViewModel
+import com.zrifapps.goservice.ui.common.toastError
 import com.zrifapps.goservice.ui.components.AppButton
 import com.zrifapps.goservice.ui.components.ConfirmDialog
 import com.zrifapps.goservice.ui.components.ConfirmDialogTone
@@ -36,6 +38,7 @@ fun EditVehicleScreen(
     vm: EditVehicleViewModel = koinViewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val ctx = LocalContext.current
 
     LaunchedEffect(vehicleId) { vm.load(vehicleId) }
     LaunchedEffect(vm) {
@@ -43,7 +46,7 @@ fun EditVehicleScreen(
             when (event) {
                 is EditVehicleViewModel.Event.Saved -> onSaved()
                 is EditVehicleViewModel.Event.Deleted -> onDeleted()
-                is EditVehicleViewModel.Event.Failed -> Unit
+                is EditVehicleViewModel.Event.Failed -> ctx.toastError(event.error)
             }
         }
     }

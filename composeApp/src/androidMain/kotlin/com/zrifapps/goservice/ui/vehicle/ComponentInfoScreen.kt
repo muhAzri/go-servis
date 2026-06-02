@@ -34,9 +34,11 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zrifapps.goservice.feature.component.presentation.ComponentInfoViewModel
 import com.zrifapps.goservice.feature.vehicle.domain.model.VehicleType
+import com.zrifapps.goservice.ui.common.toastError
 import com.zrifapps.goservice.ui.components.CircleIconButton
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
@@ -57,6 +59,7 @@ fun ComponentInfoScreen(
     vm: ComponentInfoViewModel = koinViewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val ctx = LocalContext.current
     LaunchedEffect(catalogId, customName, vehicleId) {
         if (customName != null) vm.loadNewCustom(customName, vehicleId)
         else if (catalogId != null) vm.load(catalogId, vehicleId)
@@ -65,7 +68,7 @@ fun ComponentInfoScreen(
         val cancellable = vm.observeEvents { event ->
             when (event) {
                 is ComponentInfoViewModel.Event.Tracked -> onTracked(event.trackedId)
-                is ComponentInfoViewModel.Event.Failed -> Unit
+                is ComponentInfoViewModel.Event.Failed -> ctx.toastError(event.error)
             }
         }
         onDispose { cancellable.cancel() }

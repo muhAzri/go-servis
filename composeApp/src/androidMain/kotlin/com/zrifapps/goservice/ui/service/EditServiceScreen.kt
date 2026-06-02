@@ -38,9 +38,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zrifapps.goservice.feature.service.domain.model.ServiceType
 import com.zrifapps.goservice.feature.service.presentation.EditServiceViewModel
+import com.zrifapps.goservice.ui.common.toastError
 import com.zrifapps.goservice.ui.components.AppBackButton
 import com.zrifapps.goservice.ui.components.AppButton
 import com.zrifapps.goservice.ui.components.MultiPicker
@@ -72,6 +74,7 @@ fun EditServiceScreen(
     vm: EditServiceViewModel = koinViewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val ctx = LocalContext.current
 
     LaunchedEffect(recordId) { vm.load(recordId) }
     LaunchedEffect(vm) {
@@ -79,7 +82,7 @@ fun EditServiceScreen(
             when (event) {
                 is EditServiceViewModel.Event.Saved -> onSaved()
                 is EditServiceViewModel.Event.Deleted -> onDeleted()
-                is EditServiceViewModel.Event.Failed -> Unit
+                is EditServiceViewModel.Event.Failed -> ctx.toastError(event.error)
             }
         }
     }

@@ -24,8 +24,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zrifapps.goservice.feature.vehicle.presentation.AddVehicleViewModel
+import com.zrifapps.goservice.ui.common.toastError
 import com.zrifapps.goservice.ui.components.AppBackButton
 import com.zrifapps.goservice.ui.components.AppButton
 import com.zrifapps.goservice.ui.theme.AppColors
@@ -42,12 +44,16 @@ fun AddVehicleScreen(
     vm: AddVehicleViewModel = koinViewModel(),
 ) {
     val font = plusJakartaSansFontFamily()
+    val ctx = LocalContext.current
     var formState by remember { mutableStateOf(VehicleFormState()) }
     val state by vm.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(vm) {
         vm.events.collect { event ->
-            if (event is AddVehicleViewModel.Event.Saved) onSaved()
+            when (event) {
+                is AddVehicleViewModel.Event.Saved -> onSaved()
+                is AddVehicleViewModel.Event.Failed -> ctx.toastError(event.error)
+            }
         }
     }
 

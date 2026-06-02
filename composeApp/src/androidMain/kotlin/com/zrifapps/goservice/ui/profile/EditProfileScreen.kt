@@ -37,12 +37,14 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zrifapps.goservice.feature.profile.presentation.EditProfileViewModel
 import com.zrifapps.goservice.feature.profile.presentation.EditProfileViewModel.EmailError
 import com.zrifapps.goservice.feature.profile.presentation.EditProfileViewModel.NameError
 import com.zrifapps.goservice.feature.service.presentation.ServiceHistoryViewModel
 import com.zrifapps.goservice.feature.vehicle.presentation.VehicleListViewModel
+import com.zrifapps.goservice.ui.common.toastError
 import com.zrifapps.goservice.ui.components.AppTextField
 import com.zrifapps.goservice.ui.components.CircleIconButton
 import com.zrifapps.goservice.ui.theme.AppColors
@@ -61,10 +63,14 @@ fun EditProfileScreen(
     val state by vm.state.collectAsStateWithLifecycle()
     val vehicleState by vehicleVm.state.collectAsStateWithLifecycle()
     val serviceState by serviceVm.state.collectAsStateWithLifecycle()
+    val ctx = LocalContext.current
 
     LaunchedEffect(vm) {
         vm.events.collect { event ->
-            if (event is EditProfileViewModel.Event.Saved) onSaved()
+            when (event) {
+                is EditProfileViewModel.Event.Saved -> onSaved()
+                is EditProfileViewModel.Event.Failed -> ctx.toastError(event.error)
+            }
         }
     }
 

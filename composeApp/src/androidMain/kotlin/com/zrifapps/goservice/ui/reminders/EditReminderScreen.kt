@@ -38,10 +38,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zrifapps.goservice.feature.reminder.domain.model.ReminderTriggerMode
 import com.zrifapps.goservice.feature.reminder.presentation.EditReminderViewModel
 import com.zrifapps.goservice.feature.service.domain.model.ServiceType
+import com.zrifapps.goservice.ui.common.toastError
 import com.zrifapps.goservice.ui.components.AppBackButton
 import com.zrifapps.goservice.ui.components.VehicleOption
 import com.zrifapps.goservice.ui.components.VehiclePickerRow
@@ -69,13 +71,14 @@ fun EditReminderScreen(
     vm: EditReminderViewModel = koinViewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val ctx = LocalContext.current
     LaunchedEffect(reminderId) { vm.load(reminderId) }
     LaunchedEffect(vm) {
         vm.events.collect { event ->
             when (event) {
                 is EditReminderViewModel.Event.Saved -> onSave()
                 is EditReminderViewModel.Event.Deleted -> onDelete()
-                is EditReminderViewModel.Event.Failed -> Unit
+                is EditReminderViewModel.Event.Failed -> ctx.toastError(event.error)
             }
         }
     }

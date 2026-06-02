@@ -40,11 +40,13 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zrifapps.goservice.feature.reminder.domain.model.ReminderStatus
 import com.zrifapps.goservice.feature.reminder.domain.model.ReminderTrigger
 import com.zrifapps.goservice.feature.reminder.domain.usecase.SnoozeReminder
 import com.zrifapps.goservice.feature.reminder.presentation.ReminderDetailViewModel
+import com.zrifapps.goservice.ui.common.toastError
 import com.zrifapps.goservice.ui.components.CircleIconButton
 import com.zrifapps.goservice.ui.components.IconBadge
 import com.zrifapps.goservice.ui.components.ReminderUrgency as UiReminderUrgency
@@ -69,6 +71,7 @@ fun ReminderDetailScreen(
     vm: ReminderDetailViewModel = koinViewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val ctx = LocalContext.current
     LaunchedEffect(reminderId) { vm.load(reminderId) }
     LaunchedEffect(vm) {
         vm.events.collect { event ->
@@ -77,7 +80,7 @@ fun ReminderDetailScreen(
                 ReminderDetailViewModel.Event.Dismissed -> onDeleted()
                 ReminderDetailViewModel.Event.Completed,
                 ReminderDetailViewModel.Event.Snoozed -> Unit
-                is ReminderDetailViewModel.Event.Failed -> Unit
+                is ReminderDetailViewModel.Event.Failed -> ctx.toastError(event.error)
             }
         }
     }
