@@ -17,3 +17,12 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+
+# Firebase — keep config/secrets out of the public repo.
+# Obtain from Firebase Console > Project Settings; in CI, inject as a secret.
+google-services.json
+**/google-services.json
+GoogleService-Info.plist
+**/GoogleService-Info.plist
+.firebase/
+firebase-debug.log
