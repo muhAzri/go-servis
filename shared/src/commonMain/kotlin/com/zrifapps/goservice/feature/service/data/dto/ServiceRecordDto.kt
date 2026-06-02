@@ -8,6 +8,8 @@ data class ServiceRecordDto(
     @SerialName("id") val id: String,
     @SerialName("vehicle_id") val vehicleId: String,
     @SerialName("service_type") val serviceType: String,
+    @SerialName("kind") val kind: String = "komponen",
+    @SerialName("custom_title") val customTitle: String? = null,
     @SerialName("service_date") val serviceDate: Long,
     @SerialName("odometer_km") val odometerKm: Long,
     @SerialName("workshop") val workshop: String? = null,

@@ -8,6 +8,8 @@ data class ServiceRecord(
     val id: String,
     val vehicleId: String,
     val serviceType: ServiceType,
+    val kind: ServiceKind = ServiceKind.Komponen,
+    val customTitle: String? = null,
     val serviceDate: Long,
     val odometer: Distance,
     val workshop: String?,
@@ -23,6 +25,8 @@ data class ServiceRecord(
 data class ServiceRecordDraft(
     val vehicleId: String,
     val serviceType: ServiceType,
+    val kind: ServiceKind = ServiceKind.Komponen,
+    val customTitle: String? = null,
     val serviceDate: Long,
     val odometer: Distance,
     val workshop: String?,

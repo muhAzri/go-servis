@@ -30,6 +30,8 @@ data class ServiceRecordEntity(
     @PrimaryKey val id: String,
     @ColumnInfo("vehicle_id") val vehicleId: String,
     @ColumnInfo("service_type") val serviceType: String,
+    @ColumnInfo("kind", defaultValue = "komponen") val kind: String,
+    @ColumnInfo("custom_title") val customTitle: String?,
     @ColumnInfo("service_date") val serviceDate: Long,
     @ColumnInfo("odometer_km") val odometerKm: Long,
     val workshop: String?,

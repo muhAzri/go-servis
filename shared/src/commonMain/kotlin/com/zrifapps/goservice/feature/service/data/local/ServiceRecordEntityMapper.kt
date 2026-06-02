@@ -4,6 +4,7 @@ import com.zrifapps.goservice.core.database.toDomain
 import com.zrifapps.goservice.core.database.toEmbed
 import com.zrifapps.goservice.core.value.Distance
 import com.zrifapps.goservice.core.value.Money
+import com.zrifapps.goservice.feature.service.domain.model.ServiceKind
 import com.zrifapps.goservice.feature.service.domain.model.ServiceRecord
 import com.zrifapps.goservice.feature.service.domain.model.ServiceType
 
@@ -11,6 +12,8 @@ fun ServiceRecordWithComponents.toDomain(): ServiceRecord = ServiceRecord(
     id = record.id,
     vehicleId = record.vehicleId,
     serviceType = ServiceType.fromKey(record.serviceType),
+    kind = ServiceKind.fromKey(record.kind),
+    customTitle = record.customTitle,
     serviceDate = record.serviceDate,
     odometer = Distance.ofKm(record.odometerKm),
     workshop = record.workshop,
@@ -27,6 +30,8 @@ fun ServiceRecord.toEntity(): ServiceRecordEntity = ServiceRecordEntity(
     id = id,
     vehicleId = vehicleId,
     serviceType = serviceType.key,
+    kind = kind.key,
+    customTitle = customTitle,
     serviceDate = serviceDate,
     odometerKm = odometer.kilometers,
     workshop = workshop,

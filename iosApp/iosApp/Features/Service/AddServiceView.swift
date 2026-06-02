@@ -11,16 +11,43 @@ private struct TrackedComponent: Identifiable, Hashable {
     let color: Color
 }
 
-private let trackedComponents: [TrackedComponent] = [
-    .init(id: "oli_mesin",    label: "Oli mesin",     subtitle: "2.000 km", iconUnicode: "\u{f613}", color: Color(red: 0.91, green: 0.61, blue: 0.18)),
-    .init(id: "filter_oli",   label: "Filter oli",    subtitle: "4.000 km", iconUnicode: "\u{f0b0}", color: Color(red: 0.48, green: 0.44, blue: 0.91)),
-    .init(id: "filter_udara", label: "Filter udara",  subtitle: "8.000 km", iconUnicode: "\u{f0b0}", color: Color(red: 0.48, green: 0.44, blue: 0.91)),
-    .init(id: "busi",         label: "Busi & tune-up",subtitle: "6.000 km", iconUnicode: "\u{f0e7}", color: Color(red: 0.91, green: 0.71, blue: 0.18)),
-    .init(id: "aki",          label: "Aki",            subtitle: "1–2 tahun", iconUnicode: "\u{f5df}", color: Color(red: 0.84, green: 0.27, blue: 0.23)),
-    .init(id: "kampas_rem",   label: "Kampas rem",     subtitle: "8.000 km", iconUnicode: "\u{f1ce}", color: .sgPrimary),
-    .init(id: "ban",          label: "Ban",            subtitle: "10.000 km", iconUnicode: "\u{f1cd}", color: Color(red: 0.25, green: 0.30, blue: 0.36)),
-    .init(id: "radiator",     label: "Radiator",       subtitle: "tahunan",   iconUnicode: "\u{f2c9}", color: Color(red: 0.25, green: 0.69, blue: 0.84)),
-]
+private func iconForKey(_ key: String) -> String {
+    switch key {
+    case "OIL_CAN":          return "\u{f613}"
+    case "BOLT":             return "\u{f0e7}"
+    case "CAR_BATTERY":      return "\u{f5df}"
+    case "CIRCLE_NOTCH":     return "\u{f1ce}"
+    case "LIFE_RING":        return "\u{f1cd}"
+    case "FILTER":           return "\u{f0b0}"
+    case "TEMPERATURE_HALF": return "\u{f2c9}"
+    case "GEAR":             return "\u{f013}"
+    case "GEARS":            return "\u{f085}"
+    case "WRENCH":           return "\u{f0ad}"
+    default:                 return "\u{f0ad}"
+    }
+}
+
+private func colorFromHex(_ hex: String, fallback: Color = .sgPrimary) -> Color {
+    var clean = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+    if clean.hasPrefix("#") { clean.removeFirst() }
+    guard clean.count == 6, let value = UInt32(clean, radix: 16) else { return fallback }
+    let r = Double((value >> 16) & 0xFF) / 255.0
+    let g = Double((value >> 8) & 0xFF) / 255.0
+    let b = Double(value & 0xFF) / 255.0
+    return Color(red: r, green: g, blue: b)
+}
+
+private extension AddServiceViewModelComponentOption {
+    func toLocal() -> TrackedComponent {
+        TrackedComponent(
+            id: id,
+            label: label,
+            subtitle: intervalLabel,
+            iconUnicode: iconForKey(iconKey),
+            color: colorFromHex(colorHex)
+        )
+    }
+}
 
 struct AddServiceView: View {
     var onSaved: (String) -> Void = { _ in }
@@ -82,11 +109,8 @@ struct AddServiceView: View {
     private var noteText: Binding<String> {
         Binding(get: { model.state.note }, set: { model.setNote($0) })
     }
-    private var serviceTypeBinding: Binding<String> {
-        Binding(
-            get: { model.state.serviceType.key },
-            set: { model.setServiceType(ServiceType.companion.fromKey(key: $0)) }
-        )
+    private var availableComponents: [TrackedComponent] {
+        (model.state.availableComponents as [AddServiceViewModelComponentOption]).map { $0.toLocal() }
     }
 
     var body: some View {
@@ -108,29 +132,74 @@ struct AddServiceView: View {
 
                     FieldLabel(text: "Kendaraan")
                     if let option = selectedOption {
-                        VehiclePickerRow(selected: option, locked: vehicleId != nil) {
-                            if vehicleId == nil { showVehiclePicker = true }
+                        VehiclePickerRow(selected: option, locked: contextActive) {
+                            if !contextActive { showVehiclePicker = true }
                         }
                         .padding(.bottom, 18)
                     }
 
-                    FieldLabel(text: "Jenis servis")
-                    ServiceTypeGrid(selected: serviceTypeBinding)
-                        .padding(.bottom, 18)
-
-                    FieldLabel(text: "Komponen yang diservis · \(model.state.selectedComponentIds.count)")
-                    ComponentChipsRow(
-                        selectedIds: Set(model.state.selectedComponentIds),
-                        allItems: trackedComponents,
-                        onRemove: { id in model.toggleComponent(id) },
-                        onAdd: { showComponentPicker = true }
+                    FieldLabel(text: "Jenis catatan")
+                    ModeSelector(
+                        selected: model.state.mode,
+                        onSelect: { model.setMode($0) }
                     )
-                    Text("Daftar diambil dari komponen yang kamu pantau.")
-                        .font(.custom("PlusJakartaSans-Medium", size: 11))
-                        .foregroundColor(.sgTextSubtle)
-                        .lineSpacing(2)
-                        .padding(.top, 6)
+                    .padding(.bottom, 18)
+
+                    switch model.state.mode {
+                    case ServiceKind.komponen:
+                        FieldLabel(text: "Komponen yang diservis · \(model.state.selectedComponentIds.count)")
+                        if model.state.hasTrackedComponents {
+                            ComponentChipsRow(
+                                selectedIds: Set(model.state.selectedComponentIds),
+                                allItems: availableComponents,
+                                onRemove: { id in model.toggleComponent(id) },
+                                onAdd: { showComponentPicker = true }
+                            )
+                            Text("Daftar diambil dari komponen yang kamu pantau. Reminder berikutnya dibuat otomatis per komponen.")
+                                .font(.custom("PlusJakartaSans-Medium", size: 11))
+                                .foregroundColor(.sgTextSubtle)
+                                .lineSpacing(2)
+                                .padding(.top, 6)
+                                .padding(.bottom, 18)
+                        } else {
+                            ContextBanner(
+                                title: "Belum ada komponen dipantau",
+                                body: "Tambah komponen di Detail Kendaraan → Komponen dulu, atau pakai mode Rutin / Manual.",
+                                iconUnicode: "\u{f0ad}",
+                                tone: .warning,
+                                onDismiss: nil
+                            )
+                            .padding(.bottom, 18)
+                        }
+                    case ServiceKind.rutin:
+                        let rutinKm = (model.state.selectedVehicle?.type == VehicleType.mobil) ? "10.000" : "4.000"
+                        ContextBanner(
+                            title: "Servis Rutin / Berkala",
+                            body: "Cocok untuk servis berkala umum di bengkel (tidak tahu komponen apa saja yang diganti). Kami buat reminder otomatis ~6 bulan / \(rutinKm) km kedepan.",
+                            iconUnicode: "\u{f05a}",
+                            tone: .info,
+                            onDismiss: nil
+                        )
                         .padding(.bottom, 18)
+                    case ServiceKind.manual:
+                        EditableRowField(
+                            label: "Apa yang diservis?",
+                            text: Binding(
+                                get: { model.state.customTitle },
+                                set: { model.setCustomTitle($0) }
+                            ),
+                            placeholder: "cth. Ganti spion, jok baru, klakson",
+                            iconUnicode: "\u{f0ad}"
+                        )
+                        Text("Sekali catat, tidak dibuat reminder otomatis. Cocok untuk perbaikan satu kali.")
+                            .font(.custom("PlusJakartaSans-Medium", size: 11))
+                            .foregroundColor(.sgTextSubtle)
+                            .lineSpacing(2)
+                            .padding(.top, 2)
+                            .padding(.bottom, 18)
+                    default:
+                        EmptyView()
+                    }
 
                     DateRowField(
                         label: "Tanggal servis",
@@ -172,8 +241,10 @@ struct AddServiceView: View {
                         axis: .vertical
                     )
 
-                    AutoReminderInfoCard()
-                        .padding(.top, 4)
+                    if model.state.mode != ServiceKind.manual {
+                        AutoReminderInfoCard()
+                            .padding(.top, 4)
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 8)
@@ -222,7 +293,7 @@ struct AddServiceView: View {
         }
         .sheet(isPresented: $showComponentPicker) {
             ComponentPickerSheet(
-                allItems: trackedComponents,
+                allItems: availableComponents,
                 initiallySelected: Set(model.state.selectedComponentIds),
                 onApply: { picked in
                     model.setComponents(picked)
@@ -400,48 +471,40 @@ private struct FieldLabel: View {
     }
 }
 
-private struct ServiceTypeGrid: View {
-    @Binding var selected: String
+private struct ModeSelector: View {
+    let selected: ServiceKind
+    let onSelect: (ServiceKind) -> Void
 
-    private let services: [(id: String, label: String, icon: String, color: Color)] = [
-        ("oli", "Ganti Oli\nMesin", "\u{f613}", Color(red: 0.91, green: 0.61, blue: 0.18)),
-        ("filter", "Filter Oli\n& Udara", "\u{f0b0}", Color(red: 0.48, green: 0.44, blue: 0.91)),
-        ("ban", "Rotasi/\nGanti Ban", "\u{f1cd}", Color(red: 0.25, green: 0.30, blue: 0.36)),
-        ("aki", "Aki", "\u{f5df}", Color(red: 0.84, green: 0.27, blue: 0.23)),
-        ("rem", "Kampas\nRem", "\u{f1ce}", Color(red: 0.18, green: 0.55, blue: 0.34)),
-        ("radiator", "Radiator/\nCoolant", "\u{f2c9}", Color(red: 0.25, green: 0.69, blue: 0.84)),
+    private let options: [(ServiceKind, String)] = [
+        (.komponen, "Komponen"),
+        (.rutin, "Rutin"),
+        (.manual, "Manual"),
     ]
 
     var body: some View {
-        LazyVGrid(columns: [.init(.flexible(), spacing: 8), .init(.flexible(), spacing: 8), .init(.flexible(), spacing: 8)], spacing: 8) {
-            ForEach(services, id: \.id) { s in
-                Button { selected = s.id } label: {
-                    VStack(spacing: 6) {
-                        Text(s.icon)
-                            .font(.custom("FontAwesome6Free-Solid", size: 22))
-                            .foregroundColor(selected == s.id ? .sgPrimary : s.color)
-                        Text(s.label)
-                            .font(.custom("PlusJakartaSans-SemiBold", size: 10))
-                            .foregroundColor(.sgTextPrimary)
-                            .multilineTextAlignment(.center)
-                            .lineLimit(2)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(selected == s.id ? Color.sgPrimarySoft : Color.sgSurface)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .strokeBorder(
-                                selected == s.id ? Color.sgPrimary : Color.sgBorder,
-                                lineWidth: 1.5
-                            )
-                    )
+        HStack(spacing: 8) {
+            ForEach(options, id: \.0) { (mode, label) in
+                Button(action: { onSelect(mode) }) {
+                    Text(label)
+                        .font(.custom("PlusJakartaSans-Bold", size: 13))
+                        .foregroundColor(mode == selected ? .sgPrimary : .sgTextPrimary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(mode == selected ? Color.sgPrimarySoft : Color.sgSurface)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .strokeBorder(mode == selected ? Color.sgPrimary : Color.sgBorder, lineWidth: 1.5)
+                        )
                 }
                 .buttonStyle(.plain)
             }
         }
     }
+}
+
+extension ServiceKind: Identifiable {
+    public var id: String { key }
 }
 
 private struct EditableRowField: View {

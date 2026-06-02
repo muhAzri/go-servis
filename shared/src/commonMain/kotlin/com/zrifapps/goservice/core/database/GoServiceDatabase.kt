@@ -32,7 +32,7 @@ import com.zrifapps.goservice.feature.vehicle.data.local.VehicleEntity
         ProfileEntity::class,
         OnboardingStateEntity::class,
     ],
-    version = 1,
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(RoomTypeConverters::class)

@@ -43,6 +43,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.zrifapps.goservice.feature.service.presentation.AddServiceViewModel
 import com.zrifapps.goservice.ui.components.MultiPickerItem
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
@@ -88,6 +89,36 @@ internal val trackedComponents = listOf(
 
 internal fun trackedComponentMeta(id: String): MultiPickerItem? =
     trackedComponents.firstOrNull { it.id == id }
+
+internal fun AddServiceViewModel.ComponentOption.toMultiPickerItem(): MultiPickerItem =
+    MultiPickerItem(
+        id = id,
+        label = label,
+        subtitle = intervalLabel,
+        icon = iconKeyToFa(iconKey),
+        color = parseHexColor(colorHex),
+    )
+
+private fun iconKeyToFa(key: String): String = when (key) {
+    "OIL_CAN" -> FaIcons.OIL_CAN
+    "BOLT" -> FaIcons.BOLT
+    "CAR_BATTERY" -> FaIcons.CAR_BATTERY
+    "CIRCLE_NOTCH" -> FaIcons.CIRCLE_NOTCH
+    "LIFE_RING" -> FaIcons.LIFE_RING
+    "FILTER" -> FaIcons.FILTER
+    "TEMPERATURE_HALF" -> FaIcons.TEMPERATURE_HALF
+    "GEAR" -> FaIcons.GEAR
+    "GEARS" -> FaIcons.GEARS
+    "WRENCH" -> FaIcons.WRENCH
+    else -> FaIcons.WRENCH
+}
+
+private fun parseHexColor(hex: String, fallback: Color = AppColors.Primary): Color =
+    try {
+        Color(android.graphics.Color.parseColor(hex))
+    } catch (_: Throwable) {
+        fallback
+    }
 
 internal fun formatServiceDate(millis: Long): String {
     if (millis <= 0L) return "—"

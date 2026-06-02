@@ -70,6 +70,8 @@ class ServiceRepositoryImpl(
             id = idGenerator.newId(),
             vehicleId = draft.vehicleId,
             serviceType = draft.serviceType,
+            kind = draft.kind,
+            customTitle = draft.customTitle,
             serviceDate = draft.serviceDate,
             odometer = draft.odometer,
             workshop = draft.workshop,
