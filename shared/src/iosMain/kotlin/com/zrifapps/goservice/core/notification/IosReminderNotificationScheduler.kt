@@ -1,7 +1,8 @@
 package com.zrifapps.goservice.core.notification
 
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import platform.Foundation.NSDateComponents
 import platform.UserNotifications.UNCalendarNotificationTrigger
@@ -33,8 +34,8 @@ class IosReminderNotificationScheduler : ReminderNotificationScheduler {
             val dateTime = Instant.fromEpochMilliseconds(notification.triggerAtMillis).toLocalDateTime(tz)
             val components = NSDateComponents().apply {
                 year = dateTime.year.toLong()
-                month = dateTime.monthNumber.toLong()
-                day = dateTime.dayOfMonth.toLong()
+                month = dateTime.month.number.toLong()
+                day = dateTime.day.toLong()
                 hour = dateTime.hour.toLong()
                 minute = dateTime.minute.toLong()
             }

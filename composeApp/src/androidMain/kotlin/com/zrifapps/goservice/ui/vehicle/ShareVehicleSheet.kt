@@ -1,17 +1,20 @@
 package com.zrifapps.goservice.ui.vehicle
 
+import android.content.ClipData
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
 import com.zrifapps.goservice.feature.onboarding.presentation.PresentationFactory
 import com.zrifapps.goservice.feature.vehicle.domain.model.Vehicle
 import com.zrifapps.goservice.ui.components.ActionSheet
 import com.zrifapps.goservice.ui.components.ActionSheetOption
 import com.zrifapps.goservice.ui.components.ActionSheetSelectionMode
 import com.zrifapps.goservice.ui.theme.FaIcons
+import kotlinx.coroutines.launch
 
 @Composable
 fun ShareVehicleSheet(
@@ -19,7 +22,8 @@ fun ShareVehicleSheet(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
     val name = vehicle?.displayTitle?.takeIf(String::isNotBlank) ?: "kendaraan"
 
     ActionSheet(
@@ -46,7 +50,9 @@ fun ShareVehicleSheet(
             val text = PresentationFactory.vehicleShareText(v)
             when (opt.value) {
                 "copy" -> {
-                    clipboard.setText(AnnotatedString(text))
+                    scope.launch {
+                        clipboard.setClipEntry(ClipEntry(ClipData.newPlainText(name, text)))
+                    }
                     Toast.makeText(context, "Ringkasan disalin", Toast.LENGTH_SHORT).show()
                 }
                 "system" -> {

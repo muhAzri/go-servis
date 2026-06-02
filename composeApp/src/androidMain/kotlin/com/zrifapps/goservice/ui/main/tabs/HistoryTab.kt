@@ -53,8 +53,9 @@ import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
 import com.zrifapps.goservice.ui.theme.plusJakartaSansFontFamily
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import org.koin.androidx.compose.koinViewModel
 
@@ -447,13 +448,13 @@ private val monthNames = arrayOf(
 
 private fun yearMonthLabel(epochMillis: Long): String {
     val dt = Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(TimeZone.currentSystemDefault())
-    return "${monthNames[dt.monthNumber - 1]} ${dt.year}"
+    return "${monthNames[dt.month.number - 1]} ${dt.year}"
 }
 
 private fun formatShortDate(epochMillis: Long): String {
     val dt = Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(TimeZone.currentSystemDefault())
-    val month = monthNames[dt.monthNumber - 1].take(3)
-    return "${dt.dayOfMonth} $month ${dt.year}"
+    val month = monthNames[dt.month.number - 1].take(3)
+    return "${dt.day} $month ${dt.year}"
 }
 
 private fun formatGroupedLong(value: Long): String {

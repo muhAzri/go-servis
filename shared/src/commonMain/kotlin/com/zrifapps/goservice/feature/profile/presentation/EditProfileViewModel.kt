@@ -20,8 +20,9 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 
 class EditProfileViewModel(
@@ -202,7 +203,7 @@ class EditProfileViewModel(
             if (epochMillis == null) return "—"
             val dt = Instant.fromEpochMilliseconds(epochMillis)
                 .toLocalDateTime(TimeZone.currentSystemDefault())
-            val month = INDONESIAN_MONTHS_SHORT[dt.monthNumber - 1]
+            val month = INDONESIAN_MONTHS_SHORT[dt.month.number - 1]
             val yearSuffix = (dt.year % 100).toString().padStart(2, '0')
             return "$month '$yearSuffix"
         }

@@ -3,8 +3,8 @@ package com.zrifapps.goservice.core.notification
 import com.zrifapps.goservice.core.time.AppClock
 import com.zrifapps.goservice.feature.reminder.domain.model.Reminder
 import com.zrifapps.goservice.feature.reminder.domain.model.ReminderStatus
+import kotlin.time.Instant
 import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atTime
@@ -59,6 +59,7 @@ class ReminderNotificationPlanner(
     }
 
     private fun millisToDate(millis: Long, tz: TimeZone): LocalDate =
+
         Instant.fromEpochMilliseconds(millis).toLocalDateTime(tz).date
 
     private fun bodyFor(daysLeft: Int): String = when {
