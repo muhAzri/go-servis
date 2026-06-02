@@ -231,6 +231,58 @@ internal fun DateInputField(
 }
 
 @Composable
+internal fun TitleInputField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+) {
+    val font = plusJakartaSansFontFamily()
+    var focused by remember { mutableStateOf(false) }
+    val borderColor = if (focused) AppColors.Primary else AppColors.Border
+
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        singleLine = true,
+        cursorBrush = SolidColor(AppColors.Primary),
+        textStyle = TextStyle(
+            color = AppColors.TextPrimary,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = font,
+        ),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Text,
+            imeAction = ImeAction.Next,
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .onFocusChanged { focused = it.isFocused },
+        decorationBox = { inner ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(AppColors.Surface)
+                    .border(BorderStroke(1.5.dp, borderColor), RoundedCornerShape(14.dp))
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+            ) {
+                if (value.isEmpty()) {
+                    Text(
+                        text = placeholder,
+                        color = AppColors.TextSubtle,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        fontFamily = font,
+                    )
+                }
+                inner()
+            }
+        },
+    )
+}
+
+@Composable
 internal fun NoteInputField(value: String, onValueChange: (String) -> Unit) {
     val font = plusJakartaSansFontFamily()
     var focused by remember { mutableStateOf(false) }

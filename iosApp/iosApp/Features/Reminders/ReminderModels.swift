@@ -37,7 +37,8 @@ final class AddReminderModel: ObservableObject {
         vm.preselect(vehicleId: vehicleId, trackedComponentId: trackedComponentId)
     }
     func selectVehicle(_ id: String) { vm.selectVehicle(vehicleId: id) }
-    func setServiceType(_ type: ServiceType) { vm.setServiceType(type: type) }
+    func setMode(_ mode: AddReminderViewModelMode) { vm.setMode(mode: mode) }
+    func selectComponent(_ trackedId: String) { vm.selectComponent(trackedId: trackedId) }
     func setTitle(_ value: String) { vm.setTitle(value: value) }
     func setTriggerMode(_ mode: ReminderTriggerMode) { vm.setTriggerMode(mode: mode) }
     func setTargetKm(_ km: Int64?) {

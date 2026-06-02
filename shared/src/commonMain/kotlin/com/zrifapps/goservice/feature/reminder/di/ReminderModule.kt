@@ -33,7 +33,7 @@ val reminderModule = module {
     factory { DeleteReminder(get()) }
 
     viewModel { ReminderListViewModel(get()) }
-    viewModel { AddReminderViewModel(get(), get(), get()) }
+    viewModel { AddReminderViewModel(get(), get(), get(), get(), get()) }
     viewModel { EditReminderViewModel(get(), get(), get(), get()) }
     viewModel { ReminderDetailViewModel(get(), get(), get(), get(), get(), get()) }
 }
