@@ -1,6 +1,5 @@
 import SwiftUI
 import Shared
-import UserNotifications
 
 struct HomeView: View {
     var userName: String = ""
@@ -11,22 +10,12 @@ struct HomeView: View {
     var onAddService: () -> Void = {}
     var onAddVehicle: () -> Void = {}
     var onUpdateOdometer: () -> Void = {}
-    var onOpenTips: () -> Void = {}
 
     @ObservedObject private var vehicles = VehicleListModel.shared
     @ObservedObject private var reminders = ReminderListModel.shared
 
-    @Environment(\.scenePhase) private var scenePhase
-    @State private var notifAuthorized: Bool = true
-    @State private var bannerDismissed: Bool = false
-    @State private var showNotifSheet: Bool = false
-
     private var isLoading: Bool { vehicles.state.isLoading || reminders.state.isLoading }
     private var isEmpty: Bool { vehicles.state.isEmpty }
-
-    private var showBanner: Bool {
-        !notifAuthorized && !bannerDismissed && !isEmpty && !isLoading
-    }
 
     var body: some View {
         Group {
@@ -47,9 +36,7 @@ struct HomeView: View {
                         title: "Belum ada kendaraan",
                         body: "Tambah motor atau mobilmu untuk mulai catat servis & dapat pengingat.",
                         ctaLabel: "+ Tambah Kendaraan",
-                        onCta: onAddVehicle,
-                        secondaryLabel: "Pelajari dulu",
-                        onSecondary: onOpenTips
+                        onCta: onAddVehicle
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
@@ -57,40 +44,12 @@ struct HomeView: View {
                 scrollContent
             }
         }
-        .task { await refreshNotifAuthorization() }
-        .onChange(of: scenePhase) { _, newPhase in
-            if newPhase == .active {
-                Task { await refreshNotifAuthorization() }
-            }
-        }
-    }
-
-    private func refreshNotifAuthorization() async {
-        let settings = await UNUserNotificationCenter.current().notificationSettings()
-        let granted = settings.authorizationStatus == .authorized
-            || settings.authorizationStatus == .provisional
-            || settings.authorizationStatus == .ephemeral
-        await MainActor.run { notifAuthorized = granted }
     }
 
     private var scrollContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 HomeHeader(userName: userName, onOpenReminders: onOpenReminders)
-
-                if showBanner {
-                    ContextBanner(
-                        title: "Notif belum aktif",
-                        body: "Pengingat servis tidak akan muncul di lock screen. Aktifkan supaya tidak kelewat.",
-                        iconUnicode: "\u{f0f3}",
-                        tone: .warning,
-                        ctaLabel: "Aktifkan →",
-                        onCta: { showNotifSheet = true },
-                        onDismiss: { bannerDismissed = true }
-                    )
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 8)
-                }
 
                 let vehicleById = Dictionary(uniqueKeysWithValues: vehicles.state.vehicles.map { ($0.id, $0) })
                 if let hero = pickHeroVehicle(vehicles.state.vehicles, reminders.state.reminders, vehicleById: vehicleById) {
@@ -112,8 +71,7 @@ struct HomeView: View {
                 QuickActionsGrid(
                     onAddService: onAddService,
                     onUpdateOdometer: onUpdateOdometer,
-                    onAddVehicle: onAddVehicle,
-                    onOpenTips: onOpenTips
+                    onAddVehicle: onAddVehicle
                 )
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
@@ -151,13 +109,6 @@ struct HomeView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
             }
-        }
-        .sheet(isPresented: $showNotifSheet) {
-            NotifPermissionSheet(
-                onDismiss: { showNotifSheet = false },
-                onOpenSettings: { showNotifSheet = false }
-            )
-            .presentationDetents([.medium])
         }
     }
 }
@@ -288,7 +239,6 @@ private struct QuickActionsGrid: View {
     let onAddService: () -> Void
     let onUpdateOdometer: () -> Void
     let onAddVehicle: () -> Void
-    let onOpenTips: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
@@ -309,12 +259,6 @@ private struct QuickActionsGrid: View {
                 label: "Tambah",
                 primary: false,
                 action: onAddVehicle
-            )
-            QuickActionTile(
-                icon: "\u{f0eb}",
-                label: "Tips",
-                primary: false,
-                action: onOpenTips
             )
         }
     }

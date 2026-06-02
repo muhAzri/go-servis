@@ -30,16 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.app.NotificationManagerCompat
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zrifapps.goservice.feature.reminder.domain.model.Reminder
 import com.zrifapps.goservice.feature.reminder.domain.model.ReminderUrgency as DomainReminderUrgency
@@ -48,8 +39,6 @@ import com.zrifapps.goservice.feature.vehicle.domain.model.Vehicle
 import com.zrifapps.goservice.feature.vehicle.domain.model.VehicleType
 import com.zrifapps.goservice.feature.vehicle.presentation.VehicleListViewModel
 import com.zrifapps.goservice.ui.components.AdBannerSlot
-import com.zrifapps.goservice.ui.components.ContextBanner
-import com.zrifapps.goservice.ui.components.ContextBannerTone
 import com.zrifapps.goservice.ui.components.EmptyState
 import com.zrifapps.goservice.ui.components.IconBadge
 import com.zrifapps.goservice.ui.components.NativeAdCard
@@ -57,7 +46,6 @@ import com.zrifapps.goservice.ui.components.ReminderUrgency
 import com.zrifapps.goservice.ui.components.Skeleton
 import com.zrifapps.goservice.ui.components.SkeletonLeading
 import com.zrifapps.goservice.ui.components.StatusPill
-import com.zrifapps.goservice.ui.onboarding.NotifPermissionSheet
 import com.zrifapps.goservice.ui.components.color
 import com.zrifapps.goservice.ui.components.softColor
 import com.zrifapps.goservice.ui.theme.AppColors
@@ -77,7 +65,6 @@ fun HomeTab(
     onAddService: () -> Unit = {},
     onAddVehicle: () -> Unit = {},
     onUpdateOdometer: () -> Unit = {},
-    onOpenTips: () -> Unit = {},
     vehicleVm: VehicleListViewModel = koinViewModel(),
     reminderVm: ReminderListViewModel = koinViewModel(),
 ) {
@@ -85,24 +72,6 @@ fun HomeTab(
     val reminderState by reminderVm.state.collectAsStateWithLifecycle()
     val isLoading = vehicleState.isLoading || reminderState.isLoading
     val isEmpty = vehicleState.isEmpty
-
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-    var notifGranted by remember {
-        mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled())
-    }
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                notifGranted = NotificationManagerCompat.from(context).areNotificationsEnabled()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-    var bannerDismissed by remember { mutableStateOf(false) }
-    var showNotifSheet by remember { mutableStateOf(false) }
-    val showBanner = !notifGranted && !bannerDismissed && !isEmpty && !isLoading
 
     if (isLoading) {
         Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
@@ -127,8 +96,6 @@ fun HomeTab(
                 body = "Tambah motor atau mobilmu untuk mulai catat servis & dapat pengingat.",
                 ctaLabel = "+ Tambah Kendaraan",
                 onCta = onAddVehicle,
-                secondaryLabel = "Pelajari dulu",
-                onSecondary = onOpenTips,
             )
         }
         return
@@ -141,18 +108,6 @@ fun HomeTab(
     ) {
         HomeHeader(userName = userName, onOpenReminders = onOpenReminders)
 
-        if (showBanner) {
-            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-                ContextBanner(
-                    title = "Notif belum aktif",
-                    body = "Pengingat servis tidak akan muncul di lock screen. Aktifkan supaya tidak kelewat.",
-                    tone = ContextBannerTone.Warning,
-                    ctaLabel = "Aktifkan →",
-                    onCta = { showNotifSheet = true },
-                    onDismiss = { bannerDismissed = true },
-                )
-            }
-        }
         val vehicleById = vehicleState.vehicles.associateBy { it.id }
         val heroVehicle = pickHeroVehicle(vehicleState.vehicles, reminderState.reminders, vehicleById)
         if (heroVehicle != null) {
@@ -171,7 +126,6 @@ fun HomeTab(
             onAddService = onAddService,
             onUpdateOdometer = onUpdateOdometer,
             onAddVehicle = onAddVehicle,
-            onOpenTips = onOpenTips,
         )
         Spacer(Modifier.height(16.dp))
         SectionHeading(title = "Pengingat aktif", actionLabel = "Lihat semua", onAction = onOpenReminders)
@@ -211,12 +165,6 @@ fun HomeTab(
         Spacer(Modifier.height(20.dp))
     }
 
-    if (showNotifSheet) {
-        NotifPermissionSheet(
-            onDismiss = { showNotifSheet = false },
-            onOpenSystemSettings = { showNotifSheet = false },
-        )
-    }
 }
 
 @Composable
@@ -434,7 +382,6 @@ private fun QuickActionsRow(
     onAddService: () -> Unit,
     onUpdateOdometer: () -> Unit,
     onAddVehicle: () -> Unit,
-    onOpenTips: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -461,13 +408,6 @@ private fun QuickActionsRow(
             label = "Tambah",
             primary = false,
             onClick = onAddVehicle,
-            modifier = Modifier.weight(1f),
-        )
-        QuickActionTile(
-            icon = FaIcons.LIGHTBULB,
-            label = "Tips",
-            primary = false,
-            onClick = onOpenTips,
             modifier = Modifier.weight(1f),
         )
     }
