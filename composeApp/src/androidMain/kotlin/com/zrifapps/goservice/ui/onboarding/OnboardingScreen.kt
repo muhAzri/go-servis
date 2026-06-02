@@ -80,21 +80,6 @@ fun OnboardingScreen(
             .background(AppColors.BgWarm)
             .statusBarsPadding(),
     ) {
-        TextButton(
-            onClick = onSkip,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 8.dp, end = 8.dp),
-        ) {
-            Text(
-                text = "Lewati",
-                color = AppColors.TextMuted,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                fontFamily = font,
-            )
-        }
-
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -183,6 +168,21 @@ fun OnboardingScreen(
                     trailingIcon = FaIcons.CHEVRON_RIGHT,
                 )
             }
+        }
+
+        TextButton(
+            onClick = onSkip,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 8.dp, end = 8.dp),
+        ) {
+            Text(
+                text = "Lewati",
+                color = AppColors.TextMuted,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = font,
+            )
         }
     }
 }
