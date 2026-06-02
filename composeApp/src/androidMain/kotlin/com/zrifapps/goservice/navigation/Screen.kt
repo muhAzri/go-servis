@@ -32,7 +32,6 @@ sealed interface Screen {
         val trackedComponentId: String? = null,
     ) : Screen
     @Serializable data class EditService(val recordId: String) : Screen
-    @Serializable data class InterstitialAd(val recordId: String? = null) : Screen
     @Serializable data class ServiceSaved(val recordId: String? = null) : Screen
     @Serializable data class ServiceDetail(val recordId: String) : Screen
     @Serializable data class VehicleDetail(val vehicleId: String? = null) : Screen

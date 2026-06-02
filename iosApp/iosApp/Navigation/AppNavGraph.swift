@@ -65,7 +65,9 @@ struct AppNavGraph: View {
             )
         case .addVehicle:
             AddVehicleView(
-                onSaved: { router.navigateBack() }
+                onSaved: {
+                    InterstitialController.shared.maybeShow { router.navigateBack() }
+                }
             )
         case .privacy:
             PrivacyView(onBack: { router.navigateBack() })
@@ -83,23 +85,32 @@ struct AppNavGraph: View {
                     router.navigate(to: .addService(vehicleId: vehicleId.isEmpty ? nil : vehicleId, sourceReminderId: reminderId))
                 },
                 onEdit: { id in router.navigate(to: .editReminder(reminderId: id)) },
-                onDeleted: { router.navigateBack() }
+                onDeleted: { router.navigateBack() },
+                onCompleted: { InterstitialController.shared.maybeShow {} }
             )
         case .addReminder(let vehicleId, let trackedComponentId):
             AddReminderView(
-                onSaved: { router.navigateBack() },
+                onSaved: {
+                    InterstitialController.shared.maybeShow { router.navigateBack() }
+                },
                 vehicleId: vehicleId,
                 trackedComponentId: trackedComponentId
             )
         case .addReminderFromContext(let fromContext, let vehicleId):
             AddReminderView(
-                onSaved: { router.navigateBack() },
+                onSaved: {
+                    InterstitialController.shared.maybeShow { router.navigateBack() }
+                },
                 vehicleId: vehicleId,
                 fromContext: fromContext
             )
         case .addService(let vehicleId, let sourceReminderId, let trackedComponentId):
             AddServiceView(
-                onSaved: { recordId in router.navigate(to: .interstitialAd(recordId: recordId)) },
+                onSaved: { recordId in
+                    InterstitialController.shared.maybeShow {
+                        router.navigate(to: .serviceSaved(recordId: recordId))
+                    }
+                },
                 vehicleId: vehicleId,
                 sourceReminderId: sourceReminderId,
                 trackedComponentId: trackedComponentId
@@ -109,10 +120,6 @@ struct AppNavGraph: View {
                 recordId: recordId,
                 onSaved: { router.navigateBack() },
                 onDeleted: { router.popToRoot() }
-            )
-        case .interstitialAd(let recordId):
-            InterstitialAdView(
-                onClose: { router.navigate(to: .serviceSaved(recordId: recordId)) }
             )
         case .serviceSaved(let recordId):
             ServiceSavedView(

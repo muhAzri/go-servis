@@ -14,7 +14,6 @@ enum AppDestination: Hashable {
     case addReminderFromContext(fromContext: Bool = true, vehicleId: String? = nil)
     case addService(vehicleId: String? = nil, sourceReminderId: String? = nil, trackedComponentId: String? = nil)
     case editService(recordId: String)
-    case interstitialAd(recordId: String? = nil)
     case serviceSaved(recordId: String? = nil)
     case serviceDetail(recordId: String)
     case vehicleDetail(vehicleId: String? = nil)

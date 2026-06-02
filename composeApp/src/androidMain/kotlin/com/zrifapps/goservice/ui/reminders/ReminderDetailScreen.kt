@@ -68,6 +68,7 @@ fun ReminderDetailScreen(
     onMarkServiced: (reminderId: String, vehicleId: String) -> Unit = { _, _ -> },
     onEdit: (reminderId: String) -> Unit = {},
     onDeleted: () -> Unit = {},
+    onCompleted: () -> Unit = {},
     vm: ReminderDetailViewModel = koinViewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -78,7 +79,7 @@ fun ReminderDetailScreen(
             when (event) {
                 ReminderDetailViewModel.Event.Deleted,
                 ReminderDetailViewModel.Event.Dismissed -> onDeleted()
-                ReminderDetailViewModel.Event.Completed,
+                ReminderDetailViewModel.Event.Completed -> onCompleted()
                 ReminderDetailViewModel.Event.Snoozed -> Unit
                 is ReminderDetailViewModel.Event.Failed -> ctx.toastError(event.error)
             }

@@ -23,6 +23,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.zrifapps.goservice.ads.AdsManager
+import com.zrifapps.goservice.ads.findActivity
 import com.zrifapps.goservice.feature.onboarding.domain.model.OnboardingStep
 import com.zrifapps.goservice.feature.onboarding.presentation.AppGate
 import com.zrifapps.goservice.feature.onboarding.presentation.AppGateViewModel
@@ -45,7 +46,6 @@ import com.zrifapps.goservice.ui.reminders.EditReminderScreen
 import com.zrifapps.goservice.ui.reminders.ReminderDetailScreen
 import com.zrifapps.goservice.ui.service.AddServiceScreen
 import com.zrifapps.goservice.ui.service.EditServiceScreen
-import com.zrifapps.goservice.ui.service.InterstitialAdScreen
 import com.zrifapps.goservice.ui.service.ServiceDetailScreen
 import com.zrifapps.goservice.ui.service.ServiceSavedScreen
 import com.zrifapps.goservice.ui.splash.SplashScreen
@@ -72,6 +72,7 @@ fun AppNavGraph() {
     val gate by appGateVm.gate.collectAsStateWithLifecycle()
     val onboardingState by onboardingVm.state.collectAsStateWithLifecycle()
     val ctx = LocalContext.current
+    val activity = ctx.findActivity()
 
     LaunchedEffect(onboardingVm) {
         onboardingVm.events.collect { event ->
@@ -228,7 +229,9 @@ fun AppNavGraph() {
         composable<Screen.AddVehicleForm> {
             AddVehicleScreen(
                 onBack = { navController.popBackStack() },
-                onSaved = { navController.popBackStack() },
+                onSaved = {
+                    AdsManager.showInterstitial(activity) { navController.popBackStack() }
+                },
             )
         }
 
@@ -264,6 +267,7 @@ fun AppNavGraph() {
                 },
                 onEdit = { reminderId -> navController.navigate(Screen.EditReminder(reminderId)) },
                 onDeleted = { navController.popBackStack() },
+                onCompleted = { AdsManager.showInterstitial(activity) {} },
             )
         }
 
@@ -272,28 +276,19 @@ fun AppNavGraph() {
             AddServiceScreen(
                 onClose = { navController.popBackStack() },
                 onSaved = { recordId ->
-                    navController.navigate(Screen.InterstitialAd(recordId)) {
-                        popUpTo(Screen.AddService(
-                            vehicleId = args.vehicleId,
-                            sourceReminderId = args.sourceReminderId,
-                            trackedComponentId = args.trackedComponentId,
-                        )) { inclusive = true }
+                    AdsManager.showInterstitial(activity) {
+                        navController.navigate(Screen.ServiceSaved(recordId)) {
+                            popUpTo(Screen.AddService(
+                                vehicleId = args.vehicleId,
+                                sourceReminderId = args.sourceReminderId,
+                                trackedComponentId = args.trackedComponentId,
+                            )) { inclusive = true }
+                        }
                     }
                 },
                 vehicleId = args.vehicleId,
                 sourceReminderId = args.sourceReminderId,
                 trackedComponentId = args.trackedComponentId,
-            )
-        }
-
-        composable<Screen.InterstitialAd> { backStackEntry ->
-            val args = backStackEntry.toRoute<Screen.InterstitialAd>()
-            InterstitialAdScreen(
-                onClose = {
-                    navController.navigate(Screen.ServiceSaved(args.recordId)) {
-                        popUpTo(Screen.InterstitialAd(args.recordId)) { inclusive = true }
-                    }
-                },
             )
         }
 
@@ -479,7 +474,9 @@ fun AppNavGraph() {
             val args = backStackEntry.toRoute<Screen.AddReminder>()
             AddReminderScreen(
                 onClose = { navController.popBackStack() },
-                onSaved = { navController.popBackStack() },
+                onSaved = {
+                    AdsManager.showInterstitial(activity) { navController.popBackStack() }
+                },
                 vehicleId = args.vehicleId,
                 trackedComponentId = args.trackedComponentId,
             )
@@ -489,7 +486,9 @@ fun AppNavGraph() {
             val args = backStackEntry.toRoute<Screen.AddReminderFromContext>()
             AddReminderScreen(
                 onClose = { navController.popBackStack() },
-                onSaved = { navController.popBackStack() },
+                onSaved = {
+                    AdsManager.showInterstitial(activity) { navController.popBackStack() }
+                },
                 vehicleId = args.vehicleId,
                 fromContext = args.fromContext,
             )

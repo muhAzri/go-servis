@@ -6,6 +6,7 @@ struct ReminderDetailView: View {
     var onMarkServiced: (String, String) -> Void = { _, _ in }
     var onEdit: (String) -> Void = { _ in }
     var onDeleted: () -> Void = {}
+    var onCompleted: () -> Void = {}
 
     @StateObject private var model = ReminderDetailModel()
     @State private var showSnoozeSheet = false
@@ -163,10 +164,12 @@ struct ReminderDetailView: View {
             model.load(reminderId: reminderId)
             model.onDeleted = onDeleted
             model.onDismissed = onDeleted
+            model.onCompleted = onCompleted
         }
         .onDisappear {
             model.onDeleted = nil
             model.onDismissed = nil
+            model.onCompleted = nil
         }
         .confirmationDialog(
             "Hapus pengingat?",
