@@ -8,12 +8,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zrifapps.goservice.feature.vehicle.presentation.VehicleListViewModel
 import com.zrifapps.goservice.ui.components.BottomNavBar
 import com.zrifapps.goservice.ui.components.BottomTab
 import com.zrifapps.goservice.ui.main.tabs.HistoryTab
@@ -21,6 +26,7 @@ import com.zrifapps.goservice.ui.main.tabs.HomeTab
 import com.zrifapps.goservice.ui.main.tabs.RemindersTab
 import com.zrifapps.goservice.ui.main.tabs.SettingsTab
 import com.zrifapps.goservice.ui.theme.AppColors
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun MainTabsScreen(
@@ -28,7 +34,6 @@ fun MainTabsScreen(
     onAddService: () -> Unit = {},
     onAddVehicle: () -> Unit = {},
     onUpdateOdometer: () -> Unit = {},
-    onOpenTips: () -> Unit = {},
     onOpenReminderDetail: (String) -> Unit = {},
     onOpenVehicleDetail: () -> Unit = {},
     onOpenServiceDetail: (String) -> Unit = {},
@@ -39,8 +44,11 @@ fun MainTabsScreen(
     onOpenHelp: () -> Unit = {},
     onOpenEditProfile: () -> Unit = {},
     onOpenVehicleList: () -> Unit = {},
+    vehicleVm: VehicleListViewModel = koinViewModel(),
 ) {
     var selectedTab by remember { mutableStateOf(BottomTab.Home) }
+    var showNoVehiclePrompt by remember { mutableStateOf(false) }
+    val vehicleState by vehicleVm.state.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -63,7 +71,6 @@ fun MainTabsScreen(
                     onAddService = onAddService,
                     onAddVehicle = onAddVehicle,
                     onUpdateOdometer = onUpdateOdometer,
-                    onOpenTips = onOpenTips,
                 )
                 BottomTab.Reminders -> RemindersTab(
                     onOpenReminderDetail = onOpenReminderDetail,
@@ -86,7 +93,34 @@ fun MainTabsScreen(
         BottomNavBar(
             selected = selectedTab,
             onSelect = { tab ->
-                if (tab == BottomTab.Add) onAddService() else selectedTab = tab
+                if (tab == BottomTab.Add) {
+                    if (vehicleState.vehicles.isEmpty() && !vehicleState.isLoading) {
+                        showNoVehiclePrompt = true
+                    } else {
+                        onAddService()
+                    }
+                } else {
+                    selectedTab = tab
+                }
+            },
+        )
+    }
+
+    if (showNoVehiclePrompt) {
+        AlertDialog(
+            onDismissRequest = { showNoVehiclePrompt = false },
+            title = { Text("Tambah kendaraan dulu") },
+            text = {
+                Text("Belum ada kendaraan untuk dicatatkan servisnya. Tambah kendaraan dulu yuk?")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showNoVehiclePrompt = false
+                    onAddVehicle()
+                }) { Text("Tambah Kendaraan") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showNoVehiclePrompt = false }) { Text("Batal") }
             },
         )
     }
