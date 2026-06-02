@@ -6,10 +6,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,7 +49,6 @@ fun BottomNavBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(80.dp)
             .background(AppColors.Surface)
             .drawBehind {
                 drawLine(
@@ -56,7 +58,9 @@ fun BottomNavBar(
                     strokeWidth = 1f,
                 )
             }
-            .padding(start = 6.dp, end = 6.dp, top = 6.dp, bottom = 18.dp),
+            .windowInsetsPadding(WindowInsets.navigationBars)
+            .heightIn(min = 64.dp)
+            .padding(horizontal = 6.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceAround,
     ) {
@@ -86,16 +90,18 @@ private fun TabItem(
     Column(
         modifier = modifier
             .clickable(onClick = onClick)
-            .padding(vertical = 8.dp),
+            .padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+        verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
-        FaIcon(icon = tab.icon, color = color, size = 22.sp)
+        FaIcon(icon = tab.icon, color = color, size = 20.sp)
         Text(
             text = tab.label,
             color = color,
-            fontSize = 10.sp,
+            fontSize = 11.sp,
+            lineHeight = 13.sp,
             fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
+            maxLines = 1,
         )
     }
 }
