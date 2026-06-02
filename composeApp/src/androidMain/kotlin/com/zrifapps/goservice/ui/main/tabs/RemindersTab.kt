@@ -371,9 +371,20 @@ private fun DomainReminderUrgency.toUiUrgency(): ReminderUrgency = when (this) {
 }
 
 private fun reminderTriggerLabel(reminder: Reminder): String = when (val t = reminder.trigger) {
-    is ReminderTrigger.ByKm -> "@ ${t.targetOdometer.kilometers} km"
-    is ReminderTrigger.ByDate -> "due date set"
-    is ReminderTrigger.ByBoth -> "@ ${t.targetOdometer.kilometers} km / date"
+    is ReminderTrigger.ByKm -> "Target ${formatGroupedKm(t.targetOdometer.kilometers)} km"
+    is ReminderTrigger.ByDate -> "Jatuh tempo ${formatReminderDate(t.targetDate)}"
+    is ReminderTrigger.ByBoth -> "Target ${formatGroupedKm(t.targetOdometer.kilometers)} km · ${formatReminderDate(t.targetDate)}"
+}
+
+private fun formatGroupedKm(km: Long): String {
+    if (km == 0L) return "0"
+    val abs = kotlin.math.abs(km).toString()
+    return abs.reversed().chunked(3).joinToString(".").reversed()
+}
+
+private fun formatReminderDate(millis: Long): String {
+    val fmt = java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.forLanguageTag("id-ID"))
+    return fmt.format(java.util.Date(millis))
 }
 
 private fun Set<DomainReminderUrgency>.toChipFilter(): ReminderFilter = when {

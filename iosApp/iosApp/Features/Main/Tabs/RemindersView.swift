@@ -265,12 +265,33 @@ private struct ReminderListCard: View {
     private var vehicleLabel: String { vehicle?.displayTitle ?? "—" }
     private var triggerLabel: String {
         if let byKm = reminder.trigger as? ReminderTrigger.ByKm {
-            return "@ \(byKm.targetOdometer) km"
+            return "Target \(formatKm(byKm.targetOdometer.kilometers)) km"
         } else if let byBoth = reminder.trigger as? ReminderTrigger.ByBoth {
-            return "@ \(byBoth.targetOdometer) km / date"
+            return "Target \(formatKm(byBoth.targetOdometer.kilometers)) km · \(formatDueDate(byBoth.targetDate))"
+        } else if let byDate = reminder.trigger as? ReminderTrigger.ByDate {
+            return "Jatuh tempo \(formatDueDate(byDate.targetDate))"
         } else {
-            return "due date set"
+            return "—"
         }
+    }
+
+    private static let dueDateFormatter: DateFormatter = {
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "id_ID")
+        df.dateFormat = "d MMM yyyy"
+        return df
+    }()
+
+    private func formatDueDate(_ millis: Int64) -> String {
+        let date = Date(timeIntervalSince1970: TimeInterval(millis) / 1000.0)
+        return Self.dueDateFormatter.string(from: date)
+    }
+
+    private func formatKm(_ km: Int64) -> String {
+        let nf = NumberFormatter()
+        nf.numberStyle = .decimal
+        nf.groupingSeparator = "."
+        return nf.string(from: NSNumber(value: km)) ?? "\(km)"
     }
 
     var body: some View {
