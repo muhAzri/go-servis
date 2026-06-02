@@ -33,5 +33,5 @@ val vehicleModule = module {
     viewModel { AddVehicleViewModel(get(), get()) }
     viewModel { EditVehicleViewModel(get(), get(), get(), get()) }
     viewModel { UpdateOdometerViewModel(get(), get()) }
-    viewModel { VehicleDetailViewModel(get(), get()) }
+    viewModel { VehicleDetailViewModel(get(), get(), get()) }
 }

@@ -38,9 +38,14 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zrifapps.goservice.feature.component.domain.model.ComponentUrgency
 import com.zrifapps.goservice.feature.component.presentation.VehicleComponentsViewModel
+import com.zrifapps.goservice.feature.service.domain.model.ServiceRecord
 import com.zrifapps.goservice.feature.vehicle.domain.model.Vehicle
 import com.zrifapps.goservice.feature.vehicle.domain.model.VehicleType
 import com.zrifapps.goservice.feature.vehicle.presentation.VehicleDetailViewModel
+import com.zrifapps.goservice.ui.service.components.formatRupiah
+import com.zrifapps.goservice.ui.service.components.formatServiceDate
+import com.zrifapps.goservice.ui.service.components.serviceTypeMeta
+import com.zrifapps.goservice.ui.service.components.trackedComponentMeta
 import com.zrifapps.goservice.ui.vehicle.components.faIcon
 import com.zrifapps.goservice.ui.vehicle.components.intervalLabelFor
 import com.zrifapps.goservice.ui.vehicle.components.uiColor
@@ -65,9 +70,9 @@ private const val DEFAULT_SUBTYPE = "matic"
 fun VehicleDetailScreen(
     vehicleId: String? = null,
     onBack: () -> Unit,
-    onManageComponents: () -> Unit = {},
+    onManageComponents: (vehicleId: String) -> Unit = {},
     onOpenTracked: (String) -> Unit = {},
-    onAddComponent: () -> Unit = {},
+    onAddComponent: (vehicleId: String) -> Unit = {},
     onEdit: (String?) -> Unit = {},
     vm: VehicleDetailViewModel = koinViewModel(),
     componentsVm: VehicleComponentsViewModel = koinViewModel(),
@@ -105,19 +110,19 @@ fun VehicleDetailScreen(
         ComponentsSectionHeader(
             total = trackedItems.size,
             subLabel = subLabel,
-            onManage = onManageComponents,
+            onManage = { resolvedVehicleId?.let(onManageComponents) },
         )
         ComponentsGrid(
             items = tilePreview,
             vehicleType = vehicle?.type ?: VehicleType.Motor,
             onOpenTracked = onOpenTracked,
-            onAddComponent = onAddComponent,
+            onAddComponent = { resolvedVehicleId?.let(onAddComponent) },
         )
         Spacer(Modifier.height(16.dp))
         AdBannerSlot()
         Spacer(Modifier.height(16.dp))
         DetailSectionLabel("Servis terakhir")
-        LastServicesList()
+        LastServicesList(records = state.recentServices)
         Spacer(Modifier.height(24.dp))
     }
 
@@ -456,25 +461,40 @@ private fun AddComponentCard(onClick: () -> Unit, modifier: Modifier = Modifier)
 }
 
 @Composable
-private fun LastServicesList() {
+private fun LastServicesList(records: List<ServiceRecord>) {
+    val font = plusJakartaSansFontFamily()
     Column(
         modifier = Modifier.padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        ServiceLine(
-            icon = FaIcons.OIL_CAN,
-            title = "Ganti Oli Mesin",
-            subtitle = "20 Feb 2026 · 16.000 km",
-            cost = "Rp 65.000",
-            accent = Color(0xFFE89C2E),
-        )
-        ServiceLine(
-            icon = FaIcons.BOLT,
-            title = "Busi & Tune Up",
-            subtitle = "10 Des 2025 · 13.800 km",
-            cost = "Rp 45.000",
-            accent = Color(0xFFE8B62E),
-        )
+        if (records.isEmpty()) {
+            Text(
+                text = "Belum ada riwayat servis. Catat servis pertamamu lewat tombol + di bawah.",
+                color = AppColors.TextMuted,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                fontFamily = font,
+                lineHeight = 17.sp,
+                modifier = Modifier.padding(vertical = 4.dp),
+            )
+        } else {
+            records.forEach { record ->
+                val firstComponentMeta = record.componentIds.firstOrNull()
+                    ?.let { trackedComponentMeta(it) }
+                val typeMeta = serviceTypeMeta(record.serviceType.key)
+                val title = firstComponentMeta?.label ?: typeMeta.label.replace("\n", " ")
+                val km = record.odometer.kilometers
+                val date = formatServiceDate(record.serviceDate)
+                val subtitle = "$date · ${"%,d".format(km).replace(',', '.')} km"
+                ServiceLine(
+                    icon = firstComponentMeta?.icon ?: typeMeta.icon,
+                    title = title,
+                    subtitle = subtitle,
+                    cost = formatRupiah(record.cost.amountIdr),
+                    accent = firstComponentMeta?.color ?: typeMeta.color,
+                )
+            }
+        }
     }
 }
 

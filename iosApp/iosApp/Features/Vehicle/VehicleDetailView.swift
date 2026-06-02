@@ -73,7 +73,7 @@ struct VehicleDetailView: View {
                         .padding(.bottom, 16)
 
                     DetailSectionLabel(text: "Servis terakhir")
-                    LastServicesList()
+                    LastServicesList(records: model.state.recentServices)
                         .padding(.bottom, 24)
                 }
             }
@@ -374,14 +374,85 @@ private struct AddComponentCard: View {
 }
 
 private struct LastServicesList: View {
+    let records: [ServiceRecord]
+
+    private static let dateFormatter: DateFormatter = {
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "id_ID")
+        df.dateFormat = "d MMM yyyy"
+        return df
+    }()
+
     var body: some View {
         VStack(spacing: 8) {
-            ServiceLine(icon: "\u{f613}", title: "Ganti Oli Mesin", subtitle: "20 Feb 2026 · 16.000 km", cost: "Rp 65.000", accent: Color(red: 0.91, green: 0.61, blue: 0.18))
-            ServiceLine(icon: "\u{f0e7}", title: "Busi & Tune Up", subtitle: "10 Des 2025 · 13.800 km", cost: "Rp 45.000", accent: Color(red: 0.91, green: 0.71, blue: 0.18))
+            if records.isEmpty {
+                Text("Belum ada riwayat servis. Catat servis pertamamu lewat tombol + di bawah.")
+                    .font(.custom("PlusJakartaSans-Medium", size: 12))
+                    .foregroundColor(.sgTextMuted)
+                    .lineSpacing(3)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                ForEach(records, id: \.id) { record in
+                    let meta = serviceTypeMeta(record.serviceType.key)
+                    let title = record.componentIds.first.flatMap(componentLabel) ?? meta.label
+                    let dateText = Self.dateFormatter.string(from: Date(timeIntervalSince1970: Double(record.serviceDate) / 1000.0))
+                    let kmText = String(format: "%@ km", groupedThousands(Int(truncating: record.odometer.kilometers as NSNumber)))
+                    let cost = formatRupiah(Int(truncating: record.cost.amountIdr as NSNumber))
+                    ServiceLine(
+                        icon: meta.icon,
+                        title: title,
+                        subtitle: "\(dateText) · \(kmText)",
+                        cost: cost,
+                        accent: meta.color
+                    )
+                }
+            }
         }
         .padding(.horizontal, 16)
     }
 }
+
+private struct ServiceTypeMeta {
+    let label: String
+    let icon: String
+    let color: Color
+}
+
+private func serviceTypeMeta(_ key: String) -> ServiceTypeMeta {
+    switch key {
+    case "oli":      return ServiceTypeMeta(label: "Ganti Oli Mesin",    icon: "\u{f613}", color: Color(red: 0.91, green: 0.61, blue: 0.18))
+    case "filter":   return ServiceTypeMeta(label: "Filter Oli & Udara", icon: "\u{f0b0}", color: Color(red: 0.48, green: 0.44, blue: 0.91))
+    case "ban":      return ServiceTypeMeta(label: "Rotasi/Ganti Ban",   icon: "\u{f1cd}", color: Color(red: 0.25, green: 0.30, blue: 0.36))
+    case "aki":      return ServiceTypeMeta(label: "Aki",                 icon: "\u{f5df}", color: Color(red: 0.84, green: 0.27, blue: 0.23))
+    case "rem":      return ServiceTypeMeta(label: "Kampas Rem",          icon: "\u{f1ce}", color: .sgPrimary)
+    case "radiator": return ServiceTypeMeta(label: "Radiator/Coolant",   icon: "\u{f2c9}", color: Color(red: 0.25, green: 0.69, blue: 0.84))
+    case "tune_up":  return ServiceTypeMeta(label: "Tune-up",             icon: "\u{f0e7}", color: Color(red: 0.91, green: 0.71, blue: 0.18))
+    default:         return ServiceTypeMeta(label: "Servis Lainnya",      icon: "\u{f0ad}", color: .sgPrimary)
+    }
+}
+
+private func componentLabel(_ id: String) -> String? {
+    switch id {
+    case "oli_mesin":    return "Oli mesin"
+    case "filter_oli":   return "Filter oli"
+    case "filter_udara": return "Filter udara"
+    case "busi":         return "Busi & tune-up"
+    case "aki":          return "Aki"
+    case "kampas_rem":   return "Kampas rem"
+    case "ban":          return "Ban"
+    case "radiator":     return "Radiator"
+    default:             return nil
+    }
+}
+
+private func groupedThousands(_ value: Int) -> String {
+    let nf = NumberFormatter()
+    nf.groupingSeparator = "."
+    nf.numberStyle = .decimal
+    return nf.string(from: NSNumber(value: value)) ?? "\(value)"
+}
+
+private func formatRupiah(_ value: Int) -> String { "Rp \(groupedThousands(value))" }
 
 private struct ServiceLine: View {
     let icon: String
