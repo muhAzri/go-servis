@@ -17,6 +17,7 @@ class SettingsViewModel(
 
     data class UiState(
         val serviceReminderNotificationsEnabled: Boolean = true,
+        val odometerReminderNotificationsEnabled: Boolean = true,
     )
 
     private val _state = MutableStateFlow(UiState())
@@ -29,6 +30,8 @@ class SettingsViewModel(
                     it.copy(
                         serviceReminderNotificationsEnabled =
                             settings.serviceReminderNotificationsEnabled,
+                        odometerReminderNotificationsEnabled =
+                            settings.odometerReminderNotificationsEnabled,
                     )
                 }
             }
@@ -38,6 +41,12 @@ class SettingsViewModel(
     fun setServiceReminderNotificationsEnabled(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setServiceReminderNotificationsEnabled(enabled)
+        }
+    }
+
+    fun setOdometerReminderNotificationsEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setOdometerReminderNotificationsEnabled(enabled)
         }
     }
 

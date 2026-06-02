@@ -1,5 +1,7 @@
 package com.zrifapps.goservice.core.di
 
+import com.zrifapps.goservice.core.notification.OdometerReminderPlanner
+import com.zrifapps.goservice.core.notification.OdometerReminderScheduler
 import com.zrifapps.goservice.core.notification.ReminderNotificationPlanner
 import com.zrifapps.goservice.core.notification.ReminderNotificationScheduler
 import com.zrifapps.goservice.core.notification.notificationModule
@@ -16,6 +18,7 @@ import com.zrifapps.goservice.feature.service.di.serviceModule
 import com.zrifapps.goservice.feature.settings.di.settingsModule
 import com.zrifapps.goservice.feature.settings.domain.repository.SettingsRepository
 import com.zrifapps.goservice.feature.vehicle.di.vehicleModule
+import com.zrifapps.goservice.feature.vehicle.domain.repository.VehicleRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -66,6 +69,24 @@ fun runStartupTasks() {
                 scheduler.replaceAll(planner.plan(reminders))
             } else {
                 scheduler.cancelAll()
+            }
+        }
+    }
+    scope.launch {
+        val vehicleRepository = koin.get<VehicleRepository>()
+        val settingsRepository = koin.get<SettingsRepository>()
+        val odoPlanner = koin.get<OdometerReminderPlanner>()
+        val odoScheduler = koin.get<OdometerReminderScheduler>()
+        combine(
+            vehicleRepository.observeVehicles(),
+            settingsRepository.observe(),
+        ) { vehicles, settings ->
+            vehicles to settings.odometerReminderNotificationsEnabled
+        }.distinctUntilChanged().collect { (vehicles, enabled) ->
+            if (enabled) {
+                odoScheduler.replaceAll(odoPlanner.plan(vehicles))
+            } else {
+                odoScheduler.cancelAll()
             }
         }
     }

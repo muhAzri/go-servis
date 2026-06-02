@@ -6,6 +6,7 @@ import com.zrifapps.goservice.core.error.DomainError
 import com.zrifapps.goservice.core.presentation.Cancellable
 import com.zrifapps.goservice.core.presentation.subscribeOn
 import com.zrifapps.goservice.core.result.DomainResult
+import com.zrifapps.goservice.core.time.AppClock
 import com.zrifapps.goservice.core.value.Distance
 import com.zrifapps.goservice.core.value.HexColor
 import com.zrifapps.goservice.feature.onboarding.presentation.OnboardingVehicleInput
@@ -29,6 +30,7 @@ class EditVehicleViewModel(
     private val updateVehicle: UpdateVehicle,
     private val deleteVehicle: DeleteVehicle,
     private val observeVehicles: ObserveVehicles,
+    private val clock: AppClock,
 ) : ViewModel() {
 
     data class UiState(
@@ -81,6 +83,8 @@ class EditVehicleViewModel(
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true) }
             try {
+                val newOdometer = Distance.ofKm(input.odometerKm)
+                val odometerChanged = newOdometer != current.odometer
                 val updated = current.copy(
                     nickname = input.nickname.trim(),
                     type = input.type,
@@ -89,8 +93,9 @@ class EditVehicleViewModel(
                     model = input.model.trim(),
                     year = input.year,
                     plateNumber = input.plateNumber.trim(),
-                    odometer = Distance.ofKm(input.odometerKm),
+                    odometer = newOdometer,
                     color = HexColor.parseOrNull(input.colorHex) ?: current.color,
+                    lastOdometerUpdateAt = if (odometerChanged) clock.nowEpochMillis() else current.lastOdometerUpdateAt,
                 )
                 when (val r = updateVehicle(updated)) {
                     is DomainResult.Success -> _events.emit(Event.Saved)

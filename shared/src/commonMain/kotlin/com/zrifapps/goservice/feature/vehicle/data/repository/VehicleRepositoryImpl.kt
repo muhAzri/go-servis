@@ -64,6 +64,7 @@ class VehicleRepositoryImpl(
             color = draft.color,
             createdAt = now,
             updatedAt = now,
+            lastOdometerUpdateAt = now,
             sync = SyncMetadata.newLocal(now),
         )
         return runStorage {

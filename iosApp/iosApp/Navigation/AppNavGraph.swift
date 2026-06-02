@@ -42,6 +42,11 @@ struct AppNavGraph: View {
                     router.navigate(to: .reminderDetail(reminderId: reminderId))
                     notificationRouter.consume()
                 }
+                .onChange(of: notificationRouter.pendingOdometerVehicleId, initial: true) { _, newValue in
+                    guard let vehicleId = newValue else { return }
+                    router.navigate(to: .updateOdometer(vehicleId: vehicleId))
+                    notificationRouter.consumeOdometer()
+                }
             }
         }
         .onReceive(gateModel.$gate) { newGate in

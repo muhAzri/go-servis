@@ -34,6 +34,7 @@ interface VehicleDao {
         UPDATE vehicles SET
             odometer_km = :odometerKm,
             updated_at = :now,
+            last_odometer_update_at = :now,
             sync_local_updated_at = :now,
             sync_status = :syncStatus,
             sync_version = sync_version + 1

@@ -49,6 +49,14 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import android.Manifest
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import androidx.core.app.NotificationManagerCompat
+import com.zrifapps.goservice.core.notification.OdometerNotifier
+import com.zrifapps.goservice.core.notification.ReminderNotifier
 import com.zrifapps.goservice.feature.backup.presentation.BackupViewModel
 import com.zrifapps.goservice.ui.main.sheets.readTextFromUri
 import kotlinx.coroutines.launch
@@ -90,6 +98,56 @@ fun SettingsTab(
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+
+    var pendingNotifAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val notifPermLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        val pending = pendingNotifAction
+        pendingNotifAction = null
+        if (granted) {
+            pending?.invoke()
+        } else {
+            Toast.makeText(
+                context,
+                "Izin notifikasi ditolak. Aktifkan di Setelan agar notif muncul.",
+                Toast.LENGTH_LONG,
+            ).show()
+        }
+    }
+
+    fun ensureNotifPermissionThen(action: () -> Unit) {
+        val enabled = NotificationManagerCompat.from(context).areNotificationsEnabled()
+        if (enabled) {
+            action()
+            return
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            pendingNotifAction = action
+            notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            // Pre-13: no runtime permission, but user may have disabled the channel/app in Settings.
+            Toast.makeText(
+                context,
+                "Notifikasi ServisGo dimatikan. Buka Setelan untuk mengaktifkan.",
+                Toast.LENGTH_LONG,
+            ).show()
+            runCatching {
+                val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                    putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(intent)
+            }.onFailure {
+                val fallback = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", context.packageName, null)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(fallback)
+            }
+        }
+    }
+
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
     ) { uri ->
@@ -151,6 +209,51 @@ fun SettingsTab(
                     label = "Pengingat servis",
                     toggleState = settingsState.serviceReminderNotificationsEnabled,
                     onToggle = { settingsVm.setServiceReminderNotificationsEnabled(it) },
+                ),
+                SettingItem(
+                    icon = FaIcons.GAUGE,
+                    label = "Pengingat update KM",
+                    toggleState = settingsState.odometerReminderNotificationsEnabled,
+                    onToggle = { settingsVm.setOdometerReminderNotificationsEnabled(it) },
+                ),
+                SettingItem(
+                    icon = FaIcons.BELL,
+                    label = "Tes notif servis",
+                    detail = "Kirim sekarang",
+                    onClick = {
+                        ensureNotifPermissionThen {
+                            val firstVehicle = vehicleState.vehicles.firstOrNull()
+                            val sampleId = firstVehicle?.id?.let { "test:$it" } ?: "test:reminder"
+                            ReminderNotifier.show(
+                                context = context,
+                                reminderId = sampleId,
+                                title = "Tes pengingat servis",
+                                body = "Kalau ini muncul, channel \"Pengingat servis\" sudah aktif.",
+                            )
+                            Toast.makeText(context, "Notif servis dikirim", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                ),
+                SettingItem(
+                    icon = FaIcons.GAUGE,
+                    label = "Tes notif update KM",
+                    detail = "Kirim sekarang",
+                    onClick = {
+                        val firstVehicle = vehicleState.vehicles.firstOrNull()
+                        if (firstVehicle == null) {
+                            Toast.makeText(context, "Tambah kendaraan dulu", Toast.LENGTH_SHORT).show()
+                        } else {
+                            ensureNotifPermissionThen {
+                                OdometerNotifier.show(
+                                    context = context,
+                                    vehicleId = firstVehicle.id,
+                                    title = "Tes update KM ${firstVehicle.displayTitle}",
+                                    body = "Kalau ini muncul, channel \"Update KM\" sudah aktif. Tap untuk buka layar Update KM.",
+                                )
+                                Toast.makeText(context, "Notif update KM dikirim", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
                 ),
             ),
         ),

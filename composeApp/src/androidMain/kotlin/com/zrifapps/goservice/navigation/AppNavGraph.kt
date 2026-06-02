@@ -1,8 +1,21 @@
 package com.zrifapps.goservice.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -36,6 +49,8 @@ import com.zrifapps.goservice.ui.service.InterstitialAdScreen
 import com.zrifapps.goservice.ui.service.ServiceDetailScreen
 import com.zrifapps.goservice.ui.service.ServiceSavedScreen
 import com.zrifapps.goservice.ui.splash.SplashScreen
+import com.zrifapps.goservice.ui.common.AppSnackbar
+import com.zrifapps.goservice.ui.common.toastError
 import com.zrifapps.goservice.ui.tips.TipsDetailScreen
 import com.zrifapps.goservice.ui.tips.TipsScreen
 import com.zrifapps.goservice.ui.vehicle.AddCustomComponentScreen
@@ -56,6 +71,7 @@ fun AppNavGraph() {
     val onboardingVm: OnboardingFlowViewModel = koinViewModel()
     val gate by appGateVm.gate.collectAsStateWithLifecycle()
     val onboardingState by onboardingVm.state.collectAsStateWithLifecycle()
+    val ctx = LocalContext.current
 
     LaunchedEffect(onboardingVm) {
         onboardingVm.events.collect { event ->
@@ -76,7 +92,7 @@ fun AppNavGraph() {
                         popUpTo<Screen.Splash> { inclusive = true }
                     }
                 }
-                is OnboardingEvent.Failed -> Unit
+                is OnboardingEvent.Failed -> ctx.toastError(event.error)
             }
         }
     }
@@ -97,6 +113,24 @@ fun AppNavGraph() {
         }
     }
 
+    // Tapped "Update KM" notification -> open the odometer screen for that vehicle.
+    val pendingOdoDeepLink by OdometerDeepLinks.pending.collectAsStateWithLifecycle()
+    LaunchedEffect(pendingOdoDeepLink, gate) {
+        val vehicleId = pendingOdoDeepLink ?: return@LaunchedEffect
+        if (gate is AppGate.Main) {
+            navController.navigate(Screen.UpdateOdometer(vehicleId))
+            OdometerDeepLinks.consume()
+        }
+    }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(snackbarHostState) {
+        AppSnackbar.messages.collect { message ->
+            snackbarHostState.showSnackbar(message = message, duration = SnackbarDuration.Short)
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
     NavHost(
         navController = navController,
         startDestination = Screen.Splash,
@@ -171,7 +205,6 @@ fun AppNavGraph() {
                 onAddService = { navController.navigate(Screen.AddService()) },
                 onAddVehicle = { navController.navigate(Screen.AddVehicleForm) },
                 onUpdateOdometer = { navController.navigate(Screen.UpdateOdometer()) },
-                onOpenTips = { navController.navigate(Screen.Tips) },
                 onOpenReminderDetail = { reminderId -> navController.navigate(Screen.ReminderDetail(reminderId)) },
                 onOpenVehicleDetail = { navController.navigate(Screen.VehicleDetail()) },
                 onOpenServiceDetail = { recordId -> navController.navigate(Screen.ServiceDetail(recordId)) },
@@ -294,22 +327,17 @@ fun AppNavGraph() {
 
         composable<Screen.VehicleDetail> { backStackEntry ->
             val args = backStackEntry.toRoute<Screen.VehicleDetail>()
-            val vehicleId = args.vehicleId.orEmpty()
             VehicleDetailScreen(
                 vehicleId = args.vehicleId,
                 onBack = { navController.popBackStack() },
-                onManageComponents = {
-                    if (vehicleId.isNotBlank()) {
-                        navController.navigate(Screen.VehicleComponents(vehicleId))
-                    }
+                onManageComponents = { vid ->
+                    navController.navigate(Screen.VehicleComponents(vid))
                 },
                 onOpenTracked = { trackedId ->
                     navController.navigate(Screen.TrackedComponentDetail(trackedId))
                 },
-                onAddComponent = {
-                    if (vehicleId.isNotBlank()) {
-                        navController.navigate(Screen.AddCustomComponent(vehicleId))
-                    }
+                onAddComponent = { vid ->
+                    navController.navigate(Screen.AddCustomComponent(vid))
                 },
                 onEdit = { id -> navController.navigate(Screen.EditVehicle(id)) },
             )
@@ -466,5 +494,14 @@ fun AppNavGraph() {
                 fromContext = args.fromContext,
             )
         }
+    }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .imePadding()
+                .windowInsetsPadding(WindowInsets.navigationBars),
+        )
     }
 }

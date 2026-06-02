@@ -23,6 +23,7 @@ fun VehicleEntity.toDomain(): Vehicle = Vehicle(
     color = HexColor.parseOrNull(colorHex) ?: HexColor(DEFAULT_COLOR_HEX),
     createdAt = createdAt,
     updatedAt = updatedAt,
+    lastOdometerUpdateAt = if (lastOdometerUpdateAt > 0L) lastOdometerUpdateAt else createdAt,
     sync = sync.toDomain(),
 )
 
@@ -40,5 +41,6 @@ fun Vehicle.toEntity(): VehicleEntity = VehicleEntity(
     colorHex = color.value,
     createdAt = createdAt,
     updatedAt = updatedAt,
+    lastOdometerUpdateAt = lastOdometerUpdateAt,
     sync = sync.toEmbed(),
 )

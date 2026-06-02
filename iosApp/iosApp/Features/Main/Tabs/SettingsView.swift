@@ -1,6 +1,7 @@
 import SwiftUI
 import Shared
 import UniformTypeIdentifiers
+import UserNotifications
 
 struct SettingsView: View {
     var onOpenPrivacy: () -> Void = {}
@@ -19,6 +20,7 @@ struct SettingsView: View {
     @State private var showImporter = false
     @State private var showImportAlert = false
     @State private var importMessage = ""
+    @State private var showNotifBlockedAlert = false
 
     private var displayName: String { profile.state.displayName }
     private var avatarHex: String? {
@@ -73,6 +75,45 @@ struct SettingsView: View {
                             set: { settings.setServiceReminderNotificationsEnabled($0) }
                         )
                     )
+                    SectionDivider()
+                    ToggleRow(
+                        icon: "\u{f625}",
+                        label: "Pengingat update KM",
+                        isOn: Binding(
+                            get: { settings.state.odometerReminderNotificationsEnabled },
+                            set: { settings.setOdometerReminderNotificationsEnabled($0) }
+                        )
+                    )
+                    SectionDivider()
+                    SettingsRow(
+                        icon: "\u{f0f3}",
+                        label: "Tes notif servis",
+                        action: {
+                            let firstId = vehicles.state.vehicles.first?.id
+                            fireTestNotification(
+                                identifier: "test:reminder:\(UUID().uuidString)",
+                                title: "Tes pengingat servis",
+                                body: "Kalau ini muncul, kategori \"SERVICE_REMINDER\" sudah aktif.",
+                                userInfo: ["reminderId": firstId ?? "test"],
+                                categoryId: "SERVICE_REMINDER"
+                            )
+                        }
+                    )
+                    SectionDivider()
+                    SettingsRow(
+                        icon: "\u{f625}",
+                        label: "Tes notif update KM",
+                        action: {
+                            guard let v = vehicles.state.vehicles.first else { return }
+                            fireTestNotification(
+                                identifier: "test:odo:\(UUID().uuidString)",
+                                title: "Tes update KM \(v.displayTitle)",
+                                body: "Kalau ini muncul, kategori \"ODOMETER_REMINDER\" sudah aktif. Tap untuk buka layar Update KM.",
+                                userInfo: ["vehicleId": v.id],
+                                categoryId: "ODOMETER_REMINDER"
+                            )
+                        }
+                    )
                 }
 
                 SettingsSection(title: "Legal & Bantuan") {
@@ -117,6 +158,16 @@ struct SettingsView: View {
         } message: {
             Text(importMessage)
         }
+        .alert("Izin notifikasi dimatikan", isPresented: $showNotifBlockedAlert) {
+            Button("Batal", role: .cancel) {}
+            Button("Buka Setelan") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+        } message: {
+            Text("Aktifkan notifikasi ServisGo di Setelan iOS agar pengingat bisa muncul.")
+        }
     }
 
     private func handleImport(_ result: Result<[URL], Error>) {
@@ -140,6 +191,68 @@ struct SettingsView: View {
             }
             showImportAlert = true
         }
+    }
+
+    private func fireTestNotification(
+        identifier: String,
+        title: String,
+        body: String,
+        userInfo: [String: Any],
+        categoryId: String
+    ) {
+        let center = UNUserNotificationCenter.current()
+        center.getNotificationSettings { settings in
+            switch settings.authorizationStatus {
+            case .authorized, .provisional, .ephemeral:
+                postTestNotification(
+                    identifier: identifier,
+                    title: title,
+                    body: body,
+                    userInfo: userInfo,
+                    categoryId: categoryId
+                )
+            case .notDetermined:
+                center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
+                    if granted {
+                        postTestNotification(
+                            identifier: identifier,
+                            title: title,
+                            body: body,
+                            userInfo: userInfo,
+                            categoryId: categoryId
+                        )
+                    } else {
+                        DispatchQueue.main.async { showNotifBlockedAlert = true }
+                    }
+                }
+            case .denied:
+                DispatchQueue.main.async { showNotifBlockedAlert = true }
+            @unknown default:
+                DispatchQueue.main.async { showNotifBlockedAlert = true }
+            }
+        }
+    }
+
+    private func postTestNotification(
+        identifier: String,
+        title: String,
+        body: String,
+        userInfo: [String: Any],
+        categoryId: String
+    ) {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+        content.userInfo = userInfo
+        content.categoryIdentifier = categoryId
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        let request = UNNotificationRequest(
+            identifier: identifier,
+            content: content,
+            trigger: trigger
+        )
+        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
     }
 }
 

@@ -18,6 +18,8 @@ data class Vehicle(
     val color: HexColor,
     val createdAt: Long,
     val updatedAt: Long,
+    /** Timestamp of the last odometer write (Add Vehicle or Update KM). Drives stale-KM reminders. */
+    val lastOdometerUpdateAt: Long = createdAt,
     val sync: SyncMetadata,
 ) {
     val displayTitle: String get() = nickname.ifBlank { "$brand $model".trim() }

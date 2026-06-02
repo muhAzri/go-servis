@@ -8,4 +8,6 @@ interface SettingsRepository {
     fun observe(): Flow<AppSettings>
 
     suspend fun setServiceReminderNotificationsEnabled(enabled: Boolean)
+
+    suspend fun setOdometerReminderNotificationsEnabled(enabled: Boolean)
 }

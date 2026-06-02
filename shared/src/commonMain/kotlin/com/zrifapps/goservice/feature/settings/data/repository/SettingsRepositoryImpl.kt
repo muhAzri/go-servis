@@ -21,12 +21,20 @@ class SettingsRepositoryImpl(
         _settings.update { it.copy(serviceReminderNotificationsEnabled = enabled) }
     }
 
+    override suspend fun setOdometerReminderNotificationsEnabled(enabled: Boolean) {
+        store.putBoolean(KEY_ODOMETER_REMINDER_NOTIFICATIONS, enabled)
+        _settings.update { it.copy(odometerReminderNotificationsEnabled = enabled) }
+    }
+
     private fun load(): AppSettings = AppSettings(
         serviceReminderNotificationsEnabled =
             store.getBoolean(KEY_SERVICE_REMINDER_NOTIFICATIONS, AppSettings.default.serviceReminderNotificationsEnabled),
+        odometerReminderNotificationsEnabled =
+            store.getBoolean(KEY_ODOMETER_REMINDER_NOTIFICATIONS, AppSettings.default.odometerReminderNotificationsEnabled),
     )
 
     private companion object {
         const val KEY_SERVICE_REMINDER_NOTIFICATIONS = "service_reminder_notifications_enabled"
+        const val KEY_ODOMETER_REMINDER_NOTIFICATIONS = "odometer_reminder_notifications_enabled"
     }
 }

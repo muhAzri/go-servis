@@ -9,4 +9,5 @@ import org.koin.dsl.module
 val notificationModule = module {
     single { ReminderNotificationPlanner(get()) }
     factory { RescheduleReminderNotifications(get(), get(), get(), get()) }
+    single { OdometerReminderPlanner(get()) }
 }

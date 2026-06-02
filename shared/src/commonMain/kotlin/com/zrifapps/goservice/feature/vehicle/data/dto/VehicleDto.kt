@@ -18,6 +18,7 @@ data class VehicleDto(
     @SerialName("color_hex") val colorHex: String,
     @SerialName("created_at") val createdAt: Long,
     @SerialName("updated_at") val updatedAt: Long,
+    @SerialName("last_odometer_update_at") val lastOdometerUpdateAt: Long = 0L,
     @SerialName("deleted_at") val deletedAt: Long? = null,
     @SerialName("version") val version: Long = 0L,
 )

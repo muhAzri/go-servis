@@ -93,4 +93,8 @@ final class SettingsModel: ObservableObject {
     func setServiceReminderNotificationsEnabled(_ enabled: Bool) {
         vm.setServiceReminderNotificationsEnabled(enabled: enabled)
     }
+
+    func setOdometerReminderNotificationsEnabled(_ enabled: Bool) {
+        vm.setOdometerReminderNotificationsEnabled(enabled: enabled)
+    }
 }

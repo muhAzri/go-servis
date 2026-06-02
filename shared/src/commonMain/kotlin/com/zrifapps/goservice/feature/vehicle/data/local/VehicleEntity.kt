@@ -29,5 +29,6 @@ data class VehicleEntity(
     @ColumnInfo("color_hex") val colorHex: String,
     @ColumnInfo("created_at") val createdAt: Long,
     @ColumnInfo("updated_at") val updatedAt: Long,
+    @ColumnInfo("last_odometer_update_at", defaultValue = "0") val lastOdometerUpdateAt: Long,
     @Embedded(prefix = "sync_") val sync: SyncMetadataEmbed,
 )

@@ -7,6 +7,7 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationDelegate()
 
     private let categoryId = "SERVICE_REMINDER"
+    private let odometerCategoryId = "ODOMETER_REMINDER"
     private let snoozeActionId = "SNOOZE"
 
     func register() {
@@ -18,13 +19,19 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
             title: "Tunda 3 hari",
             options: []
         )
-        let category = UNNotificationCategory(
+        let serviceCategory = UNNotificationCategory(
             identifier: categoryId,
             actions: [snooze],
             intentIdentifiers: [],
             options: []
         )
-        center.setNotificationCategories([category])
+        let odometerCategory = UNNotificationCategory(
+            identifier: odometerCategoryId,
+            actions: [],
+            intentIdentifiers: [],
+            options: []
+        )
+        center.setNotificationCategories([serviceCategory, odometerCategory])
     }
 
     func userNotificationCenter(
@@ -40,12 +47,18 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        let reminderId = response.notification.request.content.userInfo["reminderId"] as? String
+        let userInfo = response.notification.request.content.userInfo
+        let reminderId = userInfo["reminderId"] as? String
+        let odometerVehicleId = userInfo["vehicleId"] as? String
 
         if response.actionIdentifier == snoozeActionId, let id = reminderId {
             NotificationActions.shared.snooze(reminderId: id, days: 3)
-        } else if response.actionIdentifier == UNNotificationDefaultActionIdentifier, let id = reminderId {
-            Task { @MainActor in NotificationRouter.shared.open(id) }
+        } else if response.actionIdentifier == UNNotificationDefaultActionIdentifier {
+            if let id = reminderId {
+                Task { @MainActor in NotificationRouter.shared.open(id) }
+            } else if let vId = odometerVehicleId {
+                Task { @MainActor in NotificationRouter.shared.openOdometer(vId) }
+            }
         }
         completionHandler()
     }

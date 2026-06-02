@@ -24,6 +24,7 @@ fun VehicleDto.toDomain(): Vehicle = Vehicle(
     color = HexColor.parseOrNull(colorHex) ?: HexColor(DEFAULT_COLOR_HEX),
     createdAt = createdAt,
     updatedAt = updatedAt,
+    lastOdometerUpdateAt = if (lastOdometerUpdateAt > 0L) lastOdometerUpdateAt else createdAt,
     sync = SyncMetadata(
         status = if (deletedAt != null) SyncStatus.PendingDelete else SyncStatus.Synced,
         localUpdatedAt = updatedAt,
@@ -47,6 +48,7 @@ fun Vehicle.toDto(): VehicleDto = VehicleDto(
     colorHex = color.value,
     createdAt = createdAt,
     updatedAt = updatedAt,
+    lastOdometerUpdateAt = lastOdometerUpdateAt,
     deletedAt = sync.deletedAt,
     version = sync.version,
 )

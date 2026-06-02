@@ -1,0 +1,1058 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "ce3a35508f35dac3f96cf754d6742e23",
+    "entities": [
+      {
+        "tableName": "vehicles",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `owner_profile_id` TEXT NOT NULL, `nickname` TEXT NOT NULL, `type` TEXT NOT NULL, `subtype_id` TEXT NOT NULL, `brand` TEXT NOT NULL, `model` TEXT NOT NULL, `year` INTEGER, `plate_number` TEXT NOT NULL, `odometer_km` INTEGER NOT NULL, `color_hex` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `last_odometer_update_at` INTEGER NOT NULL DEFAULT 0, `sync_status` TEXT NOT NULL, `sync_local_updated_at` INTEGER NOT NULL, `sync_remote_updated_at` INTEGER, `sync_last_sync_attempt_at` INTEGER, `sync_sync_error_message` TEXT, `sync_deleted_at` INTEGER, `sync_version` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownerProfileId",
+            "columnName": "owner_profile_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nickname",
+            "columnName": "nickname",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subtypeId",
+            "columnName": "subtype_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "brand",
+            "columnName": "brand",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "model",
+            "columnName": "model",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "year",
+            "columnName": "year",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "plateNumber",
+            "columnName": "plate_number",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "odometerKm",
+            "columnName": "odometer_km",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "colorHex",
+            "columnName": "color_hex",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastOdometerUpdateAt",
+            "columnName": "last_odometer_update_at",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "sync.status",
+            "columnName": "sync_status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sync.localUpdatedAt",
+            "columnName": "sync_local_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sync.remoteUpdatedAt",
+            "columnName": "sync_remote_updated_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sync.lastSyncAttemptAt",
+            "columnName": "sync_last_sync_attempt_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sync.syncErrorMessage",
+            "columnName": "sync_sync_error_message",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sync.deletedAt",
+            "columnName": "sync_deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sync.version",
+            "columnName": "sync_version",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_vehicles_owner_profile_id",
+            "unique": false,
+            "columnNames": [
+              "owner_profile_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_vehicles_owner_profile_id` ON `${TABLE_NAME}` (`owner_profile_id`)"
+          },
+          {
+            "name": "index_vehicles_sync_deleted_at",
+            "unique": false,
+            "columnNames": [
+              "sync_deleted_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_vehicles_sync_deleted_at` ON `${TABLE_NAME}` (`sync_deleted_at`)"
+          },
+          {
+            "name": "index_vehicles_type",
+            "unique": false,
+            "columnNames": [
+              "type"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_vehicles_type` ON `${TABLE_NAME}` (`type`)"
+          }
+        ]
+      },
+      {
+        "tableName": "components",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `label` TEXT NOT NULL, `icon_key` TEXT NOT NULL, `color_hex` TEXT NOT NULL, `interval_motor_km` INTEGER, `interval_motor_days` INTEGER, `interval_motor_label` TEXT, `interval_mobil_km` INTEGER, `interval_mobil_days` INTEGER, `interval_mobil_label` TEXT, `why` TEXT NOT NULL, `applicable_subtypes` TEXT NOT NULL, `tag` TEXT NOT NULL, `is_custom` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "label",
+            "columnName": "label",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "iconKey",
+            "columnName": "icon_key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "colorHex",
+            "columnName": "color_hex",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "intervalMotorKm",
+            "columnName": "interval_motor_km",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "intervalMotorDays",
+            "columnName": "interval_motor_days",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "intervalMotorLabel",
+            "columnName": "interval_motor_label",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "intervalMobilKm",
+            "columnName": "interval_mobil_km",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "intervalMobilDays",
+            "columnName": "interval_mobil_days",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "intervalMobilLabel",
+            "columnName": "interval_mobil_label",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "why",
+            "columnName": "why",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "applicableSubtypes",
+            "columnName": "applicable_subtypes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tag",
+            "columnName": "tag",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isCustom",
+            "columnName": "is_custom",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_components_tag",
+            "unique": false,
+            "columnNames": [
+              "tag"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_components_tag` ON `${TABLE_NAME}` (`tag`)"
+          },
+          {
+            "name": "index_components_is_custom",
+            "unique": false,
+            "columnNames": [
+              "is_custom"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_components_is_custom` ON `${TABLE_NAME}` (`is_custom`)"
+          }
+        ]
+      },
+      {
+        "tableName": "tracked_components",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `vehicle_id` TEXT NOT NULL, `catalog_component_id` TEXT NOT NULL, `custom_name` TEXT, `last_service_date` INTEGER, `last_service_km` INTEGER, `next_service_date` INTEGER, `next_service_km` INTEGER, `interval_km_override` INTEGER, `interval_days_override` INTEGER, `urgency` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `sync_status` TEXT NOT NULL, `sync_local_updated_at` INTEGER NOT NULL, `sync_remote_updated_at` INTEGER, `sync_last_sync_attempt_at` INTEGER, `sync_sync_error_message` TEXT, `sync_deleted_at` INTEGER, `sync_version` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`vehicle_id`) REFERENCES `vehicles`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "vehicleId",
+            "columnName": "vehicle_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "catalogComponentId",
+            "columnName": "catalog_component_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "customName",
+            "columnName": "custom_name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastServiceDate",
+            "columnName": "last_service_date",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "lastServiceKm",
+            "columnName": "last_service_km",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "nextServiceDate",
+            "columnName": "next_service_date",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "nextServiceKm",
+            "columnName": "next_service_km",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "intervalKmOverride",
+            "columnName": "interval_km_override",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "intervalDaysOverride",
+            "columnName": "interval_days_override",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "urgency",
+            "columnName": "urgency",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sync.status",
+            "columnName": "sync_status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sync.localUpdatedAt",
+            "columnName": "sync_local_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sync.remoteUpdatedAt",
+            "columnName": "sync_remote_updated_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sync.lastSyncAttemptAt",
+            "columnName": "sync_last_sync_attempt_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sync.syncErrorMessage",
+            "columnName": "sync_sync_error_message",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sync.deletedAt",
+            "columnName": "sync_deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sync.version",
+            "columnName": "sync_version",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_tracked_components_vehicle_id",
+            "unique": false,
+            "columnNames": [
+              "vehicle_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_tracked_components_vehicle_id` ON `${TABLE_NAME}` (`vehicle_id`)"
+          },
+          {
+            "name": "index_tracked_components_catalog_component_id",
+            "unique": false,
+            "columnNames": [
+              "catalog_component_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_tracked_components_catalog_component_id` ON `${TABLE_NAME}` (`catalog_component_id`)"
+          },
+          {
+            "name": "index_tracked_components_urgency",
+            "unique": false,
+            "columnNames": [
+              "urgency"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_tracked_components_urgency` ON `${TABLE_NAME}` (`urgency`)"
+          },
+          {
+            "name": "index_tracked_components_sync_deleted_at",
+            "unique": false,
+            "columnNames": [
+              "sync_deleted_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_tracked_components_sync_deleted_at` ON `${TABLE_NAME}` (`sync_deleted_at`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "vehicles",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "vehicle_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "service_records",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `vehicle_id` TEXT NOT NULL, `service_type` TEXT NOT NULL, `kind` TEXT NOT NULL DEFAULT 'komponen', `custom_title` TEXT, `service_date` INTEGER NOT NULL, `odometer_km` INTEGER NOT NULL, `workshop` TEXT, `cost_idr` INTEGER NOT NULL, `note` TEXT, `source_reminder_id` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `sync_status` TEXT NOT NULL, `sync_local_updated_at` INTEGER NOT NULL, `sync_remote_updated_at` INTEGER, `sync_last_sync_attempt_at` INTEGER, `sync_sync_error_message` TEXT, `sync_deleted_at` INTEGER, `sync_version` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`vehicle_id`) REFERENCES `vehicles`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "vehicleId",
+            "columnName": "vehicle_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "serviceType",
+            "columnName": "service_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'komponen'"
+          },
+          {
+            "fieldPath": "customTitle",
+            "columnName": "custom_title",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "serviceDate",
+            "columnName": "service_date",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "odometerKm",
+            "columnName": "odometer_km",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "workshop",
+            "columnName": "workshop",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "costIdr",
+            "columnName": "cost_idr",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sourceReminderId",
+            "columnName": "source_reminder_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sync.status",
+            "columnName": "sync_status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sync.localUpdatedAt",
+            "columnName": "sync_local_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sync.remoteUpdatedAt",
+            "columnName": "sync_remote_updated_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sync.lastSyncAttemptAt",
+            "columnName": "sync_last_sync_attempt_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sync.syncErrorMessage",
+            "columnName": "sync_sync_error_message",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sync.deletedAt",
+            "columnName": "sync_deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sync.version",
+            "columnName": "sync_version",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_service_records_vehicle_id",
+            "unique": false,
+            "columnNames": [
+              "vehicle_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_service_records_vehicle_id` ON `${TABLE_NAME}` (`vehicle_id`)"
+          },
+          {
+            "name": "index_service_records_service_date",
+            "unique": false,
+            "columnNames": [
+              "service_date"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_service_records_service_date` ON `${TABLE_NAME}` (`service_date`)"
+          },
+          {
+            "name": "index_service_records_service_type",
+            "unique": false,
+            "columnNames": [
+              "service_type"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_service_records_service_type` ON `${TABLE_NAME}` (`service_type`)"
+          },
+          {
+            "name": "index_service_records_sync_deleted_at",
+            "unique": false,
+            "columnNames": [
+              "sync_deleted_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_service_records_sync_deleted_at` ON `${TABLE_NAME}` (`sync_deleted_at`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "vehicles",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "vehicle_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "service_record_component_xref",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`service_record_id` TEXT NOT NULL, `component_id` TEXT NOT NULL, PRIMARY KEY(`service_record_id`, `component_id`), FOREIGN KEY(`service_record_id`) REFERENCES `service_records`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "serviceRecordId",
+            "columnName": "service_record_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "componentId",
+            "columnName": "component_id",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "service_record_id",
+            "component_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_service_record_component_xref_service_record_id",
+            "unique": false,
+            "columnNames": [
+              "service_record_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_service_record_component_xref_service_record_id` ON `${TABLE_NAME}` (`service_record_id`)"
+          },
+          {
+            "name": "index_service_record_component_xref_component_id",
+            "unique": false,
+            "columnNames": [
+              "component_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_service_record_component_xref_component_id` ON `${TABLE_NAME}` (`component_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "service_records",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "service_record_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "reminders",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `vehicle_id` TEXT NOT NULL, `service_type` TEXT NOT NULL, `tracked_component_id` TEXT, `title` TEXT NOT NULL, `trigger_mode` TEXT NOT NULL, `target_km` INTEGER, `target_date` INTEGER, `note` TEXT, `notify_days_before` INTEGER NOT NULL, `status` TEXT NOT NULL, `urgency` TEXT NOT NULL, `snoozed_until` INTEGER, `completed_at` INTEGER, `completed_service_record_id` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `sync_status` TEXT NOT NULL, `sync_local_updated_at` INTEGER NOT NULL, `sync_remote_updated_at` INTEGER, `sync_last_sync_attempt_at` INTEGER, `sync_sync_error_message` TEXT, `sync_deleted_at` INTEGER, `sync_version` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`vehicle_id`) REFERENCES `vehicles`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "vehicleId",
+            "columnName": "vehicle_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "serviceType",
+            "columnName": "service_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "trackedComponentId",
+            "columnName": "tracked_component_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "triggerMode",
+            "columnName": "trigger_mode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "targetKm",
+            "columnName": "target_km",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "targetDate",
+            "columnName": "target_date",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "notifyDaysBefore",
+            "columnName": "notify_days_before",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "urgency",
+            "columnName": "urgency",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "snoozedUntil",
+            "columnName": "snoozed_until",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "completedAt",
+            "columnName": "completed_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "completedServiceRecordId",
+            "columnName": "completed_service_record_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sync.status",
+            "columnName": "sync_status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sync.localUpdatedAt",
+            "columnName": "sync_local_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sync.remoteUpdatedAt",
+            "columnName": "sync_remote_updated_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sync.lastSyncAttemptAt",
+            "columnName": "sync_last_sync_attempt_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sync.syncErrorMessage",
+            "columnName": "sync_sync_error_message",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sync.deletedAt",
+            "columnName": "sync_deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sync.version",
+            "columnName": "sync_version",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_reminders_vehicle_id",
+            "unique": false,
+            "columnNames": [
+              "vehicle_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_reminders_vehicle_id` ON `${TABLE_NAME}` (`vehicle_id`)"
+          },
+          {
+            "name": "index_reminders_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_reminders_status` ON `${TABLE_NAME}` (`status`)"
+          },
+          {
+            "name": "index_reminders_urgency",
+            "unique": false,
+            "columnNames": [
+              "urgency"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_reminders_urgency` ON `${TABLE_NAME}` (`urgency`)"
+          },
+          {
+            "name": "index_reminders_sync_deleted_at",
+            "unique": false,
+            "columnNames": [
+              "sync_deleted_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_reminders_sync_deleted_at` ON `${TABLE_NAME}` (`sync_deleted_at`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "vehicles",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "vehicle_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "profiles",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `avatar_color_hex` TEXT NOT NULL, `email` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `sync_status` TEXT NOT NULL, `sync_local_updated_at` INTEGER NOT NULL, `sync_remote_updated_at` INTEGER, `sync_last_sync_attempt_at` INTEGER, `sync_sync_error_message` TEXT, `sync_deleted_at` INTEGER, `sync_version` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "avatarColorHex",
+            "columnName": "avatar_color_hex",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "email",
+            "columnName": "email",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sync.status",
+            "columnName": "sync_status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sync.localUpdatedAt",
+            "columnName": "sync_local_updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sync.remoteUpdatedAt",
+            "columnName": "sync_remote_updated_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sync.lastSyncAttemptAt",
+            "columnName": "sync_last_sync_attempt_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sync.syncErrorMessage",
+            "columnName": "sync_sync_error_message",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sync.deletedAt",
+            "columnName": "sync_deleted_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sync.version",
+            "columnName": "sync_version",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_profiles_sync_deleted_at",
+            "unique": false,
+            "columnNames": [
+              "sync_deleted_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_profiles_sync_deleted_at` ON `${TABLE_NAME}` (`sync_deleted_at`)"
+          }
+        ]
+      },
+      {
+        "tableName": "onboarding_state",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `completed` INTEGER NOT NULL, `completed_at` INTEGER, `current_step` TEXT NOT NULL, `profile_name` TEXT, `picked_vehicle_type` TEXT, `first_vehicle_id` TEXT, `notification_permission_asked` INTEGER NOT NULL, `notification_permission_granted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "completed",
+            "columnName": "completed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "completedAt",
+            "columnName": "completed_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "currentStep",
+            "columnName": "current_step",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "profileName",
+            "columnName": "profile_name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "pickedVehicleType",
+            "columnName": "picked_vehicle_type",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "firstVehicleId",
+            "columnName": "first_vehicle_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "notificationPermissionAsked",
+            "columnName": "notification_permission_asked",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notificationPermissionGranted",
+            "columnName": "notification_permission_granted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ce3a35508f35dac3f96cf754d6742e23')"
+    ]
+  }
+}

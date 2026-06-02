@@ -6,6 +6,7 @@ final class NotificationRouter: ObservableObject {
     static let shared = NotificationRouter()
 
     @Published var pendingReminderId: String?
+    @Published var pendingOdometerVehicleId: String?
 
     private init() {}
 
@@ -15,5 +16,13 @@ final class NotificationRouter: ObservableObject {
 
     func consume() {
         pendingReminderId = nil
+    }
+
+    func openOdometer(_ vehicleId: String) {
+        pendingOdometerVehicleId = vehicleId
+    }
+
+    func consumeOdometer() {
+        pendingOdometerVehicleId = nil
     }
 }
