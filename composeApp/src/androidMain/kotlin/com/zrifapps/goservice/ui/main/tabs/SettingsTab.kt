@@ -83,6 +83,7 @@ fun SettingsTab(
     onOpenTerms: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
     onOpenHelp: () -> Unit = {},
+    onOpenFeedback: () -> Unit = {},
     onOpenEditProfile: () -> Unit = {},
     onOpenNotifSheet: () -> Unit = {},
     profileVm: ProfileViewModel = koinViewModel(),
@@ -279,6 +280,11 @@ fun SettingsTab(
                     icon = FaIcons.CIRCLE_INFO,
                     label = "Bantuan & FAQ",
                     onClick = onOpenHelp,
+                ),
+                SettingItem(
+                    icon = FaIcons.ENVELOPE,
+                    label = "Kirim Masukan / Lapor Bug",
+                    onClick = onOpenFeedback,
                 ),
                 SettingItem(
                     icon = FaIcons.STAR,

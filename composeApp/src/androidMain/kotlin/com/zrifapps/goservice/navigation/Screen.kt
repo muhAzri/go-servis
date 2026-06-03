@@ -15,6 +15,7 @@ sealed interface Screen {
     @Serializable data object Terms : Screen
     @Serializable data object About : Screen
     @Serializable data object Help : Screen
+    @Serializable data object Feedback : Screen
 
     // Core flow
     @Serializable data class ReminderDetail(val reminderId: String) : Screen

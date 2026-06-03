@@ -42,6 +42,7 @@ fun MainTabsScreen(
     onOpenTerms: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
     onOpenHelp: () -> Unit = {},
+    onOpenFeedback: () -> Unit = {},
     onOpenEditProfile: () -> Unit = {},
     onOpenVehicleList: () -> Unit = {},
     vehicleVm: VehicleListViewModel = koinViewModel(),
@@ -85,6 +86,7 @@ fun MainTabsScreen(
                     onOpenTerms = onOpenTerms,
                     onOpenAbout = onOpenAbout,
                     onOpenHelp = onOpenHelp,
+                    onOpenFeedback = onOpenFeedback,
                     onOpenEditProfile = onOpenEditProfile,
                 )
                 BottomTab.Add -> HomeTab(userName = userName)

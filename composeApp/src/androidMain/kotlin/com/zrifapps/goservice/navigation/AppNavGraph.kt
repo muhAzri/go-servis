@@ -30,6 +30,7 @@ import com.zrifapps.goservice.feature.onboarding.presentation.AppGateViewModel
 import com.zrifapps.goservice.feature.onboarding.presentation.OnboardingEvent
 import com.zrifapps.goservice.feature.onboarding.presentation.OnboardingFlowViewModel
 import com.zrifapps.goservice.feature.vehicle.domain.model.VehicleType
+import com.zrifapps.goservice.ui.feedback.FeedbackScreen
 import com.zrifapps.goservice.ui.legal.AboutScreen
 import com.zrifapps.goservice.ui.legal.HelpScreen
 import com.zrifapps.goservice.ui.legal.PrivacyScreen
@@ -214,6 +215,7 @@ fun AppNavGraph() {
                 onOpenTerms = { navController.navigate(Screen.Terms) },
                 onOpenAbout = { navController.navigate(Screen.About) },
                 onOpenHelp = { navController.navigate(Screen.Help) },
+                onOpenFeedback = { navController.navigate(Screen.Feedback) },
                 onOpenEditProfile = { navController.navigate(Screen.EditProfile) },
                 onOpenVehicleList = { navController.navigate(Screen.VehicleList) },
             )
@@ -250,6 +252,13 @@ fun AppNavGraph() {
 
         composable<Screen.Help> {
             HelpScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable<Screen.Feedback> {
+            FeedbackScreen(
+                onBack = { navController.popBackStack() },
+                onSent = { navController.popBackStack() },
+            )
         }
 
         composable<Screen.ReminderDetail> { backStackEntry ->
