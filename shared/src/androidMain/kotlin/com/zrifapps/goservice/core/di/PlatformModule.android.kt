@@ -7,6 +7,8 @@ import com.zrifapps.goservice.core.notification.AndroidOdometerReminderScheduler
 import com.zrifapps.goservice.core.notification.AndroidReminderNotificationScheduler
 import com.zrifapps.goservice.core.notification.OdometerReminderScheduler
 import com.zrifapps.goservice.core.notification.ReminderNotificationScheduler
+import com.zrifapps.goservice.feature.feedback.data.remote.AndroidFeedbackRepository
+import com.zrifapps.goservice.feature.feedback.domain.repository.FeedbackRepository
 import com.zrifapps.goservice.feature.settings.data.local.SettingsStore
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
@@ -18,4 +20,5 @@ actual val platformModule: Module = module {
     single { SettingsStore(androidContext()) }
     single<ReminderNotificationScheduler> { AndroidReminderNotificationScheduler(androidContext()) }
     single<OdometerReminderScheduler> { AndroidOdometerReminderScheduler(androidContext()) }
+    single<FeedbackRepository> { AndroidFeedbackRepository(androidContext()) }
 }
