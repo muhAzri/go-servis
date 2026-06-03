@@ -40,7 +40,7 @@ private val SECTIONS = listOf(
     "4. Backup & Ekspor Data" to "Fitur Ekspor di Pengaturan menghasilkan satu file CSV yang berisi data kendaraan, servis, pengingat, dan komponen yang kamu pilih. File ini hanya keluar dari perangkat kalau kamu sendiri yang menekan Share / Save lewat dialog sistem.\n\n" +
         "Kami tidak menyimpan salinan file ekspor di server manapun. Setelah file keluar dari perangkat (mis. dibagikan via WhatsApp, email, atau cloud drive), keamanannya menjadi tanggung jawab kamu — file dapat memuat informasi yang bisa mengidentifikasi kendaraanmu (plat nomor, riwayat bengkel, biaya).\n\n" +
         "Fitur Impor hanya membaca file CSV yang kamu pilih sendiri; impor melakukan merge by id sehingga re-impor tidak menggandakan data.",
-    "5. Penyimpanan Lokal & Penghapusan Data" to "Semua data hidup di app-private storage milik ServisGo:\n" +
+    "5. Penyimpanan Lokal & Penghapusan Data" to "Semua data hidup di app-private storage milik GoService:\n" +
         "• 'Hapus Semua Data' di Pengaturan akan menghapus seluruh data aplikasi di perangkat ini.\n" +
         "• Uninstall aplikasi juga menghapus seluruh data lokal secara permanen.\n\n" +
         "Karena kami tidak punya backup di server kami, data yang sudah dihapus atau hilang akibat uninstall/format perangkat tidak dapat kami pulihkan. Disarankan untuk mengekspor CSV berkala (lihat bagian 4).",

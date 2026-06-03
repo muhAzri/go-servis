@@ -129,7 +129,7 @@ fun SettingsTab(
             // Pre-13: no runtime permission, but user may have disabled the channel/app in Settings.
             Toast.makeText(
                 context,
-                "Notifikasi ServisGo dimatikan. Buka Setelan untuk mengaktifkan.",
+                "Notifikasi GoService dimatikan. Buka Setelan untuk mengaktifkan.",
                 Toast.LENGTH_LONG,
             ).show()
             runCatching {
@@ -272,7 +272,7 @@ fun SettingsTab(
                 ),
                 SettingItem(
                     icon = FaIcons.CIRCLE_INFO,
-                    label = "Tentang ServisGo",
+                    label = "Tentang GoService",
                     onClick = onOpenAbout,
                 ),
                 SettingItem(
@@ -318,7 +318,7 @@ fun SettingsTab(
         }
 
         Text(
-            text = "ServisGo v1.0.0 · build 2026.05.06\n© 2026 Muhammad Azri Fatihah Susanto",
+            text = "GoService v1.0.0 · build 2026.05.06\n© 2026 Muhammad Azri Fatihah Susanto",
             color = AppColors.TextSubtle,
             fontSize = 11.sp,
             modifier = Modifier

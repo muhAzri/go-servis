@@ -148,7 +148,7 @@ private fun NotifPreviewCard(
                     FaIcon(icon = iconUnicode, color = Color.White, size = 10.sp)
                 }
                 Text(
-                    text = "ServisGo",
+                    text = "GoService",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
                     fontFamily = font,

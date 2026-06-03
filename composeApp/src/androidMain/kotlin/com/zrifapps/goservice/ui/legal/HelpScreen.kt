@@ -27,8 +27,8 @@ private val FAQ = listOf(
     "Bagaimana cara menambah kendaraan?" to "Tap tombol + di tab tengah, lalu pilih jenis (motor/mobil), isi merk, model, plat, dan KM saat ini. Selesai.",
     "Apakah saya perlu update KM tiap hari?" to "Tidak. Update saat kamu ingat saja — minimal sebulan sekali agar pengingat akurat.",
     "Data saya hilang setelah uninstall?" to "Iya, karena data disimpan lokal di perangkat dan kami tidak menyimpan ke server. Pastikan ekspor CSV sebelum uninstall jika ingin menyimpan riwayat.",
-    "Notifikasi tidak muncul?" to "Pastikan izin notifikasi aktif di Pengaturan HP > ServisGo > Notifikasi.",
-    "Apakah ServisGo gratis?" to "Ya, gratis dengan iklan. Kami menjaga privasimu — tidak ada login, tidak ada tracking lintas aplikasi dari kami.",
+    "Notifikasi tidak muncul?" to "Pastikan izin notifikasi aktif di Pengaturan HP > GoService > Notifikasi.",
+    "Apakah GoService gratis?" to "Ya, gratis dengan iklan. Kami menjaga privasimu — tidak ada login, tidak ada tracking lintas aplikasi dari kami.",
 )
 
 @Composable

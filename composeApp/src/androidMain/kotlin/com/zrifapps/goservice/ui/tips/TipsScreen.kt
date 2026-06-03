@@ -154,7 +154,7 @@ private fun HeroTip(onClick: () -> Unit = {}) {
             modifier = Modifier.padding(top = 6.dp),
         )
         Text(
-            text = "3 menit baca · oleh Tim ServisGo",
+            text = "3 menit baca · oleh Tim GoService",
             color = Color.White.copy(alpha = 0.85f),
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium,

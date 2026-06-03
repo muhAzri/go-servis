@@ -29,7 +29,7 @@ import com.zrifapps.goservice.ui.theme.FaIcons
 
 @Composable
 fun AboutScreen(onBack: () -> Unit) {
-    LegalShell(title = "Tentang ServisGo", onBack = onBack) {
+    LegalShell(title = "Tentang GoService", onBack = onBack) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -52,7 +52,7 @@ fun AboutScreen(onBack: () -> Unit) {
             }
             Spacer(Modifier.height(14.dp))
             Text(
-                text = "ServisGo",
+                text = "GoService",
                 color = AppColors.TextPrimary,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.ExtraBold,
