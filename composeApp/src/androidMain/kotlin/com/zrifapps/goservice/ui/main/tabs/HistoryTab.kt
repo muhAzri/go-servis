@@ -396,7 +396,7 @@ private fun HistoryRowCard(
                 )
             }
             Text(
-                text = "$vehicle · $km",
+                text = "$vehicleLabel · $km",
                 color = AppColors.TextMuted,
                 fontSize = 12.sp,
                 fontFamily = font,
