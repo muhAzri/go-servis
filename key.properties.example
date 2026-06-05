@@ -1,0 +1,10 @@
+# Template for Android release signing. Copy to `key.properties` and fill in
+# the real values. `key.properties` and the .jks file are gitignored — never
+# commit them. Keep a secure backup; losing the keystore means you can no
+# longer publish updates to the same app on Play Store.
+#
+# Path is resolved relative to the project root (rootProject.file).
+storeFile=go-service-release.jks
+storePassword=CHANGE_ME
+keyAlias=upload
+keyPassword=CHANGE_ME

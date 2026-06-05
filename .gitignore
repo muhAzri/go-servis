@@ -26,3 +26,16 @@ GoogleService-Info.plist
 **/GoogleService-Info.plist
 .firebase/
 firebase-debug.log
+
+# Signing secrets — NEVER commit these. Keep the keystore + passwords local /
+# in a secret manager. key.properties.example (the template) stays tracked.
+*.jks
+*.keystore
+key.properties
+!key.properties.example
+go-service-signing-backup.zip
+
+# Release build artifacts
+*.aab
+*.apk
+composeApp/release/
