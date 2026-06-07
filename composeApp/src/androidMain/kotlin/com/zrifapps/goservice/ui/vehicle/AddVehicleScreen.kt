@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -61,8 +62,7 @@ fun AddVehicleScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(AppColors.BgWarm)
-            .statusBarsPadding()
-            .navigationBarsPadding(),
+            .statusBarsPadding(),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -105,7 +105,13 @@ fun AddVehicleScreen(
                     .padding(bottom = 1.dp),
             )
             Column(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp).padding(bottom = 14.dp),
+                modifier = Modifier
+                    // Bar tetap membentang ke tepi; tombol didorong naik di atas
+                    // navigation bar dan keyboard agar selalu terlihat & bisa ditekan.
+                    .navigationBarsPadding()
+                    .imePadding()
+                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                    .padding(bottom = 14.dp),
             ) {
                 AppButton(
                     text = "Simpan Kendaraan",

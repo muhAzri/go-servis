@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -53,7 +53,7 @@ fun NotifPermScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(AppColors.BgWarm)
-            .statusBarsPadding()
+            .safeDrawingPadding()
             .padding(horizontal = 24.dp),
     ) {
         Spacer(Modifier.height(8.dp))

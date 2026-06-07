@@ -15,7 +15,10 @@ import androidx.core.app.NotificationManagerCompat
  */
 object ReminderNotifier {
 
-    const val CHANNEL_ID: String = "service_reminders"
+    // Bumped to "_v2" because a channel's importance can't be raised in code once
+    // it already exists on the device — a new id forces the high-importance channel.
+    const val CHANNEL_ID: String = "service_reminders_v2"
+    private const val LEGACY_CHANNEL_ID: String = "service_reminders"
     const val EXTRA_REMINDER_ID: String = "extra_reminder_id"
     const val EXTRA_NOTIFICATION_ID: String = "extra_notification_id"
     const val ACTION_SNOOZE: String = "com.zrifapps.goservice.action.SNOOZE_REMINDER"
@@ -23,13 +26,18 @@ object ReminderNotifier {
     fun ensureChannel(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        // Remove the old default-importance channel so users don't see a stale duplicate.
+        manager.deleteNotificationChannel(LEGACY_CHANNEL_ID)
         if (manager.getNotificationChannel(CHANNEL_ID) != null) return
         val channel = NotificationChannel(
             CHANNEL_ID,
             "Pengingat servis",
-            NotificationManager.IMPORTANCE_DEFAULT,
+            // IMPORTANCE_HIGH = pops up as a heads-up notification with sound.
+            NotificationManager.IMPORTANCE_HIGH,
         ).apply {
             description = "Pengingat jadwal servis komponen kendaraan"
+            enableVibration(true)
+            enableLights(true)
         }
         manager.createNotificationChannel(channel)
     }
@@ -71,7 +79,11 @@ object ReminderNotifier {
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            // PRIORITY_HIGH + CATEGORY_REMINDER + defaults drive the heads-up popup
+            // on Android 7 and below (Android 8+ takes this from the channel instead).
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setAutoCancel(true)
             .setContentIntent(contentIntent)
             .addAction(0, "Tunda 3 hari", snoozeAction)

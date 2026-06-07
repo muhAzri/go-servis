@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -372,7 +374,9 @@ private fun SaveBar(onSave: () -> Unit, enabled: Boolean = true) {
         modifier = Modifier
             .fillMaxWidth()
             .background(AppColors.Surface)
-            .windowInsetsPadding(WindowInsets.navigationBars)
+            // Naik di atas navigation bar; saat keyboard muncul ikut naik di atasnya
+            // (union memilih inset terbesar, jadi tidak dobel).
+            .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
             .padding(PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 16.dp)),
     ) {
         AppButton(text = "Simpan Servis", onClick = onSave, enabled = enabled)

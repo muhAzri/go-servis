@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -112,7 +112,7 @@ fun VehicleComponentsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(AppColors.BgWarm)
-                .windowInsetsPadding(WindowInsets.statusBars),
+                .windowInsetsPadding(WindowInsets.systemBars),
         ) {
             TopBar(title = "Komponen", subtitle = "Memuat…", onBack = onBack, onAdd = onAdd)
             Spacer(Modifier.height(12.dp))
@@ -129,7 +129,7 @@ fun VehicleComponentsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(AppColors.BgWarm)
-                .windowInsetsPadding(WindowInsets.statusBars),
+                .windowInsetsPadding(WindowInsets.systemBars),
         ) {
             TopBar(
                 title = "Komponen",
@@ -161,7 +161,7 @@ fun VehicleComponentsScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(AppColors.BgWarm)
-            .windowInsetsPadding(WindowInsets.statusBars)
+            .windowInsetsPadding(WindowInsets.systemBars)
             .verticalScroll(rememberScrollState()),
     ) {
         TopBar(

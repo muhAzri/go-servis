@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -99,8 +101,15 @@ fun FormShell(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
+                .imePadding()
                 .verticalScroll(rememberScrollState())
-                .padding(PaddingValues(horizontal = 16.dp, vertical = 8.dp)),
+                .padding(PaddingValues(horizontal = 16.dp, vertical = 8.dp))
+                // Tanpa footer, konten terakhir bisa tertutup navigation bar (gesture pill)
+                // di mode edge-to-edge — beri ruang aman di bawah.
+                .then(
+                    if (footer == null) Modifier.windowInsetsPadding(WindowInsets.navigationBars)
+                    else Modifier,
+                ),
         ) {
             content()
         }
@@ -111,6 +120,9 @@ fun FormShell(
                     .fillMaxWidth()
                     .background(AppColors.Surface)
                     .border(1.dp, AppColors.Border, RoundedCornerShape(0.dp))
+                    // Latar footer membentang sampai tepi; isinya didorong naik di atas
+                    // navigation bar agar tombol tidak tertutup gesture pill.
+                    .windowInsetsPadding(WindowInsets.navigationBars)
                     .padding(16.dp),
             ) {
                 footer()
