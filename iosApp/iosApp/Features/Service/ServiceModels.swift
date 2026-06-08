@@ -88,7 +88,8 @@ final class EditServiceModel: ObservableObject {
 
     func load(recordId: String) { vm.load(recordId: recordId) }
     func selectVehicle(_ id: String) { vm.selectVehicle(vehicleId: id) }
-    func setServiceType(_ type: ServiceType) { vm.setServiceType(type: type) }
+    func setMode(_ mode: ServiceKind) { vm.setMode(mode: mode) }
+    func setCustomTitle(_ value: String) { vm.setCustomTitle(value: value) }
     func setServiceDate(millis: Int64) { vm.setServiceDate(millis: millis) }
     func setOdometer(km: Int64?) {
         if let km = km { vm.setOdometer(km: KotlinLong(value: km)) } else { vm.setOdometer(km: nil) }
