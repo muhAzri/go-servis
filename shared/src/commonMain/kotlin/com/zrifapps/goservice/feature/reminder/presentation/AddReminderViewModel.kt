@@ -305,7 +305,8 @@ class AddReminderViewModel(
         val trigger = buildTrigger(snapshot) ?: return
         val title = snapshot.title.trim().ifBlank { snapshot.selectedComponent?.label ?: "Pengingat servis" }
         val serviceType = when (snapshot.mode) {
-            Mode.Komponen -> snapshot.selectedComponent?.let { deriveServiceType(it.catalogId) } ?: ServiceType.Other
+            Mode.Komponen -> snapshot.selectedComponent?.let { ServiceType.fromComponentIds(listOf(it.catalogId)) }
+                ?: ServiceType.Other
             Mode.Manual -> ServiceType.Other
         }
         val linkedTrackedId = when (snapshot.mode) {
@@ -361,17 +362,6 @@ class AddReminderViewModel(
                 } else null
             }
         }
-    }
-
-    private fun deriveServiceType(catalogId: String): ServiceType = when (catalogId) {
-        "oli_mesin", "oli_gardan", "oli_gardan_mobil", "oli_transmisi" -> ServiceType.OilChange
-        "filter_oli", "filter_udara", "filter_ac", "filter_cvt" -> ServiceType.Filter
-        "ban" -> ServiceType.Tire
-        "aki" -> ServiceType.Battery
-        "kampas_rem", "minyak_rem" -> ServiceType.Brake
-        "radiator" -> ServiceType.Radiator
-        "busi", "tune_up" -> ServiceType.TuneUp
-        else -> ServiceType.Other
     }
 
     private companion object {

@@ -40,10 +40,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zrifapps.goservice.feature.service.presentation.AddServiceViewModel
+import com.zrifapps.goservice.feature.service.presentation.EditServiceViewModel
 import com.zrifapps.goservice.ui.components.MultiPickerItem
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
@@ -91,6 +91,15 @@ internal fun trackedComponentMeta(id: String): MultiPickerItem? =
     trackedComponents.firstOrNull { it.id == id }
 
 internal fun AddServiceViewModel.ComponentOption.toMultiPickerItem(): MultiPickerItem =
+    MultiPickerItem(
+        id = id,
+        label = label,
+        subtitle = intervalLabel,
+        icon = iconKeyToFa(iconKey),
+        color = parseHexColor(colorHex),
+    )
+
+internal fun EditServiceViewModel.ComponentOption.toMultiPickerItem(): MultiPickerItem =
     MultiPickerItem(
         id = id,
         label = label,
@@ -148,68 +157,6 @@ internal fun FieldLabel(text: String) {
         fontFamily = font,
         modifier = Modifier.padding(bottom = 8.dp),
     )
-}
-
-@Composable
-internal fun ServiceTypeGrid(selected: String, onSelect: (String) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        serviceTypes.chunked(3).forEach { rowChoices ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                rowChoices.forEach { choice ->
-                    ServiceTypeTile(
-                        choice = choice,
-                        active = choice.id == selected,
-                        onClick = { onSelect(choice.id) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                if (rowChoices.size < 3) {
-                    repeat(3 - rowChoices.size) { Spacer(Modifier.weight(1f)) }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ServiceTypeTile(
-    choice: ServiceTypeChoice,
-    active: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val font = plusJakartaSansFontFamily()
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(if (active) AppColors.PrimarySoft else AppColors.Surface)
-            .border(
-                BorderStroke(1.5.dp, if (active) AppColors.Primary else AppColors.Border),
-                RoundedCornerShape(14.dp),
-            )
-            .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        FaIcon(
-            icon = choice.icon,
-            color = if (active) AppColors.Primary else choice.color,
-            size = 22.sp,
-        )
-        Text(
-            text = choice.label,
-            color = AppColors.TextPrimary,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = font,
-            textAlign = TextAlign.Center,
-            lineHeight = 12.sp,
-        )
-    }
 }
 
 @Composable

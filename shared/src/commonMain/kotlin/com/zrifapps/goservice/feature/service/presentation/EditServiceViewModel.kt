@@ -8,6 +8,11 @@ import com.zrifapps.goservice.core.presentation.subscribeOn
 import com.zrifapps.goservice.core.result.DomainResult
 import com.zrifapps.goservice.core.value.Distance
 import com.zrifapps.goservice.core.value.Money
+import com.zrifapps.goservice.feature.component.domain.model.Component
+import com.zrifapps.goservice.feature.component.domain.model.TrackedComponent
+import com.zrifapps.goservice.feature.component.domain.usecase.ObserveComponentCatalogAll
+import com.zrifapps.goservice.feature.component.domain.usecase.ObserveTrackedComponents
+import com.zrifapps.goservice.feature.service.domain.model.ServiceKind
 import com.zrifapps.goservice.feature.service.domain.model.ServiceRecord
 import com.zrifapps.goservice.feature.service.domain.model.ServiceType
 import com.zrifapps.goservice.feature.service.domain.usecase.DeleteServiceRecord
@@ -22,6 +27,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -30,7 +36,17 @@ class EditServiceViewModel(
     private val updateService: UpdateService,
     private val deleteServiceRecord: DeleteServiceRecord,
     private val observeVehicles: ObserveVehicles,
+    private val observeTrackedComponents: ObserveTrackedComponents,
+    private val observeComponentCatalogAll: ObserveComponentCatalogAll,
 ) : ViewModel() {
+
+    data class ComponentOption(
+        val id: String,
+        val label: String,
+        val iconKey: String,
+        val colorHex: String,
+        val intervalLabel: String,
+    )
 
     data class UiState(
         val isLoading: Boolean = true,
@@ -38,20 +54,30 @@ class EditServiceViewModel(
         val record: ServiceRecord? = null,
         val vehicles: List<Vehicle> = emptyList(),
         val selectedVehicleId: String? = null,
-        val serviceType: ServiceType = ServiceType.OilChange,
+        val mode: ServiceKind = ServiceKind.Komponen,
+        val customTitle: String = "",
         val serviceDateMillis: Long = 0L,
         val odometerKm: Long? = null,
         val workshop: String = "",
         val costIdr: Long = 0L,
         val note: String = "",
+        val availableComponents: List<ComponentOption> = emptyList(),
+        val isLoadingComponents: Boolean = false,
         val selectedComponentIds: Set<String> = emptySet(),
     ) {
         val selectedVehicle: Vehicle? get() = vehicles.firstOrNull { it.id == selectedVehicleId }
+        val hasTrackedComponents: Boolean get() = availableComponents.isNotEmpty()
+
         val canSave: Boolean
             get() = !isLoading && !isSaving && record != null &&
                 selectedVehicle != null &&
                 serviceDateMillis > 0L &&
-                odometerKm != null && odometerKm >= 0L
+                odometerKm != null && odometerKm >= 0L &&
+                when (mode) {
+                    ServiceKind.Komponen -> selectedComponentIds.isNotEmpty()
+                    ServiceKind.Rutin -> true
+                    ServiceKind.Manual -> customTitle.trim().isNotEmpty()
+                }
     }
 
     sealed interface Event {
@@ -68,6 +94,8 @@ class EditServiceViewModel(
 
     private var recordJob: Job? = null
     private var vehiclesJob: Job? = null
+    private var componentsJob: Job? = null
+    private var observingVehicleId: String? = null
     private var loadedId: String? = null
     private var hydrated: Boolean = false
 
@@ -94,7 +122,8 @@ class EditServiceViewModel(
                             isLoading = false,
                             record = record,
                             selectedVehicleId = record.vehicleId,
-                            serviceType = record.serviceType,
+                            mode = record.kind,
+                            customTitle = record.customTitle.orEmpty(),
                             serviceDateMillis = record.serviceDate,
                             odometerKm = record.odometer.kilometers,
                             workshop = record.workshop.orEmpty(),
@@ -106,7 +135,62 @@ class EditServiceViewModel(
                         current.copy(isLoading = false, record = record)
                     }
                 }
+                if (record != null) refreshComponentsObservation(record.vehicleId)
             }
+        }
+    }
+
+    private fun refreshComponentsObservation(vehicleId: String?) {
+        if (vehicleId == observingVehicleId) return
+        observingVehicleId = vehicleId
+        componentsJob?.cancel()
+        if (vehicleId == null) {
+            _state.update {
+                it.copy(
+                    availableComponents = emptyList(),
+                    selectedComponentIds = emptySet(),
+                    isLoadingComponents = false,
+                )
+            }
+            return
+        }
+        _state.update { it.copy(isLoadingComponents = true) }
+        componentsJob = viewModelScope.launch {
+            combine(
+                observeTrackedComponents(vehicleId),
+                observeComponentCatalogAll(),
+            ) { tracked, catalog ->
+                buildOptions(vehicleId, tracked, catalog)
+            }.collect { options ->
+                _state.update { current ->
+                    val available = options.map { it.id }.toSet()
+                    val pruned = current.selectedComponentIds.intersect(available)
+                    current.copy(
+                        availableComponents = options,
+                        selectedComponentIds = pruned,
+                        isLoadingComponents = false,
+                    )
+                }
+            }
+        }
+    }
+
+    private fun buildOptions(
+        vehicleId: String,
+        tracked: List<TrackedComponent>,
+        catalog: List<Component>,
+    ): List<ComponentOption> {
+        val vehicleType = _state.value.vehicles.firstOrNull { it.id == vehicleId }?.type
+        val byId = catalog.associateBy { it.id }
+        return tracked.mapNotNull { t ->
+            val cat = byId[t.catalogComponentId] ?: return@mapNotNull null
+            ComponentOption(
+                id = cat.id,
+                label = t.customName ?: cat.label,
+                iconKey = cat.iconKey,
+                colorHex = cat.colorHex,
+                intervalLabel = vehicleType?.let { cat.intervalFor(it)?.displayLabel } ?: "—",
+            )
         }
     }
 
@@ -119,10 +203,15 @@ class EditServiceViewModel(
                 odometerKm = target.odometer.kilometers,
             )
         }
+        refreshComponentsObservation(vehicleId)
     }
 
-    fun setServiceType(type: ServiceType) {
-        _state.update { it.copy(serviceType = type) }
+    fun setMode(mode: ServiceKind) {
+        _state.update { it.copy(mode = mode) }
+    }
+
+    fun setCustomTitle(value: String) {
+        _state.update { it.copy(customTitle = value) }
     }
 
     fun setServiceDate(millis: Long) {
@@ -147,6 +236,7 @@ class EditServiceViewModel(
 
     fun toggleComponent(componentId: String) {
         _state.update { current ->
+            if (current.availableComponents.none { it.id == componentId }) return@update current
             val next = current.selectedComponentIds.toMutableSet().apply {
                 if (!add(componentId)) remove(componentId)
             }
@@ -155,7 +245,10 @@ class EditServiceViewModel(
     }
 
     fun setComponents(ids: Set<String>) {
-        _state.update { it.copy(selectedComponentIds = ids) }
+        _state.update { current ->
+            val available = current.availableComponents.map { it.id }.toSet()
+            current.copy(selectedComponentIds = ids.intersect(available))
+        }
     }
 
     fun save() {
@@ -164,18 +257,35 @@ class EditServiceViewModel(
         val vehicle = snapshot.selectedVehicle ?: return
         val km = snapshot.odometerKm ?: return
         if (snapshot.isSaving || snapshot.serviceDateMillis <= 0L) return
+        if (!snapshot.canSave) return
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true) }
             try {
+                val componentsForRecord = when (snapshot.mode) {
+                    ServiceKind.Komponen -> snapshot.selectedComponentIds.toList()
+                    ServiceKind.Rutin, ServiceKind.Manual -> emptyList()
+                }
+                val customTitle = when (snapshot.mode) {
+                    ServiceKind.Manual -> snapshot.customTitle.trim().ifBlank { null }
+                    ServiceKind.Rutin -> "Servis Rutin"
+                    ServiceKind.Komponen -> null
+                }
+                val derivedType = when (snapshot.mode) {
+                    ServiceKind.Komponen -> ServiceType.fromComponentIds(snapshot.selectedComponentIds)
+                    ServiceKind.Rutin -> ServiceType.TuneUp
+                    ServiceKind.Manual -> ServiceType.Other
+                }
                 val updated = current.copy(
                     vehicleId = vehicle.id,
-                    serviceType = snapshot.serviceType,
+                    serviceType = derivedType,
+                    kind = snapshot.mode,
+                    customTitle = customTitle,
                     serviceDate = snapshot.serviceDateMillis,
                     odometer = Distance.ofKm(km),
                     workshop = snapshot.workshop.trim().ifBlank { null },
                     cost = Money.ofIdr(snapshot.costIdr),
                     note = snapshot.note.trim().ifBlank { null },
-                    componentIds = snapshot.selectedComponentIds.toList(),
+                    componentIds = componentsForRecord,
                 )
                 when (val r = updateService(updated)) {
                     is DomainResult.Success -> _events.emit(Event.Saved)

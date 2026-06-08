@@ -34,6 +34,6 @@ val serviceModule = module {
 
     viewModel { ServiceHistoryViewModel(get(), get(), get()) }
     viewModel { AddServiceViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
-    viewModel { EditServiceViewModel(get(), get(), get(), get()) }
+    viewModel { EditServiceViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { ServiceDetailViewModel(get(), get()) }
 }

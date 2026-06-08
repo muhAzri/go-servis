@@ -274,7 +274,7 @@ class AddServiceViewModel(
                     ServiceKind.Komponen -> null
                 }
                 val derivedType = when (snapshot.mode) {
-                    ServiceKind.Komponen -> deriveServiceType(snapshot.selectedComponentIds)
+                    ServiceKind.Komponen -> ServiceType.fromComponentIds(snapshot.selectedComponentIds)
                     ServiceKind.Rutin -> ServiceType.TuneUp
                     ServiceKind.Manual -> ServiceType.Other
                 }
@@ -351,20 +351,6 @@ class AddServiceViewModel(
 
     fun observeEvents(onEvent: (Event) -> Unit): Cancellable =
         events.subscribeOn(viewModelScope, onEvent)
-
-    private fun deriveServiceType(componentIds: Set<String>): ServiceType {
-        val first = componentIds.firstOrNull() ?: return ServiceType.Other
-        return when (first) {
-            "oli_mesin", "oli_gardan", "oli_gardan_mobil", "oli_transmisi" -> ServiceType.OilChange
-            "filter_oli", "filter_udara", "filter_ac", "filter_cvt" -> ServiceType.Filter
-            "ban" -> ServiceType.Tire
-            "aki" -> ServiceType.Battery
-            "kampas_rem", "minyak_rem" -> ServiceType.Brake
-            "radiator" -> ServiceType.Radiator
-            "busi", "tune_up" -> ServiceType.TuneUp
-            else -> ServiceType.Other
-        }
-    }
 
     private fun routineIntervalFor(type: VehicleType): Pair<Long, Int> = when (type) {
         VehicleType.Motor -> 4_000L to 180   // 4.000 km / 6 bulan
