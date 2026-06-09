@@ -2,6 +2,7 @@ package com.zrifapps.goservice.ui.legal
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,16 +20,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.zrifapps.goservice.ui.common.openPlayStoreForRating
+import com.zrifapps.goservice.ui.common.shareApp
 import com.zrifapps.goservice.ui.theme.AppColors
 import com.zrifapps.goservice.ui.theme.FaIcon
 import com.zrifapps.goservice.ui.theme.FaIcons
 
 @Composable
 fun AboutScreen(onBack: () -> Unit) {
+    val context = LocalContext.current
     LegalShell(title = "Tentang GoService", onBack = onBack) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -94,8 +99,16 @@ fun AboutScreen(onBack: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            OutlinedActionButton(text = "★ Beri Rating", modifier = Modifier.weight(1f))
-            OutlinedActionButton(text = "↗ Bagikan App", modifier = Modifier.weight(1f))
+            OutlinedActionButton(
+                text = "★ Beri Rating",
+                modifier = Modifier.weight(1f),
+                onClick = { context.openPlayStoreForRating() },
+            )
+            OutlinedActionButton(
+                text = "↗ Bagikan App",
+                modifier = Modifier.weight(1f),
+                onClick = { context.shareApp() },
+            )
         }
     }
 }
@@ -128,13 +141,18 @@ private fun InfoRow(label: String, value: String, showDivider: Boolean) {
 }
 
 @Composable
-private fun OutlinedActionButton(text: String, modifier: Modifier = Modifier) {
+private fun OutlinedActionButton(
+    text: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
+) {
     Box(
         modifier = modifier
             .height(44.dp)
             .clip(RoundedCornerShape(12.dp))
             .border(1.dp, AppColors.Border, RoundedCornerShape(12.dp))
-            .background(AppColors.Surface),
+            .background(AppColors.Surface)
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(

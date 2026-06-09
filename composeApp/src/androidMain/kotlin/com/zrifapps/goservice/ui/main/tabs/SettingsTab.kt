@@ -57,6 +57,8 @@ import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
 import com.zrifapps.goservice.core.notification.OdometerNotifier
 import com.zrifapps.goservice.core.notification.ReminderNotifier
+import com.zrifapps.goservice.ui.common.openPlayStoreForRating
+import com.zrifapps.goservice.ui.common.shareApp
 import com.zrifapps.goservice.feature.backup.presentation.BackupViewModel
 import com.zrifapps.goservice.ui.main.sheets.readTextFromUri
 import kotlinx.coroutines.launch
@@ -289,7 +291,12 @@ fun SettingsTab(
                 SettingItem(
                     icon = FaIcons.STAR,
                     label = "Beri Rating ⭐",
-                    onClick = {},
+                    onClick = { context.openPlayStoreForRating() },
+                ),
+                SettingItem(
+                    icon = FaIcons.SHARE,
+                    label = "Bagikan App",
+                    onClick = { context.shareApp() },
                 ),
             ),
         ),

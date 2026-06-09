@@ -125,7 +125,7 @@ struct SettingsView: View {
                     SectionDivider()
                     SettingsRow(icon: "\u{f05a}", label: "Bantuan & FAQ", action: onOpenHelp)
                     SectionDivider()
-                    SettingsRow(icon: "\u{f005}", label: "Beri Rating ⭐", action: {})
+                    SettingsRow(icon: "\u{f1e0}", label: "Bagikan App", action: { AppLinks.shareApp() })
                 }
 
                 SettingsFooter()

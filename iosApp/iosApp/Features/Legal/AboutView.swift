@@ -55,8 +55,7 @@ struct AboutView: View {
             .padding(.top, 16)
 
             HStack(spacing: 8) {
-                outlinedButton(text: "★ Beri Rating")
-                outlinedButton(text: "↗ Bagikan App")
+                outlinedButton(text: "↗ Bagikan App", action: { AppLinks.shareApp() })
             }
             .padding(.top, 14)
         }
@@ -76,20 +75,23 @@ struct AboutView: View {
         .padding(.vertical, 12)
     }
 
-    private func outlinedButton(text: String) -> some View {
-        Text(text)
-            .font(.custom("PlusJakartaSans-Bold", size: 13))
-            .foregroundColor(.sgTextPrimary)
-            .frame(maxWidth: .infinity)
-            .frame(height: 44)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.sgSurface)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(Color.sgBorder, lineWidth: 1)
-            )
+    private func outlinedButton(text: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(text)
+                .font(.custom("PlusJakartaSans-Bold", size: 13))
+                .foregroundColor(.sgTextPrimary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color.sgSurface)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(Color.sgBorder, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
     }
 }
 
